@@ -16,6 +16,11 @@
  * Add new routes here as services are implemented.
  */
 var ROUTES = {
+  // --- Settings ---
+  getSetting: SettingsService.get,
+  updateSetting: SettingsService.update,
+  getAllSettings: SettingsService.getAll,
+
   // --- Donations ---
   createDonation: DonationService.create,
   updateDonation: DonationService.update,
@@ -34,31 +39,28 @@ var ROUTES = {
 
   // --- Dashboard ---
   getDashboard: DashboardService.getSummary,
-
-  // --- Settings ---
-  getSetting: SettingsService.get,
-  updateSetting: SettingsService.update,
 };
 
 /**
  * Dispatches a request to the appropriate service function.
+ *
  * @param {string} action - The action name from the request.
  * @param {Object} payload - The request payload.
  * @returns {ContentOutput} JSON response from the handler.
  */
 function dispatch(action, payload) {
   if (!action) {
-    return error('Missing action');
+    return error(ERROR_CODES.MISSING_ACTION, 'Missing action');
   }
 
   var handler = ROUTES[action];
   if (!handler) {
-    return error('Unknown action: ' + action);
+    return error(ERROR_CODES.UNKNOWN_ACTION, 'Unknown action: ' + action);
   }
 
   try {
     return handler(payload);
   } catch (e) {
-    return error('Internal error', e.message);
+    return error(ERROR_CODES.INTERNAL_ERROR, e.message);
   }
 }

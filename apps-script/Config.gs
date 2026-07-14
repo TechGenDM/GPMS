@@ -25,6 +25,7 @@ const CONFIG = {
     expense: 'EXP',
     receipt: 'RCT',
     user: 'USR',
+    log: 'LOG',
   },
 
   // Timezone for all date operations

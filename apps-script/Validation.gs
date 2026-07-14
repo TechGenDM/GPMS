@@ -4,39 +4,113 @@
  * All input validation lives here.
  * No validation inside service files.
  *
- * Each function returns:
- *   { valid: true }  or  { valid: false, message: "..." }
+ * Every validator returns:
+ *   { valid: true }
+ *   { valid: false, code: "ERROR_CODE", message: "Human-readable message" }
  */
 
 /**
  * Validates donation input.
+ *
  * @param {Object} data - Donation payload.
  * @returns {Object} Validation result.
  */
 function validateDonation(data) {
-  // TODO: Implement in Milestone 3
-  // Required fields: donorName, amount, category, date, paymentMode
+  if (!data) {
+    return { valid: false, code: ERROR_CODES.VALIDATION_ERROR, message: 'Donation data is required' };
+  }
+
+  if (!data.donorName || String(data.donorName).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Donor name is required' };
+  }
+
+  if (!data.amount || isNaN(Number(data.amount)) || Number(data.amount) <= 0) {
+    return { valid: false, code: ERROR_CODES.INVALID_AMOUNT, message: 'Amount must be greater than zero' };
+  }
+
+  if (!data.category || String(data.category).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Category is required' };
+  }
+
+  if (!data.paymentMode || String(data.paymentMode).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Payment mode is required' };
+  }
+
   return { valid: true };
 }
 
 /**
  * Validates expense input.
+ *
  * @param {Object} data - Expense payload.
  * @returns {Object} Validation result.
  */
 function validateExpense(data) {
-  // TODO: Implement in Milestone 3
-  // Required fields: description, amount, category, date
+  if (!data) {
+    return { valid: false, code: ERROR_CODES.VALIDATION_ERROR, message: 'Expense data is required' };
+  }
+
+  if (!data.description || String(data.description).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Description is required' };
+  }
+
+  if (!data.amount || isNaN(Number(data.amount)) || Number(data.amount) <= 0) {
+    return { valid: false, code: ERROR_CODES.INVALID_AMOUNT, message: 'Amount must be greater than zero' };
+  }
+
+  if (!data.category || String(data.category).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Category is required' };
+  }
+
   return { valid: true };
 }
 
 /**
  * Validates user / login input.
+ *
  * @param {Object} data - User payload.
  * @returns {Object} Validation result.
  */
 function validateUser(data) {
-  // TODO: Implement in Milestone 3
-  // Required fields: phone or username, password
+  if (!data) {
+    return { valid: false, code: ERROR_CODES.VALIDATION_ERROR, message: 'User data is required' };
+  }
+
+  if (!data.phone || String(data.phone).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Phone number is required' };
+  }
+
+  if (!data.password || String(data.password).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Password is required' };
+  }
+
+  // Basic phone validation (Indian 10-digit)
+  var phone = String(data.phone).replace(/\D/g, '');
+  if (phone.length !== 10) {
+    return { valid: false, code: ERROR_CODES.VALIDATION_ERROR, message: 'Phone must be 10 digits' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validates settings input.
+ *
+ * @param {Object} data - Settings payload.
+ * @returns {Object} Validation result.
+ */
+function validateSettings(data) {
+  if (!data) {
+    return { valid: false, code: ERROR_CODES.VALIDATION_ERROR, message: 'Settings data is required' };
+  }
+
+  if (!data.key || String(data.key).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Setting key is required' };
+  }
+
+  if (data.value === undefined || data.value === null) {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Setting value is required' };
+  }
+
   return { valid: true };
 }
