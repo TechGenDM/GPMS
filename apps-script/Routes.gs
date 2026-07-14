@@ -32,6 +32,9 @@ var ROUTES = {
   createExpense: ExpenseService.create,
   updateExpense: ExpenseService.update,
   cancelExpense: ExpenseService.cancel,
+  getExpense: ExpenseService.get,
+  searchExpenses: ExpenseService.search,
+  getRecentExpenses: ExpenseService.getRecentExpenses,
 
   // --- Users / Auth ---
   authenticate: UserService.authenticate,
