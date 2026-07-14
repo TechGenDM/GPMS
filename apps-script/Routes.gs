@@ -34,8 +34,11 @@ var ROUTES = {
   cancelExpense: ExpenseService.cancel,
 
   // --- Users / Auth ---
-  login: UserService.login,
-  getUser: UserService.find,
+  authenticate: UserService.authenticate,
+  createUser: UserService.createUser,
+  updateUser: UserService.updateUser,
+  disableUser: UserService.disableUser,
+  getAllUsers: UserService.getAllUsers,
 
   // --- Dashboard ---
   getDashboard: DashboardService.getSummary,

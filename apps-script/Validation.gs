@@ -66,7 +66,7 @@ function validateExpense(data) {
 }
 
 /**
- * Validates user / login input.
+ * Validates user / login input for creation or updates.
  *
  * @param {Object} data - User payload.
  * @returns {Object} Validation result.
@@ -76,18 +76,48 @@ function validateUser(data) {
     return { valid: false, code: ERROR_CODES.VALIDATION_ERROR, message: 'User data is required' };
   }
 
-  if (!data.phone || String(data.phone).trim() === '') {
-    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Phone number is required' };
+  if (!data.fullName || String(data.fullName).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Full name is required' };
   }
 
-  if (!data.password || String(data.password).trim() === '') {
-    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Password is required' };
+  if (!data.email || String(data.email).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Email is required' };
+  }
+
+  // Basic email validation
+  var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(data.email)) {
+    return { valid: false, code: ERROR_CODES.VALIDATION_ERROR, message: 'Invalid email format' };
+  }
+
+  if (!data.phone || String(data.phone).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Phone number is required' };
   }
 
   // Basic phone validation (Indian 10-digit)
   var phone = String(data.phone).replace(/\D/g, '');
   if (phone.length !== 10) {
     return { valid: false, code: ERROR_CODES.VALIDATION_ERROR, message: 'Phone must be 10 digits' };
+  }
+
+  if (!data.role || String(data.role).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Role is required' };
+  }
+
+  // Validate role against CONFIG
+  var validRoles = Object.values(CONFIG.roles);
+  if (validRoles.indexOf(data.role) === -1) {
+    return { valid: false, code: ERROR_CODES.INVALID_ROLE, message: 'Invalid role specified' };
+  }
+
+  if (!data.status || String(data.status).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Status is required' };
+  }
+
+  // Validate status against CONFIG
+  var validStatuses = Object.values(CONFIG.status);
+  if (validStatuses.indexOf(data.status) === -1) {
+    return { valid: false, code: ERROR_CODES.VALIDATION_ERROR, message: 'Invalid status specified' };
   }
 
   return { valid: true };
