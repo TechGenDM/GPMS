@@ -44,12 +44,17 @@ var ROUTES = {
   getAllUsers: UserService.getAllUsers,
 
   // --- Dashboard ---
-  getDashboard: DashboardService.getSummary,
+  getFinancialSummary: DashboardService.getFinancialSummary,
+  getRecentActivity: DashboardService.getRecentActivity,
+  getDonationStats: DashboardService.getDonationStats,
+  getExpenseStats: DashboardService.getExpenseStats,
+  getDashboardSummary: DashboardService.getDashboardSummary,
+  getPublicDashboard: DashboardService.getPublicDashboard,
 };
 
 /**
  * Dispatches a request to the appropriate service function.
- * Implements global authentication for all routes except 'authenticate'.
+ * Implements global authentication for all routes except 'authenticate' and 'getPublicDashboard'.
  *
  * @param {string} action - The action name from the request.
  * @param {Object} payload - The request payload.
@@ -66,9 +71,9 @@ function dispatch(action, payload) {
   }
 
   try {
-    // 1. Skip authentication for the 'authenticate' route itself
-    if (action === 'authenticate') {
-      return handler(payload);
+    // 1. Skip authentication for public routes
+    if (action === 'authenticate' || action === 'getPublicDashboard') {
+      return handler(null, payload);
     }
 
     // 2. Global Authentication Interceptor
