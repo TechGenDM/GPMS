@@ -46,6 +46,7 @@ var ROUTES = {
 
 /**
  * Dispatches a request to the appropriate service function.
+ * Implements global authentication for all routes except 'authenticate'.
  *
  * @param {string} action - The action name from the request.
  * @param {Object} payload - The request payload.
@@ -62,7 +63,28 @@ function dispatch(action, payload) {
   }
 
   try {
-    return handler(payload);
+    // 1. Skip authentication for the 'authenticate' route itself
+    if (action === 'authenticate') {
+      return handler(payload);
+    }
+
+    // 2. Global Authentication Interceptor
+    if (!payload || !payload.userEmail) {
+      return error(ERROR_CODES.UNAUTHORIZED, 'Authentication required: Missing userEmail in payload');
+    }
+
+    // Attempt to authenticate the user
+    var authResponse = JSON.parse(UserService.authenticate({ email: payload.userEmail }).getContent());
+    if (authResponse.success === false) {
+       // Return the exact error (e.g., USER_NOT_FOUND or USER_DISABLED)
+       return error(authResponse.code, authResponse.message);
+    }
+
+    // We have a valid, active user object now
+    var user = authResponse.data;
+
+    // 3. Call the handler with (user, payload)
+    return handler(user, payload);
   } catch (e) {
     return error(ERROR_CODES.INTERNAL_ERROR, e.message);
   }
