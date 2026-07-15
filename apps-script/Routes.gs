@@ -12,49 +12,61 @@
  */
 
 /**
- * Route map — action name → handler function.
- * Add new routes here as services are implemented.
+ * Returns the route map at runtime.
+ *
+ * IMPORTANT:
+ * Apps Script does not guarantee .gs file initialization order.
+ * Therefore, service references must not be resolved globally.
+ * Building the route map at runtime ensures all service objects
+ * are available before their methods are referenced.
+ *
+ * @returns {Object} Action name → handler function map.
  */
-var ROUTES = {
-  // --- Settings ---
-  getSetting: SettingsService.get,
-  updateSetting: SettingsService.update,
-  getAllSettings: SettingsService.getAll,
+function getRoutes() {
+  return {
+    // --- Settings ---
+    getSetting: SettingsService.get,
+    updateSetting: SettingsService.update,
+    getAllSettings: SettingsService.getAll,
 
-  // --- Donations ---
-  createDonation: DonationService.create,
-  updateDonation: DonationService.update,
-  cancelDonation: DonationService.cancel,
-  getDonation: DonationService.get,
-  searchDonations: DonationService.search,
+    // --- Donations ---
+    createDonation: DonationService.create,
+    updateDonation: DonationService.update,
+    cancelDonation: DonationService.cancel,
+    getDonation: DonationService.get,
+    searchDonations: DonationService.search,
 
-  // --- Expenses ---
-  createExpense: ExpenseService.create,
-  updateExpense: ExpenseService.update,
-  cancelExpense: ExpenseService.cancel,
-  getExpense: ExpenseService.get,
-  searchExpenses: ExpenseService.search,
-  getRecentExpenses: ExpenseService.getRecentExpenses,
+    // --- Expenses ---
+    createExpense: ExpenseService.create,
+    updateExpense: ExpenseService.update,
+    cancelExpense: ExpenseService.cancel,
+    getExpense: ExpenseService.get,
+    searchExpenses: ExpenseService.search,
+    getRecentExpenses: ExpenseService.getRecentExpenses,
 
-  // --- Users / Auth ---
-  authenticate: UserService.authenticate,
-  createUser: UserService.createUser,
-  updateUser: UserService.updateUser,
-  disableUser: UserService.disableUser,
-  getAllUsers: UserService.getAllUsers,
+    // --- Users / Auth ---
+    authenticate: UserService.authenticate,
+    createUser: UserService.createUser,
+    updateUser: UserService.updateUser,
+    disableUser: UserService.disableUser,
+    getAllUsers: UserService.getAllUsers,
 
-  // --- Dashboard ---
-  getFinancialSummary: DashboardService.getFinancialSummary,
-  getRecentActivity: DashboardService.getRecentActivity,
-  getDonationStats: DashboardService.getDonationStats,
-  getExpenseStats: DashboardService.getExpenseStats,
-  getDashboardSummary: DashboardService.getDashboardSummary,
-  getPublicDashboard: DashboardService.getPublicDashboard,
-};
+    // --- Dashboard ---
+    getFinancialSummary: DashboardService.getFinancialSummary,
+    getRecentActivity: DashboardService.getRecentActivity,
+    getDonationStats: DashboardService.getDonationStats,
+    getExpenseStats: DashboardService.getExpenseStats,
+    getDashboardSummary: DashboardService.getDashboardSummary,
+    getPublicDashboard: DashboardService.getPublicDashboard,
+  };
+}
 
 /**
  * Dispatches a request to the appropriate service function.
- * Implements global authentication for all routes except 'authenticate' and 'getPublicDashboard'.
+ *
+ * Implements global authentication for all routes except:
+ * - authenticate
+ * - getPublicDashboard
  *
  * @param {string} action - The action name from the request.
  * @param {Object} payload - The request payload.
@@ -62,38 +74,69 @@ var ROUTES = {
  */
 function dispatch(action, payload) {
   if (!action) {
-    return error(ERROR_CODES.MISSING_ACTION, 'Missing action');
+    return error(
+      ERROR_CODES.MISSING_ACTION,
+      'Missing action'
+    );
   }
 
-  var handler = ROUTES[action];
+  // Resolve routes at runtime to avoid Apps Script
+  // global initialization order problems.
+  var routes = getRoutes();
+  var handler = routes[action];
+
   if (!handler) {
-    return error(ERROR_CODES.UNKNOWN_ACTION, 'Unknown action: ' + action);
+    return error(
+      ERROR_CODES.UNKNOWN_ACTION,
+      'Unknown action: ' + action
+    );
   }
 
   try {
-    // 1. Skip authentication for public routes
-    if (action === 'authenticate' || action === 'getPublicDashboard') {
+    // 1. Public routes do not require authentication.
+    if (action === 'authenticate') {
+      // UserService.authenticate(payload) — takes ONE argument.
+      return handler(payload);
+    }
+
+    if (action === 'getPublicDashboard') {
+      // DashboardService.getPublicDashboard(user, payload) — user is null.
       return handler(null, payload);
     }
 
-    // 2. Global Authentication Interceptor
+    // 2. All protected routes require a user email.
     if (!payload || !payload.userEmail) {
-      return error(ERROR_CODES.UNAUTHORIZED, 'Authentication required: Missing userEmail in payload');
+      return error(
+        ERROR_CODES.UNAUTHORIZED,
+        'Authentication required: Missing userEmail in payload'
+      );
     }
 
-    // Attempt to authenticate the user
-    var authResponse = JSON.parse(UserService.authenticate({ email: payload.userEmail }).getContent());
+    // 3. Authenticate the requesting user.
+    var authResponse = JSON.parse(
+      UserService.authenticate({
+        email: payload.userEmail,
+      }).getContent()
+    );
+
+    // Reject invalid or disabled users.
     if (authResponse.success === false) {
-       // Return the exact error (e.g., USER_NOT_FOUND or USER_DISABLED)
-       return error(authResponse.code, authResponse.message);
+      return error(
+        authResponse.code,
+        authResponse.message
+      );
     }
 
-    // We have a valid, active user object now
+    // Authenticated and active GPMS user.
     var user = authResponse.data;
 
-    // 3. Call the handler with (user, payload)
+    // 4. Execute the requested protected route.
     return handler(user, payload);
+
   } catch (e) {
-    return error(ERROR_CODES.INTERNAL_ERROR, e.message);
+    return error(
+      ERROR_CODES.INTERNAL_ERROR,
+      e.message
+    );
   }
 }

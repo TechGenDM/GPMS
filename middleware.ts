@@ -1,38 +1,21 @@
 import { auth } from '@/auth';
+import { NextResponse } from 'next/server';
 
 export default auth((req) => {
-  const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
+  const isLoginPage = req.nextUrl.pathname === '/login';
 
-  // Define public routes that do not require authentication
-  const isApiAuthRoute = nextUrl.pathname.startsWith('/api/auth');
-  const isPublicRoute = nextUrl.pathname === '/login' || nextUrl.pathname.startsWith('/public');
-
-  if (isApiAuthRoute) {
-    return;
+  if (!isLoggedIn && !isLoginPage) {
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
-  // If attempting to access a protected route while not logged in, redirect to login
-  if (!isLoggedIn && !isPublicRoute) {
-    let callbackUrl = nextUrl.pathname;
-    if (nextUrl.search) {
-      callbackUrl += nextUrl.search;
-    }
-
-    const encodedCallbackUrl = encodeURIComponent(callbackUrl);
-    return Response.redirect(new URL(`/login?callbackUrl=${encodedCallbackUrl}`, nextUrl));
+  if (isLoggedIn && isLoginPage) {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
-  // If logged in and trying to access the login page, redirect to dashboard
-  if (isLoggedIn && nextUrl.pathname === '/login') {
-    return Response.redirect(new URL('/dashboard', nextUrl));
-  }
-
-  // Allow access if logged in or on a public route
-  return;
+  return NextResponse.next();
 });
 
-// Optionally, don't invoke Middleware on some paths
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
