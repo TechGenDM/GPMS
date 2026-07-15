@@ -11,6 +11,10 @@
 
 /**
  * Validates donation input.
+ * Matches actual GPMS Database 2026 Donations sheet.
+ *
+ * Required: donorName, amount, paymentMode
+ * Optional: phone, upiRef, purpose, remarks
  *
  * @param {Object} data - Donation payload.
  * @returns {Object} Validation result.
@@ -26,10 +30,6 @@ function validateDonation(data) {
 
   if (!data.amount || isNaN(Number(data.amount)) || Number(data.amount) <= 0) {
     return { valid: false, code: ERROR_CODES.INVALID_AMOUNT, message: 'Amount must be greater than zero' };
-  }
-
-  if (!data.category || String(data.category).trim() === '') {
-    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Category is required' };
   }
 
   if (!data.paymentMode || String(data.paymentMode).trim() === '') {

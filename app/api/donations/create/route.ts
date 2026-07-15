@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     // Read donation fields from the request body
     const body = await request.json();
-    const { donorName, amount, category, paymentMode, remarks } = body;
+    const { donorName, phone, amount, paymentMode, upiRef, purpose, remarks } = body;
 
     const response = await fetch(appsScriptUrl, {
       method: 'POST',
@@ -28,9 +28,11 @@ export async function POST(request: NextRequest) {
         payload: {
           userEmail: session.user.email, // Injected server-side — never from frontend
           donorName,
+          phone: phone || '',
           amount,
-          category,
           paymentMode,
+          upiRef: upiRef || '',
+          purpose: purpose || '',
           remarks: remarks || '',
         },
       }),

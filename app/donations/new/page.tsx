@@ -10,7 +10,7 @@ import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 import { Button } from '@/components/ui/button';
 
 // ── Constants matching backend expectations ──────────────────────────
-const CATEGORIES = [
+const PURPOSES = [
   'General Donation',
   'Prasad',
   'Decoration',
@@ -23,10 +23,11 @@ const PAYMENT_MODES = ['Cash', 'UPI'] as const;
 // ── Types ────────────────────────────────────────────────────────────
 interface DonationFormData {
   donorName: string;
+  phone: string;
   amount: string;
-  category: string;
+  purpose: string;
   paymentMode: string;
-  upiReference: string;
+  upiRef: string;
   remarks: string;
 }
 
@@ -36,10 +37,11 @@ interface CreateDonationResponse {
 
 const INITIAL_FORM: DonationFormData = {
   donorName: '',
+  phone: '',
   amount: '',
-  category: CATEGORIES[0],
+  purpose: PURPOSES[0],
   paymentMode: PAYMENT_MODES[0],
-  upiReference: '',
+  upiRef: '',
   remarks: '',
 };
 
@@ -47,7 +49,6 @@ const INITIAL_FORM: DonationFormData = {
 function validateForm(form: DonationFormData): string | null {
   if (!form.donorName.trim()) return 'Donor name is required';
   if (!form.amount || Number(form.amount) <= 0) return 'Amount must be greater than zero';
-  if (!form.category) return 'Please select a category';
   if (!form.paymentMode) return 'Please select a payment mode';
   return null;
 }
@@ -92,20 +93,16 @@ export default function NewDonationPage() {
 
       setSubmitting(true);
 
-      // Build remarks: prepend UPI ref if present
-      let remarks = form.remarks.trim();
-      if (form.paymentMode === 'UPI' && form.upiReference.trim()) {
-        remarks = `UPI Ref: ${form.upiReference.trim()}${remarks ? ' | ' + remarks : ''}`;
-      }
-
       const res = await fetchApi<CreateDonationResponse>('/donations/create', {
         method: 'POST',
         body: {
           donorName: form.donorName.trim(),
+          phone: form.phone.trim(),
           amount: Number(form.amount),
-          category: form.category,
+          purpose: form.purpose,
           paymentMode: form.paymentMode,
-          remarks,
+          upiRef: form.paymentMode === 'UPI' ? form.upiRef.trim() : '',
+          remarks: form.remarks.trim(),
         },
         showLoading: true,
         loadingMessage: 'Recording donation...',
@@ -225,6 +222,22 @@ export default function NewDonationPage() {
             />
           </div>
 
+          {/* Phone */}
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-1.5">
+              Phone Number <span className="text-slate-400 text-xs">(optional)</span>
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              autoComplete="off"
+              placeholder="10-digit mobile number"
+              value={form.phone}
+              onChange={(e) => updateField('phone', e.target.value)}
+              className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+            />
+          </div>
+
           {/* Amount */}
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-slate-700 mb-1.5">
@@ -249,24 +262,24 @@ export default function NewDonationPage() {
             </div>
           </div>
 
-          {/* Category — Pill Chips */}
+          {/* Purpose — Pill Chips */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Category <span className="text-red-500">*</span>
+              Purpose <span className="text-slate-400 text-xs">(optional)</span>
             </label>
             <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((cat) => (
+              {PURPOSES.map((pur) => (
                 <button
-                  key={cat}
+                  key={pur}
                   type="button"
-                  onClick={() => updateField('category', cat)}
+                  onClick={() => updateField('purpose', pur)}
                   className={`px-4 py-2.5 rounded-full text-sm font-medium transition-all ${
-                    form.category === cat
+                    form.purpose === pur
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-white text-slate-700 border border-slate-300 hover:border-blue-400 hover:text-blue-600'
                   }`}
                 >
-                  {cat}
+                  {pur}
                 </button>
               ))}
             </div>
@@ -306,8 +319,8 @@ export default function NewDonationPage() {
                 type="text"
                 autoComplete="off"
                 placeholder="Transaction ID or UPI ref number"
-                value={form.upiReference}
-                onChange={(e) => updateField('upiReference', e.target.value)}
+                value={form.upiRef}
+                onChange={(e) => updateField('upiRef', e.target.value)}
                 className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
               />
             </div>
