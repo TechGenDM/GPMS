@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { LogOut, ArrowUpRight, ArrowDownRight, IndianRupee } from 'lucide-react';
+import { LogOut, ArrowUpRight, ArrowDownRight, IndianRupee, Plus } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { useFeedback } from '@/components/ui/Feedback';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -30,6 +31,7 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const feedback = useFeedback();
 
@@ -181,6 +183,17 @@ export default function DashboardPage() {
         </div>
 
       </main>
+
+      {/* Floating Action Button — Primary volunteer action */}
+      <div className="fixed bottom-6 left-0 right-0 px-4 z-10 max-w-3xl mx-auto">
+        <button
+          onClick={() => router.push('/donations/new')}
+          className="w-full h-14 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-bold text-base shadow-lg shadow-green-600/30 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+        >
+          <Plus className="w-5 h-5" />
+          Record Donation
+        </button>
+      </div>
     </div>
   );
 }
