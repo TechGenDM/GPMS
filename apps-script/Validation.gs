@@ -50,6 +50,10 @@ function validateExpense(data) {
     return { valid: false, code: ERROR_CODES.VALIDATION_ERROR, message: 'Expense data is required' };
   }
 
+  if (!data.category || String(data.category).trim() === '') {
+    return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Category is required' };
+  }
+
   if (!data.description || String(data.description).trim() === '') {
     return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Description is required' };
   }

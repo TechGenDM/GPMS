@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { LogOut, ArrowUpRight, ArrowDownRight, IndianRupee, Plus } from 'lucide-react';
+import { LogOut, ArrowUpRight, ArrowDownRight, IndianRupee, Plus, Minus } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { useFeedback } from '@/components/ui/Feedback';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -184,14 +184,21 @@ export default function DashboardPage() {
 
       </main>
 
-      {/* Floating Action Button — Primary volunteer action */}
-      <div className="fixed bottom-6 left-0 right-0 px-4 z-10 max-w-3xl mx-auto">
+      {/* Floating Action Buttons — Primary volunteer actions */}
+      <div className="fixed bottom-6 left-0 right-0 px-4 z-10 max-w-3xl mx-auto flex gap-3">
         <button
           onClick={() => router.push('/donations/new')}
-          className="w-full h-14 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-bold text-base shadow-lg shadow-green-600/30 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+          className="flex-1 h-14 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-bold text-base shadow-lg shadow-green-600/30 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
         >
           <Plus className="w-5 h-5" />
-          Record Donation
+          Donation
+        </button>
+        <button
+          onClick={() => router.push('/expenses/new')}
+          className="flex-1 h-14 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-base shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+        >
+          <Minus className="w-5 h-5" />
+          Expense
         </button>
       </div>
     </div>

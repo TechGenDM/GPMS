@@ -3,11 +3,10 @@
  * =====================
  * Core business logic for managing expenses.
  *
- * Expense object format:
- * { id, date, category, description, vendor, amount, billLink, status, createdBy, updatedBy, remarks }
- *
- * Expenses sheet structure:
- * | ID | Date | Category | Description | Vendor | Amount | BillLink | Status | CreatedBy | UpdatedBy | Remarks |
+ * Expenses sheet structure (actual GPMS Database 2026):
+ * | A: Expense ID | B: Category | C: Description | D: Vendor | E: Amount |
+ * | F: Paid By ID | G: Paid By Name | H: Bill Link | I: Status | J: Created At |
+ * | K: Updated At |
  */
 
 var ExpenseService = {
@@ -29,20 +28,20 @@ var ExpenseService = {
     var expenseId = ReceiptService.generateExpenseId();
     var date = now();
 
-    // 3. Save to sheet
+    // 3. Save to sheet (11 columns: A–K)
     var sheet = getSheet(CONFIG.sheets.expenses);
     sheet.appendRow([
-      expenseId,
-      date,
-      payload.category,
-      payload.description,
-      payload.vendor || '',
-      payload.amount,
-      payload.billLink || '',
-      CONFIG.status.active, // Status
-      user.fullName,        // CreatedBy
-      '',                   // UpdatedBy
-      ''                    // Remarks
+      expenseId,                     // A: Expense ID
+      payload.category,              // B: Category
+      payload.description,           // C: Description
+      payload.vendor || '',          // D: Vendor
+      payload.amount,                // E: Amount
+      user.id,                       // F: Paid By ID
+      user.fullName,                 // G: Paid By Name
+      payload.billLink || '',        // H: Bill Link
+      CONFIG.status.active,          // I: Status
+      date,                          // J: Created At
+      ''                             // K: Updated At
     ]);
 
     // 4. Audit log
@@ -83,16 +82,16 @@ var ExpenseService = {
 
     var sheet = getSheet(CONFIG.sheets.expenses);
     var currentData = sheet.getRange(row, 1, 1, 11).getValues()[0];
-    var oldExpense = ExpenseService._mapExpense(currentData);
 
-    // Update specific fields
-    if (payload.category) sheet.getRange(row, 3).setValue(payload.category);
-    if (payload.description) sheet.getRange(row, 4).setValue(payload.description);
-    if (payload.vendor !== undefined) sheet.getRange(row, 5).setValue(payload.vendor);
-    if (payload.amount) sheet.getRange(row, 6).setValue(payload.amount);
-    if (payload.billLink !== undefined) sheet.getRange(row, 7).setValue(payload.billLink);
+    // Update specific fields (1-indexed for getRange)
+    if (payload.category) sheet.getRange(row, 2).setValue(payload.category);
+    if (payload.description) sheet.getRange(row, 3).setValue(payload.description);
+    if (payload.vendor !== undefined) sheet.getRange(row, 4).setValue(payload.vendor);
+    if (payload.amount) sheet.getRange(row, 5).setValue(payload.amount);
+    if (payload.billLink !== undefined) sheet.getRange(row, 8).setValue(payload.billLink);
+    if (payload.status) sheet.getRange(row, 9).setValue(payload.status);
     
-    sheet.getRange(row, 10).setValue(user.fullName); // UpdatedBy
+    sheet.getRange(row, 11).setValue(now()); // Updated At
 
     AuditService.log({
       userId: user.id,
@@ -100,53 +99,10 @@ var ExpenseService = {
       action: 'updateExpense',
       module: 'Expenses',
       recordId: payload.expenseId,
-      oldValue: JSON.stringify({ amount: oldExpense.amount, category: oldExpense.category }),
-      newValue: JSON.stringify({ amount: payload.amount || oldExpense.amount, category: payload.category || oldExpense.category }),
+      newValue: 'Updated expense',
     });
 
     return success('Expense updated successfully');
-  },
-
-  /**
-   * Cancels an expense (soft delete — sets status to Cancelled).
-   *
-   * @param {Object} user - The authenticated User object.
-   * @param {Object} payload - Must include expenseId and reason.
-   * @returns {ContentOutput} JSON response.
-   */
-  cancel: function (user, payload) {
-    if (!payload || !payload.expenseId) {
-      return error(ERROR_CODES.MISSING_FIELD, 'Expense ID is required');
-    }
-    
-    if (!payload.reason || String(payload.reason).trim() === '') {
-      return error(ERROR_CODES.MISSING_FIELD, 'Cancel reason is required');
-    }
-
-    // Authorization: Only Admins can cancel expenses
-    if (!UserService.authorize(user, [CONFIG.roles.admin])) {
-      return error(ERROR_CODES.ROLE_NOT_ALLOWED, 'Only admins can cancel expenses');
-    }
-
-    var row = ExpenseService._findExpenseRow(payload.expenseId);
-    if (row === -1) {
-      return error(ERROR_CODES.EXPENSE_NOT_FOUND, 'Expense not found');
-    }
-
-    var sheet = getSheet(CONFIG.sheets.expenses);
-    sheet.getRange(row, 8).setValue(CONFIG.status.cancelled); // Status
-    sheet.getRange(row, 10).setValue(user.fullName); // UpdatedBy
-    sheet.getRange(row, 11).setValue(payload.reason); // Remarks (Cancel Reason)
-
-    AuditService.log({
-      userId: user.id,
-      userName: user.fullName,
-      action: 'cancelExpense',
-      module: 'Expenses',
-      recordId: payload.expenseId,
-    });
-
-    return success('Expense cancelled successfully');
   },
 
   /**
@@ -173,7 +129,7 @@ var ExpenseService = {
   },
 
   /**
-   * Searches expenses by criteria (ID, vendor, category, description).
+   * Searches expenses by criteria.
    *
    * @param {Object} user - The authenticated User object.
    * @param {Object} payload - Search filters.
@@ -184,9 +140,8 @@ var ExpenseService = {
     var data = sheet.getDataRange().getValues();
     var results = [];
 
-    // Skip header row
     for (var i = 1; i < data.length; i++) {
-      if (!data[i][0]) continue;
+      if (!data[i][0] || String(data[i][0]).toLowerCase() === 'expense id') continue;
 
       var expense = ExpenseService._mapExpense(data[i]);
       var match = true;
@@ -213,11 +168,7 @@ var ExpenseService = {
   },
 
   /**
-   * Retrieves the most recent expenses up to a specified limit.
-   *
-   * @param {Object} user - The authenticated User object.
-   * @param {Object} payload - Must include limit (number).
-   * @returns {ContentOutput} JSON response.
+   * Retrieves the most recent expenses.
    */
   getRecentExpenses: function(user, payload) {
     var limit = payload && payload.limit ? parseInt(payload.limit, 10) : 10;
@@ -226,12 +177,10 @@ var ExpenseService = {
     var data = sheet.getDataRange().getValues();
     var results = [];
 
-    // Skip header and iterate backwards
     for (var i = data.length - 1; i > 0; i--) {
-      if (!data[i][0]) continue;
+      if (!data[i][0] || String(data[i][0]).toLowerCase() === 'expense id') continue;
       
       var expense = ExpenseService._mapExpense(data[i]);
-      // Generally we want active expenses for "recent", or maybe all. We'll include all here.
       results.push(expense);
       
       if (results.length >= limit) break;
@@ -245,34 +194,26 @@ var ExpenseService = {
   // ==========================================
 
   /**
-   * Maps a raw sheet row to a standard Expense object.
-   *
-   * @param {Array} row - Raw row data array.
-   * @returns {Object} Standard Expense object.
-   * @private
+   * Maps a raw sheet row (11 columns) to a standard Expense object.
    */
   _mapExpense: function (row) {
     return {
-      id: row[0],
-      date: row[1],
-      category: row[2],
-      description: row[3],
-      vendor: row[4],
-      amount: row[5],
-      billLink: row[6],
-      status: row[7],
-      createdBy: row[8],
-      updatedBy: row[9],
-      remarks: row[10],
+      id: row[0],             // A: Expense ID
+      category: row[1],       // B: Category
+      description: row[2],    // C: Description
+      vendor: row[3],         // D: Vendor
+      amount: row[4],         // E: Amount
+      paidById: row[5],       // F: Paid By ID
+      paidByName: row[6],     // G: Paid By Name
+      billLink: row[7],       // H: Bill Link
+      status: row[8],         // I: Status
+      createdAt: row[9],      // J: Created At
+      updatedAt: row[10]      // K: Updated At
     };
   },
 
   /**
    * Finds the row index for an expense based on its ID.
-   *
-   * @param {string} expenseId - ID to search for.
-   * @returns {number} Row index (1-indexed) or -1 if not found.
-   * @private
    */
   _findExpenseRow: function (expenseId) {
     var sheet = getSheet(CONFIG.sheets.expenses);
@@ -284,5 +225,5 @@ var ExpenseService = {
       }
     }
     return -1;
-  },
+  }
 };
