@@ -97,7 +97,7 @@ function now() {
 /**
  * Safely appends a row of data below the last actual data row.
  * Bypasses issues with pre-filled dropdown template rows by looking
- * for the last row that has an ID in the specified ID column.
+ * for the first empty row in the ID column after the header.
  *
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - The sheet to modify.
  * @param {Array} rowData - 1D array of row data to insert.
@@ -106,20 +106,30 @@ function now() {
 function safeAppendRow(sheet, rowData, idColIndex) {
   var data = sheet.getDataRange().getValues();
   
-  var lastRowWithData = 0;
-  // Scan from bottom up to find the last row with an ID
-  for (var i = data.length - 1; i >= 0; i--) {
-    if (String(data[i][idColIndex]).trim() !== '') {
-      lastRowWithData = i + 1; // 1-indexed row number
+  // 1. Find the header row (look for 'id', 'expense id', 'donation id' etc in the id column)
+  var headerIndex = 0;
+  for (var i = 0; i < data.length; i++) {
+    var val = String(data[i][idColIndex]).trim().toLowerCase();
+    if (val === 'expense id' || val === 'donation id' || val === 'id' || val === 'receipt id') {
+      headerIndex = i;
+      break;
+    }
+  }
+  
+  // 2. Scan downwards from the header to find the first empty cell in the ID column
+  var targetRow = data.length + 1; // default to appending at the end if no empty cell is found
+  for (var i = headerIndex + 1; i < data.length; i++) {
+    if (String(data[i][idColIndex]).trim() === '') {
+      targetRow = i + 1; // 1-indexed row number
       break;
     }
   }
 
-  var targetRow = lastRowWithData === 0 ? 1 : lastRowWithData + 1;
-
+  // 3. Ensure we have enough rows in the sheet
   if (targetRow > sheet.getMaxRows()) {
-    sheet.appendRow(rowData);
-  } else {
-    sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
-  }
+    sheet.insertRowAfter(sheet.getMaxRows());
+  } 
+  
+  // 4. Overwrite the target row
+  sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
 }
