@@ -66,28 +66,6 @@ function validateExpense(data) {
     return { valid: false, code: ERROR_CODES.MISSING_FIELD, message: 'Category is required' };
   }
 
-  // Dynamic Category Validation against Categories sheet
-  try {
-    var sheet = getSheet(CONFIG.sheets.categories);
-    var categoryData = sheet.getDataRange().getValues();
-    var isValidCategory = false;
-    
-    // Skip header row
-    for (var i = 1; i < categoryData.length; i++) {
-      // Column 0 = CategoryName, Column 1 = Type
-      if (categoryData[i][0] === data.category && categoryData[i][1] === 'Expense') {
-        isValidCategory = true;
-        break;
-      }
-    }
-    
-    if (!isValidCategory) {
-      return { valid: false, code: ERROR_CODES.INVALID_CATEGORY, message: 'Invalid or unauthorized expense category' };
-    }
-  } catch (e) {
-    return { valid: false, code: ERROR_CODES.INTERNAL_ERROR, message: 'Failed to validate category: ' + e.message };
-  }
-
   return { valid: true };
 }
 
