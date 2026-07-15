@@ -1,8 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils'; // standard tailwind-merge util
 
-const cx = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
-
 interface CurrencyDisplayProps {
   amount: number;
   className?: string;
@@ -22,8 +20,8 @@ export function CurrencyDisplay({ amount, className, size = 'lg' }: CurrencyDisp
   };
 
   return (
-    <div className={cx('font-bold text-slate-900 tracking-tight flex items-baseline', sizeClasses[size], className)}>
-      <span className="text-slate-500 mr-1 opacity-80" style={{ fontSize: '0.85em' }}>₹</span>
+    <div className={cn('font-bold text-slate-900 tracking-tight flex items-baseline', sizeClasses[size], className)}>
+      <span className={cn('text-slate-500 mr-1 opacity-80', className?.includes('text-white') && 'text-blue-200')} style={{ fontSize: '0.85em' }}>₹</span>
       <span>{formattedAmount}</span>
     </div>
   );
