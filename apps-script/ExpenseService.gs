@@ -30,7 +30,7 @@ var ExpenseService = {
 
     // 3. Save to sheet (11 columns: A–K)
     var sheet = getSheet(CONFIG.sheets.expenses);
-    sheet.appendRow([
+    safeAppendRow(sheet, [
       expenseId,                     // A: Expense ID
       payload.category,              // B: Category
       payload.description,           // C: Description
@@ -42,7 +42,7 @@ var ExpenseService = {
       CONFIG.status.active,          // I: Status
       date,                          // J: Created At
       ''                             // K: Updated At
-    ]);
+    ], 0); // 0 is the index for column A (Expense ID)
 
     // 4. Audit log
     AuditService.log({

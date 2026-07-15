@@ -47,7 +47,7 @@ var DonationService = {
 
     // 3. Save to sheet (14 columns: A–N)
     var sheet = getSheet(CONFIG.sheets.donations);
-    sheet.appendRow([
+    safeAppendRow(sheet, [
       donationId,                    // A: Donation ID
       receiptId,                     // B: Receipt ID
       payload.donorName,             // C: Donor Name
@@ -62,7 +62,7 @@ var DonationService = {
       CONFIG.status.active,          // L: Status
       date,                          // M: Created At
       ''                             // N: Updated At
-    ]);
+    ], 0); // 0 is the index for column A (Donation ID)
 
     // 4. Audit log
     AuditService.log({

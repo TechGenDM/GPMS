@@ -93,3 +93,33 @@ function getSheetData(sheet) {
 function now() {
   return formatDate(new Date());
 }
+
+/**
+ * Safely appends a row of data below the last actual data row.
+ * Bypasses issues with pre-filled dropdown template rows by looking
+ * for the last row that has an ID in the specified ID column.
+ *
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - The sheet to modify.
+ * @param {Array} rowData - 1D array of row data to insert.
+ * @param {number} idColIndex - 0-indexed column number to check for real data (e.g., 0 for Col A).
+ */
+function safeAppendRow(sheet, rowData, idColIndex) {
+  var data = sheet.getDataRange().getValues();
+  
+  var lastRowWithData = 0;
+  // Scan from bottom up to find the last row with an ID
+  for (var i = data.length - 1; i >= 0; i--) {
+    if (String(data[i][idColIndex]).trim() !== '') {
+      lastRowWithData = i + 1; // 1-indexed row number
+      break;
+    }
+  }
+
+  var targetRow = lastRowWithData === 0 ? 1 : lastRowWithData + 1;
+
+  if (targetRow > sheet.getMaxRows()) {
+    sheet.appendRow(rowData);
+  } else {
+    sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
+  }
+}
