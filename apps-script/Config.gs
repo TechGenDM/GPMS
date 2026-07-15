@@ -7,7 +7,7 @@
 
 const CONFIG = {
   // Replace with your actual Spreadsheet ID after creating the Google Sheet
-  spreadsheetId: '',
+  spreadsheetId: '1HqW9FanYtR4vbQ5usJy64XEBXswFFpJKAY3LkrV-vck',
 
   sheets: {
     users: 'Users',
@@ -17,6 +17,8 @@ const CONFIG = {
     categories: 'Categories',
     auditLogs: 'AuditLogs',
     metadata: 'Metadata',
+    sessions: 'Sessions',
+    backups: 'Backups (Generated)',
   },
 
   // ID prefixes for generated IDs
