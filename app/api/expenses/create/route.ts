@@ -15,32 +15,43 @@ export async function POST(request: NextRequest) {
       throw new Error('API URL not configured');
     }
 
-    const payload = {
-      action: 'createExpense',
-      userEmail: session.user.email,
-      payload: {
-        category: body.category,
-        description: body.description,
-        amount: body.amount,
-        vendor: body.vendor,
-        billLink: body.billLink
-      }
-    };
-
     const response = await fetch(scriptUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        action: 'createExpense',
+        payload: {
+          userEmail: session.user.email,
+          category: body.category,
+          description: body.description,
+          amount: body.amount,
+          vendor: body.vendor,
+          billLink: body.billLink
+        }
+      }),
+      redirect: 'follow',
     });
 
-    const data = await response.json();
-
-    if (!response.ok || data.status === 'error') {
-      console.error('Apps Script Error:', data);
+    const rawText = await response.text();
+    console.log('[GPMS API] Raw Apps Script Response:', rawText);
+    
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      console.error('[GPMS API] Failed to parse Apps Script response for createExpense.');
       return NextResponse.json(
-        { error: data.message || 'Failed to record expense' },
+        { success: false, message: 'Invalid response from backend' },
+        { status: 502 }
+      );
+    }
+
+    if (!response.ok || !data.success) {
+      console.error('[GPMS API] Apps Script Error:', data);
+      return NextResponse.json(
+        { success: false, error: data.message || 'Failed to record expense' },
         { status: 400 }
       );
     }

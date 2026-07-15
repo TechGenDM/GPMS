@@ -2,11 +2,12 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle, IndianRupee, Minus, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Plus, Loader2 } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { useFeedback } from '@/components/ui/Feedback';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
+import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 
 const EXPENSE_CATEGORIES = [
   'Decoration',
@@ -36,38 +37,43 @@ const INITIAL_FORM: ExpenseFormData = {
 
 export default function RecordExpense() {
   const router = useRouter();
-  const [formData, setFormData] = useState<ExpenseFormData>(INITIAL_FORM);
+  const [form, setForm] = useState<ExpenseFormData>(INITIAL_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successId, setSuccessId] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  
+  // Store full success data for the receipt
+  const [successData, setSuccessData] = useState<{
+    expenseId: string;
+    amount: number;
+    category: string;
+  } | null>(null);
+
   const { showLoading, showSuccess, showError, clear } = useFeedback();
 
-  const handleInputChange = useCallback((
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    clear();
-  }, [clear]);
+  const updateField = useCallback(
+    <K extends keyof ExpenseFormData>(field: K, value: ExpenseFormData[K]) => {
+      setForm((prev) => ({ ...prev, [field]: value }));
+      setValidationError(null);
+    },
+    []
+  );
 
-  const validateForm = (): boolean => {
-    if (!formData.category) {
-      showError('Please select an expense category');
-      return false;
+  const validateForm = (): string | null => {
+    if (!form.category) return 'Please select an expense category';
+    if (!form.description.trim()) return 'Please enter a description';
+    if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0) {
+      return 'Please enter a valid amount';
     }
-    if (!formData.description.trim()) {
-      showError('Please enter a description');
-      return false;
-    }
-    if (!formData.amount || isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
-      showError('Please enter a valid amount');
-      return false;
-    }
-    return true;
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    const err = validateForm();
+    if (err) {
+      setValidationError(err);
+      return;
+    }
 
     setIsSubmitting(true);
     showLoading('Recording expense...');
@@ -77,19 +83,24 @@ export default function RecordExpense() {
       const result = await fetchApi<CreateExpenseResponse>('/expenses/create', {
         method: 'POST',
         body: {
-          category: formData.category,
-          description: formData.description.trim(),
-          amount: Number(formData.amount),
-          vendor: formData.vendor.trim() || undefined,
-          billLink: formData.billLink.trim() || undefined
+          category: form.category,
+          description: form.description.trim(),
+          amount: Number(form.amount),
+          vendor: form.vendor.trim() || undefined,
+          billLink: form.billLink.trim() || undefined
         }
       });
 
-      if (result.success) {
-        setSuccessId(result.data?.expenseId || null);
+      if (result.success && result.data?.expenseId) {
+        setSuccessData({
+          expenseId: result.data.expenseId,
+          amount: Number(form.amount),
+          category: form.category,
+        });
         showSuccess('Expense recorded successfully!');
       } else {
-        showError(result.message || 'Failed to record expense');
+        // Fallback error, the API proxy correctly bubbles this up now
+        showError((result as any).error || result.message || 'Failed to record expense');
       }
     } catch (err: any) {
       showError(err.message || 'An unexpected error occurred');
@@ -98,175 +109,217 @@ export default function RecordExpense() {
     }
   };
 
-  const resetForm = () => {
-    setFormData(INITIAL_FORM);
-    setSuccessId(null);
+  const handleRecordAnother = () => {
+    setForm(INITIAL_FORM);
+    setSuccessData(null);
     clear();
   };
 
-  if (successId) {
+  // ── Success Screen (Receipt) ──────────────────────────────────────
+  if (successData) {
     return (
-      <div className="max-w-md mx-auto space-y-6 pt-12">
-        <Card className="p-8 text-center space-y-6 bg-gradient-to-br from-red-50 to-orange-50 border-red-100">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-red-600" />
-            </div>
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        {/* Header (Simplified) */}
+        <header className="bg-white border-b border-slate-200">
+          <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-center">
+            <h1 className="text-lg font-bold text-slate-900">Receipt</h1>
           </div>
-          
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-gray-900">Expense Recorded</h2>
-            <p className="text-gray-600">The expense has been successfully logged.</p>
-          </div>
+        </header>
 
-          <div className="bg-white p-4 rounded-xl border border-red-100 space-y-2">
-            <p className="text-sm text-gray-500">Expense ID</p>
-            <p className="text-lg font-mono font-medium text-gray-900">{successId}</p>
-          </div>
+        <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-8 flex flex-col justify-center">
+          <Card className="border-0 shadow-xl overflow-hidden rounded-2xl bg-white relative">
+            <div className="absolute top-0 left-0 w-full h-2 bg-red-500" />
+            
+            <CardContent className="p-8 text-center space-y-6">
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-red-600" />
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">
+                  Expense Recorded
+                </p>
+                <h2 className="text-2xl font-bold text-slate-900">
+                  {successData.expenseId}
+                </h2>
+              </div>
 
-          <div className="pt-6 space-y-3">
-            <Button onClick={resetForm} className="w-full bg-red-600 hover:bg-red-700 text-white shadow-md">
-              <Minus className="w-4 h-4 mr-2" /> Record Another Expense
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => router.push('/dashboard')}
-              className="w-full border-red-200 text-red-700 hover:bg-red-50"
+              <div className="py-6 border-y border-slate-100 border-dashed">
+                <p className="text-sm text-slate-500 mb-1">Category</p>
+                <p className="text-lg font-semibold text-slate-900 mb-4">
+                  {successData.category}
+                </p>
+                
+                <p className="text-sm text-slate-500 mb-1">Amount</p>
+                <CurrencyDisplay
+                  amount={successData.amount}
+                  size="lg"
+                  className="justify-center text-red-900"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="mt-6 space-y-3">
+            <Button
+              onClick={handleRecordAnother}
+              className="w-full h-12 text-base bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold shadow-md"
             >
-              Return to Dashboard
+              <Plus className="w-5 h-5 mr-2" />
+              Record Another Expense
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/dashboard')}
+              className="w-full h-12 text-base rounded-xl font-semibold border-slate-300 text-slate-700"
+            >
+              Back to Dashboard
             </Button>
           </div>
-        </Card>
+        </main>
       </div>
     );
   }
 
+  // ── Form State ───────────────────────────────────────────────────
   return (
-    <div className="max-w-md mx-auto space-y-6 pb-24">
+    <div className="min-h-screen bg-slate-50 pb-20">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <button 
-          onClick={() => router.back()}
-          className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Record Expense</h1>
-          <p className="text-sm text-gray-500">Log a new expense to the GPMS Database</p>
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard')}
+            className="p-2 -ml-2 mr-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
+            aria-label="Back to Dashboard"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Record Expense</h1>
         </div>
-      </div>
+      </header>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        
-        {/* Amount (Hero Input) */}
-        <Card className="p-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Amount (₹) *</label>
+      {/* Form */}
+      <main className="max-w-3xl mx-auto px-4 py-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          
+          {/* Validation Error Banner */}
+          {validationError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 font-medium">
+              {validationError}
+            </div>
+          )}
+
+          {/* Amount */}
+          <div>
+            <label htmlFor="amount" className="block text-sm font-medium text-slate-700 mb-1.5">
+              Amount <span className="text-red-500">*</span>
+            </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <IndianRupee className="h-6 w-6 text-gray-400" />
-              </div>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-lg">₹</span>
               <input
-                type="number"
-                name="amount"
-                value={formData.amount}
-                onChange={handleInputChange}
-                className="block w-full pl-12 pr-4 py-4 text-3xl font-bold text-gray-900 border-gray-300 rounded-xl focus:ring-red-500 focus:border-red-500 bg-gray-50 transition-colors placeholder:text-gray-300"
+                id="amount"
+                type="text"
+                autoComplete="off"
+                inputMode="decimal"
                 placeholder="0"
-                required
-                min="1"
-                step="0.01"
+                value={form.amount}
+                onChange={(e) => updateField('amount', e.target.value)}
+                className="w-full h-14 pl-8 pr-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-xl font-semibold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-shadow"
               />
             </div>
           </div>
-        </Card>
 
-        {/* Category Selection */}
-        <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700">Category *</label>
-          <div className="flex flex-wrap gap-2">
-            {EXPENSE_CATEGORIES.map(category => (
-              <button
-                key={category}
-                type="button"
-                onClick={() => {
-                  setFormData(prev => ({ ...prev, category }));
-                  clear();
-                }}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  formData.category === category
-                    ? 'bg-red-600 text-white shadow-md scale-105'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:border-red-200 hover:bg-red-50'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Category <span className="text-red-500">*</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {EXPENSE_CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => updateField('category', cat)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    form.category === cat
+                      ? 'bg-red-600 text-white shadow-md'
+                      : 'bg-white text-slate-600 border border-slate-300 hover:border-red-300 hover:bg-red-50'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Details Section */}
-        <Card className="p-6 space-y-5">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Description *</label>
+          {/* Description */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-1.5">
+              Description <span className="text-red-500">*</span>
+            </label>
             <input
+              id="description"
               type="text"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              className="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-red-500 focus:border-red-500 transition-colors"
+              autoComplete="off"
               placeholder="e.g. Bamboo purchase for tent"
-              required
+              value={form.description}
+              onChange={(e) => updateField('description', e.target.value)}
+              className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-shadow"
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Vendor (Optional)</label>
+          {/* Vendor */}
+          <div>
+            <label htmlFor="vendor" className="block text-sm font-medium text-slate-700 mb-1.5">
+              Vendor <span className="text-slate-400 text-xs">(optional)</span>
+            </label>
             <input
+              id="vendor"
               type="text"
-              name="vendor"
-              value={formData.vendor}
-              onChange={handleInputChange}
-              className="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-red-500 focus:border-red-500 transition-colors"
+              autoComplete="off"
               placeholder="e.g. Sharma Traders"
+              value={form.vendor}
+              onChange={(e) => updateField('vendor', e.target.value)}
+              className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-shadow"
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Bill/Receipt Link (Optional)</label>
+          {/* Bill Link */}
+          <div>
+            <label htmlFor="billLink" className="block text-sm font-medium text-slate-700 mb-1.5">
+              Bill/Receipt Link <span className="text-slate-400 text-xs">(optional)</span>
+            </label>
             <input
+              id="billLink"
               type="url"
-              name="billLink"
-              value={formData.billLink}
-              onChange={handleInputChange}
-              className="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-red-500 focus:border-red-500 transition-colors"
+              autoComplete="off"
               placeholder="https://drive.google.com/..."
+              value={form.billLink}
+              onChange={(e) => updateField('billLink', e.target.value)}
+              className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-shadow"
             />
-            <p className="text-xs text-gray-500">Paste a Google Drive or image URL for the receipt</p>
           </div>
-        </Card>
 
-        {/* Submit Button */}
-        <div className="pt-4 pb-12">
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-4 text-lg font-semibold bg-red-600 hover:bg-red-700 text-white shadow-lg transition-all"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" /> Recording...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5" /> Save Expense
-              </span>
-            )}
-          </Button>
-        </div>
-
-      </form>
+          {/* Submit Button */}
+          <div className="pt-6">
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full h-12 text-base font-semibold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg transition-all"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Recording...
+                </span>
+              ) : (
+                'Save Expense'
+              )}
+            </Button>
+          </div>
+        </form>
+      </main>
     </div>
   );
 }
