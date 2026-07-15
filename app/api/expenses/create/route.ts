@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 
@@ -6,17 +5,18 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!appsScriptUrl) {
+      console.error('[GPMS API] NEXT_PUBLIC_API_URL is not set.');
+      return NextResponse.json({ success: false, message: 'Server configuration error' }, { status: 500 });
     }
 
     const body = await request.json();
 
-    const scriptUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!scriptUrl) {
-      throw new Error('API URL not configured');
-    }
-
-    const response = await fetch(scriptUrl, {
+    const response = await fetch(appsScriptUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -28,16 +28,20 @@ export async function POST(request: NextRequest) {
           category: body.category,
           description: body.description,
           amount: body.amount,
-          vendor: body.vendor,
-          billLink: body.billLink
-        }
+          vendor: body.vendor || '',
+          billLink: body.billLink || '',
+        },
       }),
       redirect: 'follow',
     });
 
     const rawText = await response.text();
+    console.log('[GPMS API] createExpense payload sent:', JSON.stringify({
+      action: 'createExpense',
+      payload: { userEmail: session.user.email, category: body.category, description: body.description, amount: body.amount }
+    }));
     console.log('[GPMS API] Raw Apps Script Response:', rawText);
-    
+
     let data;
     try {
       data = JSON.parse(rawText);
@@ -49,25 +53,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!response.ok || !data.success) {
-      console.error('[GPMS API] Apps Script Error:', data);
-      return NextResponse.json(
-        { success: false, error: data.message || 'Failed to record expense' },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: { expenseId: data.data?.id },
-      message: 'Expense recorded successfully'
-    });
-
+    // Pass through the Apps Script response directly (same pattern as donations)
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('[GPMS API] Unexpected error in createExpense:', error);
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

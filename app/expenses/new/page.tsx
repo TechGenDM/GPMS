@@ -76,31 +76,30 @@ export default function RecordExpense() {
     }
 
     setIsSubmitting(true);
-    showLoading('Recording expense...');
 
     try {
-      interface CreateExpenseResponse { expenseId: string }
+      interface CreateExpenseResponse { id: string }
       const result = await fetchApi<CreateExpenseResponse>('/expenses/create', {
         method: 'POST',
         body: {
           category: form.category,
           description: form.description.trim(),
           amount: Number(form.amount),
-          vendor: form.vendor.trim() || undefined,
-          billLink: form.billLink.trim() || undefined
-        }
-      });
+          vendor: form.vendor.trim() || '',
+          billLink: form.billLink.trim() || ''
+        },
+        showLoading: true,
+        loadingMessage: 'Recording expense...',
+      }, { showLoading, showSuccess, showError, clear });
 
-      if (result.success && result.data?.expenseId) {
+      if (result.success && result.data?.id) {
         setSuccessData({
-          expenseId: result.data.expenseId,
+          expenseId: result.data.id,
           amount: Number(form.amount),
           category: form.category,
         });
-        showSuccess('Expense recorded successfully!');
-      } else {
-        // Fallback error, the API proxy correctly bubbles this up now
-        showError((result as any).error || result.message || 'Failed to record expense');
+      } else if (!result.success) {
+        showError(result.message || 'Failed to record expense');
       }
     } catch (err: any) {
       showError(err.message || 'An unexpected error occurred');
