@@ -1,0 +1,134 @@
+
+> gpms@0.1.0 lint
+> eslint
+
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/app/api/auth/verify/route.ts
+   9:32  warning  Replace `{·success:·false,·message:·'Email·required'·},·{·status:·400·}` with `⏎········{·success:·false,·message:·'Email·required'·},⏎········{·status:·400·}⏎······`                              prettier/prettier
+  13:1   warning  Delete `····`                                                                                                                                                                                       prettier/prettier
+  16:32  warning  Replace `{·success:·false,·message:·'Server·configuration·error'·},·{·status:·500·}` with `⏎········{·success:·false,·message:·'Server·configuration·error'·},⏎········{·status:·500·}⏎······`      prettier/prettier
+  21:17  warning  Replace `'[GPMS·verify]·Target·URL·prefix:',·appsScriptUrl.substring(0,·60)·+·'...'` with `⏎······'[GPMS·verify]·Target·URL·prefix:',⏎······appsScriptUrl.substring(0,·60)·+·'...'⏎····`            prettier/prettier
+  39:17  warning  Replace `'[GPMS·verify]·Apps·Script·Content-Type:',·response.headers.get('content-type')` with `⏎······'[GPMS·verify]·Apps·Script·Content-Type:',⏎······response.headers.get('content-type')⏎····`  prettier/prettier
+  50:21  warning  Replace `'[GPMS·verify]·Failed·to·parse·Apps·Script·response·as·JSON.'` with `⏎········'[GPMS·verify]·Failed·to·parse·Apps·Script·response·as·JSON.'⏎······`                                        prettier/prettier
+  58:17  warning  Replace `'[GPMS·verify]·Parsed·response:',` with `⏎······'[GPMS·verify]·Parsed·response:',⏎·····`                                                                                                   prettier/prettier
+  59:1   warning  Insert `··`                                                                                                                                                                                         prettier/prettier
+  60:1   warning  Insert `··`                                                                                                                                                                                         prettier/prettier
+  61:7   warning  Insert `··`                                                                                                                                                                                         prettier/prettier
+  62:7   warning  Insert `··`                                                                                                                                                                                         prettier/prettier
+  63:1   warning  Replace `······` with `········`                                                                                                                                                                    prettier/prettier
+  64:1   warning  Insert `··`                                                                                                                                                                                         prettier/prettier
+  65:5   warning  Replace `})` with `··})⏎····`                                                                                                                                                                       prettier/prettier
+  70:30  warning  Replace `{·success:·false,·message:·'Internal·server·error'·},·{·status:·500·}` with `⏎······{·success:·false,·message:·'Internal·server·error'·},⏎······{·status:·500·}⏎····`                      prettier/prettier
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/app/api/dashboard/summary/route.ts
+   4:28  warning  '_request' is defined but never used                                                                                                                                                            @typescript-eslint/no-unused-vars
+   8:32  warning  Replace `{·success:·false,·message:·'Unauthorized'·},·{·status:·401·}` with `⏎········{·success:·false,·message:·'Unauthorized'·},⏎········{·status:·401·}⏎······`                              prettier/prettier
+  14:32  warning  Replace `{·success:·false,·message:·'Server·configuration·error'·},·{·status:·500·}` with `⏎········{·success:·false,·message:·'Server·configuration·error'·},⏎········{·status:·500·}⏎······`  prettier/prettier
+  25:40  warning  Insert `,`                                                                                                                                                                                      prettier/prettier
+  46:30  warning  Replace `{·success:·false,·message:·'Internal·server·error'·},·{·status:·500·}` with `⏎······{·success:·false,·message:·'Internal·server·error'·},⏎······{·status:·500·}⏎····`                  prettier/prettier
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/app/dashboard/page.tsx
+    5:9   warning  Replace `·LogOut,·ArrowUpRight,·ArrowDownRight,·IndianRupee·` with `⏎··LogOut,⏎··ArrowUpRight,⏎··ArrowDownRight,⏎··IndianRupee,⏎`                                                                                                                                                                                                                    prettier/prettier
+    5:48  warning  'IndianRupee' is defined but never used                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+   38:1   warning  Delete `····`                                                                                                                                                                                                                                                                                                                                        prettier/prettier
+   40:49  warning  Replace `'/dashboard/summary',` with `⏎········'/dashboard/summary',⏎·······`                                                                                                                                                                                                                                                                        prettier/prettier
+   41:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                          prettier/prettier
+   42:9   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                          prettier/prettier
+   43:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                          prettier/prettier
+   44:7   warning  Replace `},·feedback` with `··},⏎········feedback⏎······`                                                                                                                                                                                                                                                                                            prettier/prettier
+   63:75  warning  Replace `GPMS·Dashboard` with `⏎············GPMS·Dashboard⏎··········`                                                                                                                                                                                                                                                                               prettier/prettier
+   64:18  warning  Delete `·`                                                                                                                                                                                                                                                                                                                                           prettier/prettier
+   65:28  warning  Delete `·`                                                                                                                                                                                                                                                                                                                                           prettier/prettier
+   66:22  warning  Delete `·`                                                                                                                                                                                                                                                                                                                                           prettier/prettier
+   77:63  warning  Delete `⏎········`                                                                                                                                                                                                                                                                                                                                   prettier/prettier
+   83:29  warning  Delete `·`                                                                                                                                                                                                                                                                                                                                           prettier/prettier
+   84:50  warning  Delete `·`                                                                                                                                                                                                                                                                                                                                           prettier/prettier
+   85:24  warning  Delete `·`                                                                                                                                                                                                                                                                                                                                           prettier/prettier
+   86:84  warning  Delete `·`                                                                                                                                                                                                                                                                                                                                           prettier/prettier
+  101:31  warning  Replace `·amount={data?.summary.donations.total·??·0}·size="md"` with `⏎················amount={data?.summary.donations.total·??·0}⏎················size="md"⏎·············`                                                                                                                                                                         prettier/prettier
+  105:49  warning  Replace `₹{new·Intl.NumberFormat('en-IN').format(data?.summary.donations.cash·??·0)}` with `⏎····················₹⏎····················{new·Intl.NumberFormat('en-IN').format(⏎······················data?.summary.donations.cash·??·0⏎····················)}⏎··················`                                                                    prettier/prettier
+  109:49  warning  Replace `₹{new·Intl.NumberFormat('en-IN').format(data?.summary.donations.upi·??·0)}` with `⏎····················₹⏎····················{new·Intl.NumberFormat('en-IN').format(⏎······················data?.summary.donations.upi·??·0⏎····················)}⏎··················`                                                                      prettier/prettier
+  123:31  warning  Replace `·amount={data?.summary.expenses.total·??·0}·size="md"` with `⏎················amount={data?.summary.expenses.total·??·0}⏎················size="md"⏎·············`                                                                                                                                                                           prettier/prettier
+  130:79  warning  Replace `Recent·Activity</h2>` with `⏎············Recent·Activity`                                                                                                                                                                                                                                                                                   prettier/prettier
+  131:11  warning  Insert `</h2>⏎`                                                                                                                                                                                                                                                                                                                                      prettier/prettier
+  159:27  warning  Replace `·className={`p-2·rounded-full·mr-3·shrink-0·${activity.type·===·'Donation'·?·'bg-green-100·text-green-600'·:·'bg-red-100·text-red-600'}`}` with `⏎························className={`p-2·rounded-full·mr-3·shrink-0·${activity.type·===·'Donation'·?·'bg-green-100·text-green-600'·:·'bg-red-100·text-red-600'}`}⏎······················`  prettier/prettier
+  160:57  warning  Replace `<ArrowUpRight·className="w-4·h-4"·/>·:·<ArrowDownRight·className="w-4·h-4"·/>` with `(⏎··························<ArrowUpRight·className="w-4·h-4"·/>⏎························)·:·(⏎··························<ArrowDownRight·className="w-4·h-4"·/>⏎························)`                                                             prettier/prettier
+  163:27  warning  Replace `·className="font-medium·text-slate-900·truncate·pr-2"·title={activity.title}` with `⏎··························className="font-medium·text-slate-900·truncate·pr-2"⏎··························title={activity.title}⏎························`                                                                                              prettier/prettier
+  172:25  warning  Replace `·className={`font-semibold·${activity.type·===·'Donation'·?·'text-green-600'·:·'text-slate-900'}`}` with `⏎························className={`font-semibold·${activity.type·===·'Donation'·?·'text-green-600'·:·'text-slate-900'}`}⏎······················`                                                                                prettier/prettier
+  173:68  warning  Insert `⏎························`                                                                                                                                                                                                                                                                                                                   prettier/prettier
+  181:15  warning  Delete `⏎`                                                                                                                                                                                                                                                                                                                                           prettier/prettier
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/app/login/page.tsx
+   9:9   warning  Delete `⏎········`                                                                          prettier/prettier
+  18:49  warning  Replace `⏎············Management·System·(GPMS)⏎··········` with `Management·System·(GPMS)`  prettier/prettier
+  56:1   warning  Delete `············`                                                                       prettier/prettier
+  58:74  warning  Insert `⏎·············`                                                                     prettier/prettier
+  58:84  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                             react/no-unescaped-entities
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/auth.ts
+  30:26  warning  'account' is defined but never used              @typescript-eslint/no-unused-vars
+  30:35  warning  'profile' is defined but never used              @typescript-eslint/no-unused-vars
+  35:15  warning  'backendUrl' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  38:74  warning  Delete `·`                                       prettier/prettier
+  41:1   warning  Delete `········`                                prettier/prettier
+  44:1   warning  Delete `········`                                prettier/prettier
+  52:1   warning  Delete `········`                                prettier/prettier
+  54:1   warning  Delete `········`                                prettier/prettier
+  57:20  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  58:20  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  61:1   warning  Delete `········`                                prettier/prettier
+  71:31  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  72:33  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/components/layout/UserNav.tsx
+  20:1  warning  Delete `······`  prettier/prettier
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/components/ui/Card.tsx
+   2:10  warning  'cn' is defined but never used                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+   5:66  warning  Insert `⏎·`                                                                                                                                                                                                                                                                      prettier/prettier
+  27:9   warning  Replace `·className={cx('px-6·py-5·border-b·border-slate-100·flex·flex-col·space-y-1.5',·className)}·{...props}` with `⏎······className={cx(⏎········'px-6·py-5·border-b·border-slate-100·flex·flex-col·space-y-1.5',⏎········className⏎······)}⏎······{...props}⏎····`          prettier/prettier
+  35:8   warning  Replace `·className={cx('text-lg·font-semibold·leading-none·tracking-tight·text-slate-900',·className)}·{...props}` with `⏎······className={cx(⏎········'text-lg·font-semibold·leading-none·tracking-tight·text-slate-900',⏎········className⏎······)}⏎······{...props}⏎····`    prettier/prettier
+  51:9   warning  Replace `·className={cx('px-6·py-4·bg-slate-50·border-t·border-slate-100·flex·items-center',·className)}·{...props}` with `⏎······className={cx(⏎········'px-6·py-4·bg-slate-50·border-t·border-slate-100·flex·items-center',⏎········className⏎······)}⏎······{...props}⏎····`  prettier/prettier
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/components/ui/ConfirmModal.tsx
+  32:9   warning  Delete `⏎········`                                                                                                                                                                                                         prettier/prettier
+  37:31  warning  Replace `·className="h-6·w-6·text-red-600"·aria-hidden="true"` with `⏎··················className="h-6·w-6·text-red-600"⏎··················aria-hidden="true"⏎···············`                                             prettier/prettier
+  40:17  warning  Replace `·className={`mt-3·sm:mt-0·${isDestructive·?·'sm:ml-4'·:·''}·text-left`}` with `⏎··············className={`mt-3·sm:mt-0·${isDestructive·?·'sm:ml-4'·:·''}·text-left`}⏎············`                                prettier/prettier
+  41:18  warning  Replace `·className="text-xl·font-semibold·leading-6·text-slate-900"·id="modal-title"` with `⏎················className="text-xl·font-semibold·leading-6·text-slate-900"⏎················id="modal-title"⏎··············`  prettier/prettier
+  64:28  warning  Delete `·`                                                                                                                                                                                                                 prettier/prettier
+  65:67  warning  Delete `·`                                                                                                                                                                                                                 prettier/prettier
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/components/ui/CurrencyDisplay.tsx
+   2:10  warning  'cn' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   4:66  warning  Insert `⏎·`                                                                                                                                                                                                                                                                            prettier/prettier
+  12:34  warning  Replace `·amount,·className,·size·=·'lg'·}:·CurrencyDisplayProps)·{⏎··` with `⏎··amount,⏎··className,⏎··size·=·'lg',⏎}:·CurrencyDisplayProps)·{`                                                                                                                                       prettier/prettier
+  25:9   warning  Replace `·className={cx('font-bold·text-slate-900·tracking-tight·flex·items-baseline',·sizeClasses[size],·className)}` with `⏎······className={cx(⏎········'font-bold·text-slate-900·tracking-tight·flex·items-baseline',⏎········sizeClasses[size],⏎········className⏎······)}⏎····`  prettier/prettier
+  26:12  warning  Replace `·className="text-slate-500·mr-1·opacity-80"·style={{·fontSize:·'0.85em'·}}>₹` with `⏎········className="text-slate-500·mr-1·opacity-80"⏎········style={{·fontSize:·'0.85em'·}}⏎······>⏎········₹⏎······`                                                                      prettier/prettier
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/components/ui/Feedback.tsx
+   3:16  warning  Replace `·createContext,·useContext,·useState,·ReactNode,·useCallback·` with `⏎··createContext,⏎··useContext,⏎··useState,⏎··ReactNode,⏎··useCallback,⏎`  prettier/prettier
+  15:72  warning  Replace `undefined` with `⏎··undefined⏎`                                                                                                                 prettier/prettier
+  47:30  warning  Replace `·value={{·showLoading,·showSuccess,·showError,·clear·}}` with `⏎······value={{·showLoading,·showSuccess,·showError,·clear·}}⏎····`              prettier/prettier
+  49:1   warning  Delete `······`                                                                                                                                          prettier/prettier
+  54:13  warning  Delete `⏎············`                                                                                                                                   prettier/prettier
+  58:1   warning  Delete `············`                                                                                                                                    prettier/prettier
+  62:1   warning  Delete `············`                                                                                                                                    prettier/prettier
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/components/user/RoleGuard.tsx
+  16:28  warning  Replace `·allowedRoles,·children,·fallback·=·null·` with `⏎··allowedRoles,⏎··children,⏎··fallback·=·null,⏎`  prettier/prettier
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/lib/api.ts
+  19:3   warning  Delete `·`       prettier/prettier
+  32:29  warning  Delete `⏎··`     prettier/prettier
+  67:25  warning  Insert `⏎·····`  prettier/prettier
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/lib/utils.ts
+  1:39  warning  Replace `"clsx"` with `'clsx'`                      prettier/prettier
+  2:25  warning  Replace `"tailwind-merge"` with `'tailwind-merge'`  prettier/prettier
+
+/Users/devasishmishra/Developer/TechGenDM_Codes/Coding Web Playground /GPMS/proxy.ts
+  21:3  warning  Insert `⏎`  prettier/prettier
+
+✖ 98 problems (5 errors, 93 warnings)
+  0 errors and 86 warnings potentially fixable with the `--fix` option.
+

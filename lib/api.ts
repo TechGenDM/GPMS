@@ -1,4 +1,4 @@
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data?: T;
@@ -7,7 +7,7 @@ export interface ApiResponse<T = any> {
 
 export interface ApiRequestOptions {
   method?: 'GET' | 'POST';
-  body?: any;
+  body?: unknown;
   showLoading?: boolean;
   loadingMessage?: string;
 }
@@ -20,7 +20,7 @@ export interface ApiRequestOptions {
  * Since this is a pure function, it doesn't use hooks directly.
  * Components will pass their `showLoading`, `showSuccess`, `showError` callbacks if they want automatic feedback.
  */
-export async function fetchApi<T = any>(
+export async function fetchApi<T = unknown>(
   endpoint: string,
   options: ApiRequestOptions = {},
   feedback?: {
@@ -63,13 +63,14 @@ export async function fetchApi<T = any>(
       }
       return data;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Network error';
     if (feedback?.showError) {
-      feedback.showError(error.message || 'Network error');
+      feedback.showError(errorMessage);
     }
     return {
       success: false,
-      message: error.message || 'Network error',
+      message: errorMessage,
       code: 'NETWORK_ERROR',
     };
   }

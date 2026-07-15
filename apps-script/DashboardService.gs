@@ -42,6 +42,14 @@ var DashboardService = {
     var donSheet = getSheet(CONFIG.sheets.donations);
     var donData = donSheet.getDataRange().getValues();
     
+    var donH = DashboardService._findHeaders(donData, 'Donation ID');
+    var donCols = donH.cols;
+    var donIdCol      = donCols['Donation ID'] !== undefined ? donCols['Donation ID'] : (donCols['ID'] !== undefined ? donCols['ID'] : 0);
+    var donAmtCol     = donCols['Amount'] !== undefined ? donCols['Amount'] : 3;
+    var donModeCol    = donCols['Payment Mode'] !== undefined ? donCols['Payment Mode'] : (donCols['PaymentMode'] !== undefined ? donCols['PaymentMode'] : 5);
+    var donStatusCol  = donCols['Status'] !== undefined ? donCols['Status'] : 6;
+    var donNameCol    = donCols['Donor Name'] !== undefined ? donCols['Donor Name'] : (donCols['DonorName'] !== undefined ? donCols['DonorName'] : 2);
+
     var stats = {
       totalDonors: 0,
       highestDonation: 0,
@@ -54,12 +62,12 @@ var DashboardService = {
     var donorNames = {};
     var sum = 0;
 
-    for (var i = 1; i < donData.length; i++) {
-      if (!donData[i][0] || donData[i][6] !== CONFIG.status.active) continue;
+    for (var i = donH.headerIndex + 1; i < donData.length; i++) {
+      if (!donData[i][donIdCol] || String(donData[i][donStatusCol]) !== CONFIG.status.active) continue;
       
-      var amt = parseFloat(donData[i][3]) || 0;
-      var mode = String(donData[i][5]).toLowerCase();
-      var name = String(donData[i][2]).toLowerCase().trim();
+      var amt = parseFloat(donData[i][donAmtCol]) || 0;
+      var mode = String(donData[i][donModeCol] || '').toLowerCase();
+      var name = String(donData[i][donNameCol] || '').toLowerCase().trim();
       
       stats.totalCount++;
       sum += amt;
@@ -89,6 +97,14 @@ var DashboardService = {
     var expSheet = getSheet(CONFIG.sheets.expenses);
     var expData = expSheet.getDataRange().getValues();
     
+    var expH = DashboardService._findHeaders(expData, 'Expense ID');
+    var expCols = expH.cols;
+    var expIdCol      = expCols['Expense ID'] !== undefined ? expCols['Expense ID'] : (expCols['ID'] !== undefined ? expCols['ID'] : 0);
+    var expAmtCol     = expCols['Amount'] !== undefined ? expCols['Amount'] : 5;
+    var expCatCol     = expCols['Category'] !== undefined ? expCols['Category'] : 2;
+    var expStatusCol  = expCols['Status'] !== undefined ? expCols['Status'] : 7;
+    var expDateCol    = expCols['Date'] !== undefined ? expCols['Date'] : (expCols['Created At'] !== undefined ? expCols['Created At'] : 1);
+
     var stats = {
       highestExpense: 0,
       averageExpense: 0,
@@ -101,12 +117,12 @@ var DashboardService = {
     var todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    for (var i = 1; i < expData.length; i++) {
-      if (!expData[i][0] || expData[i][7] !== CONFIG.status.active) continue;
+    for (var i = expH.headerIndex + 1; i < expData.length; i++) {
+      if (!expData[i][expIdCol] || String(expData[i][expStatusCol]) !== CONFIG.status.active) continue;
       
-      var amt = parseFloat(expData[i][5]) || 0;
-      var cat = String(expData[i][2]);
-      var expDateStr = expData[i][1];
+      var amt = parseFloat(expData[i][expAmtCol]) || 0;
+      var cat = String(expData[i][expCatCol]);
+      var expDateStr = expData[i][expDateCol];
       
       stats.totalCount++;
       sum += amt;
@@ -116,17 +132,14 @@ var DashboardService = {
       if (!stats.perCategory[cat]) stats.perCategory[cat] = 0;
       stats.perCategory[cat] += amt;
       
-      // Try to parse date string back to Date object
       var expDate;
       if (expDateStr instanceof Date) {
         expDate = expDateStr;
       } else {
-        // Very basic parse, relying on standard format or JS parsing
-        // If it fails to parse properly, today's expense might be slightly off.
         expDate = new Date(expDateStr);
       }
       
-      if (expDate >= todayStart) {
+      if (!isNaN(expDate.getTime()) && expDate >= todayStart) {
         stats.todaysExpense += amt;
       }
     }
@@ -184,12 +197,39 @@ var DashboardService = {
     });
   },
 
-  // ==========================================
-  // Internal Helpers
-  // ==========================================
+  /**
+   * Finds the header row index and builds a column-name-to-index map.
+   * Handles sheets that have summary/title rows above the actual header.
+   *
+   * @param {Array[]} data - 2D array from getDataRange().getValues().
+   * @param {string} firstColName - Expected name of the first column (e.g. 'Expense ID').
+   * @returns {{ headerIndex: number, cols: Object }} Header row index and column map.
+   * @private
+   */
+  _findHeaders: function(data, firstColName) {
+    for (var r = 0; r < data.length; r++) {
+      var cell = String(data[r][0]).trim();
+      if (cell.toLowerCase() === firstColName.toLowerCase()) {
+        var cols = {};
+        for (var c = 0; c < data[r].length; c++) {
+          var name = String(data[r][c]).trim();
+          if (name) cols[name] = c;
+        }
+        return { headerIndex: r, cols: cols };
+      }
+    }
+    // Fallback: treat row 0 as header
+    var fallbackCols = {};
+    for (var fc = 0; fc < data[0].length; fc++) {
+      var fname = String(data[0][fc]).trim();
+      if (fname) fallbackCols[fname] = fc;
+    }
+    return { headerIndex: 0, cols: fallbackCols };
+  },
 
   /**
    * Calculates the core financial snapshot.
+   * Uses header-based column lookup to handle varying sheet layouts.
    * @private
    */
   _calculateSnapshot: function() {
@@ -208,13 +248,22 @@ var DashboardService = {
       balance: 0
     };
 
-    // Process Donations
-    for (var i = 1; i < donData.length; i++) {
-      if (!donData[i][0] || donData[i][6] !== CONFIG.status.active) continue;
+    // --- Donations (header-based) ---
+    var donH = DashboardService._findHeaders(donData, 'Donation ID');
+    var donCols = donH.cols;
+    // Resolve column indexes by name (with fallbacks for alternate header names)
+    var donIdCol      = donCols['Donation ID'] !== undefined ? donCols['Donation ID'] : donCols['ID'] !== undefined ? donCols['ID'] : 0;
+    var donAmtCol     = donCols['Amount'] !== undefined ? donCols['Amount'] : 3;
+    var donModeCol    = donCols['Payment Mode'] !== undefined ? donCols['Payment Mode'] : (donCols['PaymentMode'] !== undefined ? donCols['PaymentMode'] : 5);
+    var donStatusCol  = donCols['Status'] !== undefined ? donCols['Status'] : 6;
+    var donDateCol    = donCols['Date'] !== undefined ? donCols['Date'] : (donCols['Created At'] !== undefined ? donCols['Created At'] : 1);
+
+    for (var i = donH.headerIndex + 1; i < donData.length; i++) {
+      if (!donData[i][donIdCol] || String(donData[i][donStatusCol]) !== CONFIG.status.active) continue;
       
-      var amt = parseFloat(donData[i][3]) || 0;
-      var mode = String(donData[i][5]).toLowerCase();
-      var donDateStr = donData[i][1];
+      var amt = parseFloat(donData[i][donAmtCol]) || 0;
+      var mode = String(donData[i][donModeCol] || '').toLowerCase();
+      var donDateStr = donData[i][donDateCol];
       
       snapshot.donations.total += amt;
       
@@ -223,22 +272,29 @@ var DashboardService = {
       else snapshot.donations.cash += amt; // default unknown to cash
       
       var donDate = donDateStr instanceof Date ? donDateStr : new Date(donDateStr);
-      if (donDate >= todayStart) {
+      if (!isNaN(donDate.getTime()) && donDate >= todayStart) {
         snapshot.donations.today += amt;
       }
     }
 
-    // Process Expenses
-    for (var j = 1; j < expData.length; j++) {
-      if (!expData[j][0] || expData[j][7] !== CONFIG.status.active) continue;
+    // --- Expenses (header-based) ---
+    var expH = DashboardService._findHeaders(expData, 'Expense ID');
+    var expCols = expH.cols;
+    var expIdCol      = expCols['Expense ID'] !== undefined ? expCols['Expense ID'] : (expCols['ID'] !== undefined ? expCols['ID'] : 0);
+    var expAmtCol     = expCols['Amount'] !== undefined ? expCols['Amount'] : 5;
+    var expStatusCol  = expCols['Status'] !== undefined ? expCols['Status'] : 7;
+    var expDateCol    = expCols['Date'] !== undefined ? expCols['Date'] : (expCols['Created At'] !== undefined ? expCols['Created At'] : 1);
+
+    for (var j = expH.headerIndex + 1; j < expData.length; j++) {
+      if (!expData[j][expIdCol] || String(expData[j][expStatusCol]) !== CONFIG.status.active) continue;
       
-      var expAmt = parseFloat(expData[j][5]) || 0;
-      var expDateStr = expData[j][1];
+      var expAmt = parseFloat(expData[j][expAmtCol]) || 0;
+      var expDateStr = expData[j][expDateCol];
       
       snapshot.expenses.total += expAmt;
       
       var expDate = expDateStr instanceof Date ? expDateStr : new Date(expDateStr);
-      if (expDate >= todayStart) {
+      if (!isNaN(expDate.getTime()) && expDate >= todayStart) {
         snapshot.expenses.today += expAmt;
       }
     }
@@ -251,6 +307,7 @@ var DashboardService = {
 
   /**
    * Returns merged, sorted recent activity.
+   * Uses header-based column lookup to handle varying sheet layouts.
    * @private
    */
   _getMergedActivity: function(limit) {
@@ -262,29 +319,51 @@ var DashboardService = {
     
     var combined = [];
     
-    // Add Donations (Active only)
-    for (var i = 1; i < donData.length; i++) {
-      if (!donData[i][0] || donData[i][6] !== CONFIG.status.active) continue;
+    // --- Donations (header-based) ---
+    var donH = DashboardService._findHeaders(donData, 'Donation ID');
+    var donCols = donH.cols;
+    var donIdCol      = donCols['Donation ID'] !== undefined ? donCols['Donation ID'] : (donCols['ID'] !== undefined ? donCols['ID'] : 0);
+    var donDateCol    = donCols['Date'] !== undefined ? donCols['Date'] : (donCols['Created At'] !== undefined ? donCols['Created At'] : 1);
+    var donNameCol    = donCols['Donor Name'] !== undefined ? donCols['Donor Name'] : (donCols['DonorName'] !== undefined ? donCols['DonorName'] : 2);
+    var donAmtCol     = donCols['Amount'] !== undefined ? donCols['Amount'] : 3;
+    var donStatusCol  = donCols['Status'] !== undefined ? donCols['Status'] : 6;
+
+    for (var i = donH.headerIndex + 1; i < donData.length; i++) {
+      if (!donData[i][donIdCol] || String(donData[i][donStatusCol]) !== CONFIG.status.active) continue;
+      var dDateVal = donData[i][donDateCol];
+      var dTime = dDateVal instanceof Date ? dDateVal.getTime() : new Date(dDateVal).getTime();
+      if (isNaN(dTime)) dTime = 0;
       combined.push({
         type: 'Donation',
-        id: donData[i][0],
-        date: donData[i][1] instanceof Date ? donData[i][1].getTime() : new Date(donData[i][1]).getTime(),
-        title: donData[i][2], // Donor Name
-        amount: parseFloat(donData[i][3]) || 0,
-        status: donData[i][6]
+        id: donData[i][donIdCol],
+        date: dTime,
+        title: donData[i][donNameCol],
+        amount: parseFloat(donData[i][donAmtCol]) || 0,
+        status: donData[i][donStatusCol]
       });
     }
 
-    // Add Expenses (Active only)
-    for (var j = 1; j < expData.length; j++) {
-      if (!expData[j][0] || expData[j][7] !== CONFIG.status.active) continue;
+    // --- Expenses (header-based) ---
+    var expH = DashboardService._findHeaders(expData, 'Expense ID');
+    var expCols = expH.cols;
+    var expIdCol      = expCols['Expense ID'] !== undefined ? expCols['Expense ID'] : (expCols['ID'] !== undefined ? expCols['ID'] : 0);
+    var expDateCol    = expCols['Date'] !== undefined ? expCols['Date'] : (expCols['Created At'] !== undefined ? expCols['Created At'] : 1);
+    var expDescCol    = expCols['Description'] !== undefined ? expCols['Description'] : 3;
+    var expAmtCol     = expCols['Amount'] !== undefined ? expCols['Amount'] : 5;
+    var expStatusCol  = expCols['Status'] !== undefined ? expCols['Status'] : 7;
+
+    for (var j = expH.headerIndex + 1; j < expData.length; j++) {
+      if (!expData[j][expIdCol] || String(expData[j][expStatusCol]) !== CONFIG.status.active) continue;
+      var eDateVal = expData[j][expDateCol];
+      var eTime = eDateVal instanceof Date ? eDateVal.getTime() : new Date(eDateVal).getTime();
+      if (isNaN(eTime)) eTime = 0;
       combined.push({
         type: 'Expense',
-        id: expData[j][0],
-        date: expData[j][1] instanceof Date ? expData[j][1].getTime() : new Date(expData[j][1]).getTime(),
-        title: expData[j][3], // Description
-        amount: parseFloat(expData[j][5]) || 0,
-        status: expData[j][7]
+        id: expData[j][expIdCol],
+        date: eTime,
+        title: expData[j][expDescCol],
+        amount: parseFloat(expData[j][expAmtCol]) || 0,
+        status: expData[j][expStatusCol]
       });
     }
 
@@ -297,10 +376,15 @@ var DashboardService = {
     var results = [];
     for (var k = 0; k < Math.min(limit, combined.length); k++) {
       var item = combined[k];
-      item.date = Utilities.formatDate(new Date(item.date), CONFIG.timezone, CONFIG.dateFormat);
+      if (item.date > 0) {
+        item.date = Utilities.formatDate(new Date(item.date), CONFIG.timezone, CONFIG.dateFormat);
+      } else {
+        item.date = '';
+      }
       results.push(item);
     }
     
     return results;
   }
 };
+

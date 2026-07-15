@@ -13,6 +13,11 @@ declare module 'next-auth' {
       status?: string;
     };
   }
+
+  interface User {
+    role?: string;
+    status?: string;
+  }
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -54,8 +59,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         
         if (data.success && data.data && data.data.status === 'Active') {
           // Temporarily attach role to user object to pass to jwt
-          (user as any).role = data.data.role;
-          (user as any).status = data.data.status;
+          user.role = data.data.role;
+          user.status = data.data.status;
           return true;
         }
         
@@ -68,8 +73,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       // User is available during sign-in
       if (user) {
-        token.role = (user as any).role;
-        token.status = (user as any).status;
+        token.role = user.role;
+        token.status = user.status;
       }
       return token;
     },
