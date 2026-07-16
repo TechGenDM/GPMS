@@ -17,7 +17,7 @@ export async function UserNav() {
           {session.user.role || 'Volunteer'}
         </span>
       </div>
-      
+
       <form
         action={async () => {
           'use server';

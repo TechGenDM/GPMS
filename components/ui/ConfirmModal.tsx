@@ -29,16 +29,23 @@ export function ConfirmModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-0 bg-slate-900/40 backdrop-blur-sm transition-opacity">
       <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all translate-y-0 sm:scale-100">
-        
         <div className="p-6">
           <div className="flex items-start">
             {isDestructive && (
               <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                <AlertTriangle className="h-6 w-6 text-red-600" aria-hidden="true" />
+                <AlertTriangle
+                  className="h-6 w-6 text-red-600"
+                  aria-hidden="true"
+                />
               </div>
             )}
-            <div className={`mt-3 sm:mt-0 ${isDestructive ? 'sm:ml-4' : ''} text-left`}>
-              <h3 className="text-xl font-semibold leading-6 text-slate-900" id="modal-title">
+            <div
+              className={`mt-3 sm:mt-0 ${isDestructive ? 'sm:ml-4' : ''} text-left`}
+            >
+              <h3
+                className="text-xl font-semibold leading-6 text-slate-900"
+                id="modal-title"
+              >
                 {title}
               </h3>
               <div className="mt-3">
@@ -61,8 +68,8 @@ export function ConfirmModal({
           <button
             type="button"
             className={`w-full sm:w-auto px-6 py-3 sm:py-2 text-sm font-semibold text-white rounded-xl sm:rounded-lg shadow-sm focus:outline-none focus:ring-2 transition-colors ${
-              isDestructive 
-                ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' 
+              isDestructive
+                ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
                 : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
             }`}
             onClick={onConfirm}

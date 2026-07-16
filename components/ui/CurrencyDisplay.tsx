@@ -7,8 +7,11 @@ interface CurrencyDisplayProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export function CurrencyDisplay({ amount, className, size = 'lg' }: CurrencyDisplayProps) {
-  
+export function CurrencyDisplay({
+  amount,
+  className,
+  size = 'lg',
+}: CurrencyDisplayProps) {
   // Format the number to Indian numbering system (e.g. 1,00,000)
   const formattedAmount = new Intl.NumberFormat('en-IN').format(amount);
 
@@ -20,8 +23,22 @@ export function CurrencyDisplay({ amount, className, size = 'lg' }: CurrencyDisp
   };
 
   return (
-    <div className={cn('font-bold text-slate-900 tracking-tight flex items-baseline', sizeClasses[size], className)}>
-      <span className={cn('text-slate-500 mr-1 opacity-80', className?.includes('text-white') && 'text-blue-200')} style={{ fontSize: '0.85em' }}>₹</span>
+    <div
+      className={cn(
+        'font-bold text-slate-900 tracking-tight flex items-baseline',
+        sizeClasses[size],
+        className
+      )}
+    >
+      <span
+        className={cn(
+          'text-slate-500 mr-1 opacity-80',
+          className?.includes('text-white') && 'text-blue-200'
+        )}
+        style={{ fontSize: '0.85em' }}
+      >
+        ₹
+      </span>
       <span>{formattedAmount}</span>
     </div>
   );

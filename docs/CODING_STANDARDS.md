@@ -1,6 +1,7 @@
 # GPMS Coding & UI Standards
 
 ## UI Principles (The Volunteer Experience)
+
 Every frontend page must adhere to these absolute rules:
 
 1. **Rule 1 — The 10 Second Rule:** A volunteer should understand how to use a screen in under 10 seconds. No complex menus, no hidden gestures.
@@ -13,6 +14,7 @@ Every frontend page must adhere to these absolute rules:
 ## Coding Conventions
 
 ### Backend (Apps Script)
+
 - **Names:** CamelCase for functions (`createDonation`), PascalCase for Services (`DonationService`).
 - **Purity:** Services must not manipulate raw HTTP `doPost` objects. They accept `(user, payload)`.
 - **Validation:** Always validate payloads in `Validation.gs` before doing any business logic.
@@ -20,6 +22,7 @@ Every frontend page must adhere to these absolute rules:
 - **Audit:** Call `AuditService.log()` for every data mutation.
 
 ### Frontend (Next.js & React)
+
 - **Framework:** Next.js (App Router), React, Tailwind CSS, TypeScript.
 - **Components:** Functional components with React Hooks.
 - **Styling:** Tailwind CSS strictly. Do not use inline styles.

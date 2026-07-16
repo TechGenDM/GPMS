@@ -13,7 +13,11 @@ interface RoleGuardProps {
  * RoleGuard prevents rendering of its children if the current user
  * does not have one of the allowed roles.
  */
-export function RoleGuard({ allowedRoles, children, fallback = null }: RoleGuardProps) {
+export function RoleGuard({
+  allowedRoles,
+  children,
+  fallback = null,
+}: RoleGuardProps) {
   const { data: session, status } = useSession();
 
   if (status === 'loading') {

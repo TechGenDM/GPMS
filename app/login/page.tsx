@@ -6,7 +6,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-8">
-        
         <div className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
             {/* Simple placeholder for Ganesha icon or committee logo */}
@@ -15,9 +14,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Ganesh Puja
           </h1>
-          <p className="text-sm text-slate-500">
-            Management System (GPMS)
-          </p>
+          <p className="text-sm text-slate-500">Management System (GPMS)</p>
         </div>
 
         <Card className="shadow-lg border-0">
@@ -53,9 +50,10 @@ export default function LoginPage() {
                 Sign in with Google
               </button>
             </form>
-            
+
             <p className="mt-6 text-center text-xs text-slate-400">
-              Authorized volunteers only. By signing in, you agree to the committee's data policies.
+              Authorized volunteers only. By signing in, you agree to the
+              committee's data policies.
             </p>
           </CardContent>
         </Card>
