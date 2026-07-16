@@ -5,13 +5,19 @@ export async function POST(_request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!appsScriptUrl) {
       console.error('[GPMS API] NEXT_PUBLIC_API_URL is not set.');
-      return NextResponse.json({ success: false, message: 'Server configuration error' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, message: 'Server configuration error' },
+        { status: 500 }
+      );
     }
 
     const response = await fetch(appsScriptUrl, {
@@ -22,7 +28,7 @@ export async function POST(_request: NextRequest) {
       body: JSON.stringify({
         action: 'getDashboardSummary',
         payload: {
-          userEmail: session.user.email
+          userEmail: session.user.email,
         },
       }),
       redirect: 'follow',
@@ -43,6 +49,9 @@ export async function POST(_request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('[GPMS API] Unexpected error in dashboard summary:', error);
-    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

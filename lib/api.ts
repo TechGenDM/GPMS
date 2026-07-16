@@ -16,7 +16,7 @@ export interface ApiRequestOptions {
  * Global API wrapper to standardize requests to Next.js API Routes.
  * This function expects to be called within a context where `useFeedback`
  * could be manually triggered, or we handle feedback explicitly in components.
- * 
+ *
  * Since this is a pure function, it doesn't use hooks directly.
  * Components will pass their `showLoading`, `showSuccess`, `showError` callbacks if they want automatic feedback.
  */
@@ -30,7 +30,6 @@ export async function fetchApi<T = unknown>(
     clear?: () => void;
   }
 ): Promise<ApiResponse<T>> {
-  
   if (feedback?.showLoading && options.showLoading !== false) {
     feedback.showLoading(options.loadingMessage || 'Loading...');
   }
@@ -64,7 +63,8 @@ export async function fetchApi<T = unknown>(
       return data;
     }
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Network error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Network error';
     if (feedback?.showError) {
       feedback.showError(errorMessage);
     }
