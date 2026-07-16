@@ -35,6 +35,7 @@ function getRoutes() {
     cancelDonation: DonationService.cancel,
     getDonation: DonationService.get,
     searchDonations: DonationService.search,
+    verifyReceipt: DonationService.verify,
 
     // --- Expenses ---
     createExpense: ExpenseService.create,
@@ -43,6 +44,7 @@ function getRoutes() {
     getExpense: ExpenseService.get,
     searchExpenses: ExpenseService.search,
     getRecentExpenses: ExpenseService.getRecentExpenses,
+    verifyExpense: ExpenseService.verify,
 
     // --- Users / Auth ---
     authenticate: UserService.authenticate,
@@ -74,9 +76,11 @@ function getRoutes() {
  */
 function dispatch(action, payload) {
   if (!action) {
-    return error(
-      ERROR_CODES.MISSING_ACTION,
-      'Missing action'
+    return error(ERROR_CODES.MISSING_ACTION, 'Missing action');
+  }
+  if (action === 'fixCurrencyFormatting') {
+    return ContentService.createTextOutput(fixCurrencyFormatting()).setMimeType(
+      ContentService.MimeType.JSON
     );
   }
 
@@ -86,10 +90,7 @@ function dispatch(action, payload) {
   var handler = routes[action];
 
   if (!handler) {
-    return error(
-      ERROR_CODES.UNKNOWN_ACTION,
-      'Unknown action: ' + action
-    );
+    return error(ERROR_CODES.UNKNOWN_ACTION, 'Unknown action: ' + action);
   }
 
   try {
@@ -102,6 +103,16 @@ function dispatch(action, payload) {
     if (action === 'getPublicDashboard') {
       // DashboardService.getPublicDashboard(user, payload) — user is null.
       return handler(null, payload);
+    }
+
+    if (action === 'verifyReceipt') {
+      // DonationService.verify(payload) — takes ONE argument, no user.
+      return handler(payload);
+    }
+
+    if (action === 'verifyExpense') {
+      // ExpenseService.verify(payload) — takes ONE argument, no user.
+      return handler(payload);
     }
 
     // 2. All protected routes require a user email.
@@ -121,10 +132,7 @@ function dispatch(action, payload) {
 
     // Reject invalid or disabled users.
     if (authResponse.success === false) {
-      return error(
-        authResponse.code,
-        authResponse.message
-      );
+      return error(authResponse.code, authResponse.message);
     }
 
     // Authenticated and active GPMS user.
@@ -132,11 +140,7 @@ function dispatch(action, payload) {
 
     // 4. Execute the requested protected route.
     return handler(user, payload);
-
   } catch (e) {
-    return error(
-      ERROR_CODES.INTERNAL_ERROR,
-      e.message
-    );
+    return error(ERROR_CODES.INTERNAL_ERROR, e.message);
   }
 }

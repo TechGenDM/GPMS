@@ -96,7 +96,7 @@ function now() {
 
 /**
  * Safely appends a row of data below the last actual data row.
- * Bypasses issues with pre-filled dropdown template rows by looking
+ * It searches the ID column (specified by idColIndex) downwards from the header
  * for the first empty row in the ID column after the header.
  *
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - The sheet to modify.
@@ -105,19 +105,24 @@ function now() {
  */
 function safeAppendRow(sheet, rowData, idColIndex) {
   var data = sheet.getDataRange().getValues();
-  
-  // 1. Find the header row (look for 'id', 'expense id', 'donation id' etc in the id column)
+
+  // 1. Find the header row
   var headerIndex = 0;
   for (var i = 0; i < data.length; i++) {
     var val = String(data[i][idColIndex]).trim().toLowerCase();
-    if (val === 'expense id' || val === 'donation id' || val === 'id' || val === 'receipt id') {
+    if (
+      val === 'expense id' ||
+      val === 'donation id' ||
+      val === 'id' ||
+      val === 'receipt id'
+    ) {
       headerIndex = i;
       break;
     }
   }
-  
+
   // 2. Scan downwards from the header to find the first empty cell in the ID column
-  var targetRow = data.length + 1; // default to appending at the end if no empty cell is found
+  var targetRow = data.length + 1; // default to appending at the end
   for (var i = headerIndex + 1; i < data.length; i++) {
     if (String(data[i][idColIndex]).trim() === '') {
       targetRow = i + 1; // 1-indexed row number
@@ -128,8 +133,24 @@ function safeAppendRow(sheet, rowData, idColIndex) {
   // 3. Ensure we have enough rows in the sheet
   if (targetRow > sheet.getMaxRows()) {
     sheet.insertRowAfter(sheet.getMaxRows());
-  } 
-  
-  // 4. Overwrite the target row
-  sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
+  }
+
+  // 4. Write data atomically and robustly
+  // We clear data validations on the target row to ensure setValue(s)
+  // doesn't silently fail or throw due to restrictive dropdowns.
+  var targetRange = sheet.getRange(targetRow, 1, 1, rowData.length);
+  targetRange.clearDataValidations();
+
+  // Convert undefined/null to empty string
+  var cleanRowData = [];
+  for (var c = 0; c < rowData.length; c++) {
+    cleanRowData.push(
+      rowData[c] === undefined || rowData[c] === null ? '' : rowData[c]
+    );
+  }
+
+  targetRange.setValues([cleanRowData]);
+
+  // Force persistence immediately
+  SpreadsheetApp.flush();
 }

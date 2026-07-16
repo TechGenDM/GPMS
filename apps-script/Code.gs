@@ -26,7 +26,10 @@ function doGet(e) {
 
     return dispatch(action, e.parameter);
   } catch (err) {
-    return error(ERROR_CODES.INTERNAL_ERROR, 'GET request failed: ' + err.message);
+    return error(
+      ERROR_CODES.INTERNAL_ERROR,
+      'GET request failed: ' + err.message
+    );
   }
 }
 
@@ -51,6 +54,9 @@ function doPost(e) {
 
     return dispatch(action, payload);
   } catch (err) {
-    return error(ERROR_CODES.INTERNAL_ERROR, 'POST request failed: ' + err.message);
+    return error(
+      ERROR_CODES.INTERNAL_ERROR,
+      'POST request failed: ' + err.message
+    );
   }
 }

@@ -29,15 +29,15 @@ var AuditService = {
       var sheet = getSheet(CONFIG.sheets.auditLogs);
 
       sheet.appendRow([
-        Utilities.getUuid(),          // LogId — unique identifier
-        now(),                        // Timestamp
-        params.userId || '',          // UserId
-        params.userName || 'System',  // UserName
-        params.action || '',          // Action
-        params.module || '',          // Module
-        params.recordId || '',        // RecordId
-        params.oldValue || '',        // OldValue
-        params.newValue || '',        // NewValue
+        Utilities.getUuid(), // LogId — unique identifier
+        now(), // Timestamp
+        params.userId || '', // UserId
+        params.userName || 'System', // UserName
+        params.action || '', // Action
+        params.module || '', // Module
+        params.recordId || '', // RecordId
+        params.oldValue || '', // OldValue
+        params.newValue || '', // NewValue
       ]);
     } catch (e) {
       // Audit logging should never break the main flow.

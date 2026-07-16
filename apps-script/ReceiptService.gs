@@ -25,7 +25,10 @@ var ReceiptService = {
    * @returns {string} Receipt ID (e.g., RCT-20250714-00042).
    */
   generateReceiptId: function () {
-    return ReceiptService._generateId('receiptCounter', CONFIG.prefixes.receipt);
+    return ReceiptService._generateId(
+      'receiptCounter',
+      CONFIG.prefixes.receipt
+    );
   },
 
   /**
@@ -35,7 +38,10 @@ var ReceiptService = {
    * @returns {string} Donation ID (e.g., DON-20250714-00042).
    */
   generateDonationId: function () {
-    return ReceiptService._generateId('donationCounter', CONFIG.prefixes.donation);
+    return ReceiptService._generateId(
+      'donationCounter',
+      CONFIG.prefixes.donation
+    );
   },
 
   /**
@@ -45,7 +51,10 @@ var ReceiptService = {
    * @returns {string} Expense ID (e.g., EXP-20250714-00015).
    */
   generateExpenseId: function () {
-    return ReceiptService._generateId('expenseCounter', CONFIG.prefixes.expense);
+    return ReceiptService._generateId(
+      'expenseCounter',
+      CONFIG.prefixes.expense
+    );
   },
 
   /**
@@ -90,7 +99,9 @@ var ReceiptService = {
       // Wait up to 10 seconds to acquire lock
       lock.waitLock(10000);
     } catch (e) {
-      throw new Error('Could not acquire lock for ID generation. Please try again.');
+      throw new Error(
+        'Could not acquire lock for ID generation. Please try again.'
+      );
     }
 
     try {

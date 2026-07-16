@@ -24,7 +24,10 @@ var SettingsService = {
     var row = findRow(sheet, 1, payload.key);
 
     if (row === -1) {
-      return error(ERROR_CODES.SETTING_NOT_FOUND, 'Setting not found: ' + payload.key);
+      return error(
+        ERROR_CODES.SETTING_NOT_FOUND,
+        'Setting not found: ' + payload.key
+      );
     }
 
     var value = sheet.getRange(row, 2).getValue();

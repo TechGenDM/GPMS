@@ -70,7 +70,10 @@ var UserService = {
 
     var row = UserService._findUserRow(payload.email, 3);
     if (row === -1) {
-      return error(ERROR_CODES.USER_NOT_FOUND, 'User not found. You do not have access to GPMS.');
+      return error(
+        ERROR_CODES.USER_NOT_FOUND,
+        'User not found. You do not have access to GPMS.'
+      );
     }
 
     var sheet = getSheet(CONFIG.sheets.users);
@@ -78,7 +81,10 @@ var UserService = {
     var user = UserService._mapUser(dataRow);
 
     if (user.status !== CONFIG.status.active) {
-      return error(ERROR_CODES.USER_DISABLED, 'Your account has been disabled.');
+      return error(
+        ERROR_CODES.USER_DISABLED,
+        'Your account has been disabled.'
+      );
     }
 
     // Update last login
@@ -109,7 +115,7 @@ var UserService = {
 
     // SuperAdmin bypass (assuming we might add it later, for now we just check the array)
     // If we have a 'SuperAdmin' role, we could always return true here.
-    
+
     if (allowedRoles && allowedRoles.length > 0) {
       return allowedRoles.indexOf(user.role) !== -1;
     }
@@ -179,7 +185,7 @@ var UserService = {
     }
 
     var sheet = getSheet(CONFIG.sheets.users);
-    
+
     // We only update specific fields, not email or status (status is managed via disable)
     if (payload.fullName) sheet.getRange(row, 2).setValue(payload.fullName);
     if (payload.phone) sheet.getRange(row, 4).setValue(payload.phone);
@@ -191,7 +197,10 @@ var UserService = {
       action: 'updateUser',
       module: 'Users',
       recordId: payload.userId,
-      newValue: JSON.stringify({ fullName: payload.fullName, role: payload.role }),
+      newValue: JSON.stringify({
+        fullName: payload.fullName,
+        role: payload.role,
+      }),
     });
 
     return success('User updated successfully');
@@ -214,10 +223,10 @@ var UserService = {
     }
 
     var sheet = getSheet(CONFIG.sheets.users);
-    
+
     // Protection: Cannot disable self (optional but good practice)
     if (payload.userId === payload.adminUserId) {
-       return error(ERROR_CODES.FORBIDDEN, 'You cannot disable yourself');
+      return error(ERROR_CODES.FORBIDDEN, 'You cannot disable yourself');
     }
 
     sheet.getRange(row, 6).setValue('Disabled'); // Using hardcoded or config string, though config.status.cancelled might apply. Let's stick to 'Disabled' as per requirements.
@@ -289,8 +298,12 @@ var UserService = {
     var sheet = getSheet(CONFIG.sheets.users);
     var data = sheet.getDataRange().getValues();
 
-    for (var i = 1; i < data.length; i++) { // Skip header
-      if (String(data[i][columnIndex - 1]).toLowerCase() === String(key).toLowerCase()) {
+    for (var i = 1; i < data.length; i++) {
+      // Skip header
+      if (
+        String(data[i][columnIndex - 1]).toLowerCase() ===
+        String(key).toLowerCase()
+      ) {
         return i + 1; // 1-indexed for SpreadsheetApp
       }
     }

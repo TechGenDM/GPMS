@@ -30,19 +30,23 @@ var ExpenseService = {
 
     // 3. Save to sheet (11 columns: A–K)
     var sheet = getSheet(CONFIG.sheets.expenses);
-    safeAppendRow(sheet, [
-      expenseId,                     // A: Expense ID
-      payload.category,              // B: Category
-      payload.description,           // C: Description
-      payload.vendor || '',          // D: Vendor
-      payload.amount,                // E: Amount
-      user.id,                       // F: Paid By ID
-      user.fullName,                 // G: Paid By Name
-      payload.billLink || '',        // H: Bill Link
-      CONFIG.status.active,          // I: Status
-      date,                          // J: Created At
-      ''                             // K: Updated At
-    ], 0); // 0 is the index for column A (Expense ID)
+    safeAppendRow(
+      sheet,
+      [
+        expenseId, // A: Expense ID
+        payload.category, // B: Category
+        payload.description, // C: Description
+        payload.vendor || '', // D: Vendor
+        payload.amount, // E: Amount
+        user.id, // F: Paid By ID
+        user.fullName, // G: Paid By Name
+        payload.billLink || '', // H: Bill Link
+        CONFIG.status.active, // I: Status
+        date, // J: Created At
+        '', // K: Updated At
+      ],
+      0
+    ); // 0 is the index for column A (Expense ID)
 
     // 4. Audit log
     AuditService.log({
@@ -51,11 +55,23 @@ var ExpenseService = {
       action: 'createExpense',
       module: 'Expenses',
       recordId: expenseId,
-      newValue: JSON.stringify({ amount: payload.amount, category: payload.category }),
+      newValue: JSON.stringify({
+        amount: payload.amount,
+        category: payload.category,
+      }),
     });
 
     // 5. Return success
-    return success('Expense created successfully', { id: expenseId });
+    return success('Expense created successfully', {
+      id: expenseId,
+      category: payload.category,
+      description: payload.description,
+      vendor: payload.vendor || '',
+      amount: payload.amount,
+      paidBy: user.fullName,
+      date: date,
+      billLink: payload.billLink || '',
+    });
   },
 
   /**
@@ -72,7 +88,10 @@ var ExpenseService = {
 
     // Authorization: Only Admins can update expenses
     if (!UserService.authorize(user, [CONFIG.roles.admin])) {
-      return error(ERROR_CODES.ROLE_NOT_ALLOWED, 'Only admins can modify expenses');
+      return error(
+        ERROR_CODES.ROLE_NOT_ALLOWED,
+        'Only admins can modify expenses'
+      );
     }
 
     var row = ExpenseService._findExpenseRow(payload.expenseId);
@@ -85,12 +104,15 @@ var ExpenseService = {
 
     // Update specific fields (1-indexed for getRange)
     if (payload.category) sheet.getRange(row, 2).setValue(payload.category);
-    if (payload.description) sheet.getRange(row, 3).setValue(payload.description);
-    if (payload.vendor !== undefined) sheet.getRange(row, 4).setValue(payload.vendor);
+    if (payload.description)
+      sheet.getRange(row, 3).setValue(payload.description);
+    if (payload.vendor !== undefined)
+      sheet.getRange(row, 4).setValue(payload.vendor);
     if (payload.amount) sheet.getRange(row, 5).setValue(payload.amount);
-    if (payload.billLink !== undefined) sheet.getRange(row, 8).setValue(payload.billLink);
+    if (payload.billLink !== undefined)
+      sheet.getRange(row, 8).setValue(payload.billLink);
     if (payload.status) sheet.getRange(row, 9).setValue(payload.status);
-    
+
     sheet.getRange(row, 11).setValue(now()); // Updated At
 
     AuditService.log({
@@ -125,7 +147,10 @@ var ExpenseService = {
     var sheet = getSheet(CONFIG.sheets.expenses);
     var currentData = sheet.getRange(row, 1, 1, 11).getValues()[0];
 
-    return success('Expense retrieved', ExpenseService._mapExpense(currentData));
+    return success(
+      'Expense retrieved',
+      ExpenseService._mapExpense(currentData)
+    );
   },
 
   /**
@@ -141,21 +166,36 @@ var ExpenseService = {
     var results = [];
 
     for (var i = 1; i < data.length; i++) {
-      if (!data[i][0] || String(data[i][0]).toLowerCase() === 'expense id') continue;
+      if (!data[i][0] || String(data[i][0]).toLowerCase() === 'expense id')
+        continue;
 
       var expense = ExpenseService._mapExpense(data[i]);
       var match = true;
 
       if (payload.status && expense.status !== payload.status) match = false;
-      if (payload.category && expense.category !== payload.category) match = false;
-      
-      if (payload.vendor && expense.vendor.toLowerCase().indexOf(payload.vendor.toLowerCase()) === -1) {
+      if (payload.category && expense.category !== payload.category)
+        match = false;
+
+      if (
+        payload.vendor &&
+        expense.vendor.toLowerCase().indexOf(payload.vendor.toLowerCase()) ===
+          -1
+      ) {
         match = false;
       }
-      if (payload.description && expense.description.toLowerCase().indexOf(payload.description.toLowerCase()) === -1) {
+      if (
+        payload.description &&
+        expense.description
+          .toLowerCase()
+          .indexOf(payload.description.toLowerCase()) === -1
+      ) {
         match = false;
       }
-      if (payload.expenseId && String(expense.id).toLowerCase() !== String(payload.expenseId).toLowerCase()) {
+      if (
+        payload.expenseId &&
+        String(expense.id).toLowerCase() !==
+          String(payload.expenseId).toLowerCase()
+      ) {
         match = false;
       }
 
@@ -168,21 +208,58 @@ var ExpenseService = {
   },
 
   /**
+   * Verifies an official expense record (Public, unauthenticated).
+   * Scrubbed for privacy.
+   *
+   * @param {Object} payload - Must include { expenseId }
+   * @returns {ContentOutput} JSON response with verified data.
+   */
+  verify: function (payload) {
+    if (!payload || !payload.expenseId) {
+      return error(ERROR_CODES.MISSING_FIELD, 'Expense ID is required');
+    }
+
+    var row = ExpenseService._findExpenseRow(payload.expenseId);
+    if (row === -1) {
+      return error(ERROR_CODES.EXPENSE_NOT_FOUND, 'Expense record not found');
+    }
+
+    var sheet = getSheet(CONFIG.sheets.expenses);
+    var dataRow = sheet.getRange(row, 1, 1, 11).getValues()[0];
+    var rawExpense = ExpenseService._mapExpense(dataRow);
+
+    // Return safe data for public verification
+    var safeData = {
+      expenseId: rawExpense.id,
+      category: rawExpense.category,
+      description: rawExpense.description,
+      vendor: rawExpense.vendor,
+      amount: rawExpense.amount,
+      paidByName: rawExpense.paidByName, // Safe to show name
+      date: rawExpense.createdAt,
+      status: rawExpense.status,
+    };
+
+    return success('Expense verified successfully', safeData);
+  },
+
+  /**
    * Retrieves the most recent expenses.
    */
-  getRecentExpenses: function(user, payload) {
+  getRecentExpenses: function (user, payload) {
     var limit = payload && payload.limit ? parseInt(payload.limit, 10) : 10;
-    
+
     var sheet = getSheet(CONFIG.sheets.expenses);
     var data = sheet.getDataRange().getValues();
     var results = [];
 
     for (var i = data.length - 1; i > 0; i--) {
-      if (!data[i][0] || String(data[i][0]).toLowerCase() === 'expense id') continue;
-      
+      if (!data[i][0] || String(data[i][0]).toLowerCase() === 'expense id')
+        continue;
+
       var expense = ExpenseService._mapExpense(data[i]);
       results.push(expense);
-      
+
       if (results.length >= limit) break;
     }
 
@@ -198,17 +275,17 @@ var ExpenseService = {
    */
   _mapExpense: function (row) {
     return {
-      id: row[0],             // A: Expense ID
-      category: row[1],       // B: Category
-      description: row[2],    // C: Description
-      vendor: row[3],         // D: Vendor
-      amount: row[4],         // E: Amount
-      paidById: row[5],       // F: Paid By ID
-      paidByName: row[6],     // G: Paid By Name
-      billLink: row[7],       // H: Bill Link
-      status: row[8],         // I: Status
-      createdAt: row[9],      // J: Created At
-      updatedAt: row[10]      // K: Updated At
+      id: row[0], // A: Expense ID
+      category: row[1], // B: Category
+      description: row[2], // C: Description
+      vendor: row[3], // D: Vendor
+      amount: row[4], // E: Amount
+      paidById: row[5], // F: Paid By ID
+      paidByName: row[6], // G: Paid By Name
+      billLink: row[7], // H: Bill Link
+      status: row[8], // I: Status
+      createdAt: row[9], // J: Created At
+      updatedAt: row[10], // K: Updated At
     };
   },
 
@@ -220,10 +297,12 @@ var ExpenseService = {
     var data = sheet.getDataRange().getValues();
 
     for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0]).toLowerCase() === String(expenseId).toLowerCase()) {
+      if (
+        String(data[i][0]).toLowerCase() === String(expenseId).toLowerCase()
+      ) {
         return i + 1;
       }
     }
     return -1;
-  }
+  },
 };

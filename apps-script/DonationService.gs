@@ -47,22 +47,26 @@ var DonationService = {
 
     // 3. Save to sheet (14 columns: A–N)
     var sheet = getSheet(CONFIG.sheets.donations);
-    safeAppendRow(sheet, [
-      donationId,                    // A: Donation ID
-      receiptId,                     // B: Receipt ID
-      payload.donorName,             // C: Donor Name
-      payload.phone || '',           // D: Phone
-      payload.amount,                // E: Amount
-      payload.paymentMode,           // F: Payment Mode
-      payload.upiRef || '',          // G: UPI Ref
-      user.id,                       // H: Collector ID (authenticated user)
-      user.fullName,                 // I: Collector Name (authenticated user)
-      payload.purpose || '',         // J: Purpose
-      payload.remarks || '',         // K: Remarks
-      CONFIG.status.active,          // L: Status
-      date,                          // M: Created At
-      ''                             // N: Updated At
-    ], 0); // 0 is the index for column A (Donation ID)
+    safeAppendRow(
+      sheet,
+      [
+        donationId, // A: Donation ID
+        receiptId, // B: Receipt ID
+        payload.donorName, // C: Donor Name
+        payload.phone || '', // D: Phone
+        payload.amount, // E: Amount
+        payload.paymentMode, // F: Payment Mode
+        payload.upiRef || '', // G: UPI Ref
+        user.id, // H: Collector ID (authenticated user)
+        user.fullName, // I: Collector Name (authenticated user)
+        payload.purpose || '', // J: Purpose
+        payload.remarks || '', // K: Remarks
+        CONFIG.status.active, // L: Status
+        date, // M: Created At
+        '', // N: Updated At
+      ],
+      0
+    ); // 0 is the index for column A (Donation ID)
 
     // 4. Audit log
     AuditService.log({
@@ -71,11 +75,19 @@ var DonationService = {
       action: 'createDonation',
       module: 'Donations',
       recordId: donationId,
-      newValue: JSON.stringify({ amount: payload.amount, donor: payload.donorName, mode: payload.paymentMode }),
+      newValue: JSON.stringify({
+        amount: payload.amount,
+        donor: payload.donorName,
+        mode: payload.paymentMode,
+      }),
     });
 
     // 5. Return success
-    return success('Donation created successfully', { id: donationId, receiptId: receiptId });
+    return success('Donation created successfully', {
+      id: donationId,
+      receiptId: receiptId,
+      collectorName: user.fullName,
+    });
   },
 
   /**
@@ -92,7 +104,10 @@ var DonationService = {
 
     // Authorization: Only Admins can update donations
     if (!UserService.authorize(user, [CONFIG.roles.admin])) {
-      return error(ERROR_CODES.ROLE_NOT_ALLOWED, 'Only admins can modify donations');
+      return error(
+        ERROR_CODES.ROLE_NOT_ALLOWED,
+        'Only admins can modify donations'
+      );
     }
 
     var row = DonationService._findDonationRow(payload.donationId);
@@ -101,20 +116,25 @@ var DonationService = {
     }
 
     var sheet = getSheet(CONFIG.sheets.donations);
-    
+
     // Read current data to preserve old state in audit
     var currentData = sheet.getRange(row, 1, 1, 14).getValues()[0];
     var oldDonation = DonationService._mapDonation(currentData);
 
     // Update specific fields (1-indexed column numbers)
-    if (payload.donorName) sheet.getRange(row, 3).setValue(payload.donorName);       // C
-    if (payload.phone !== undefined) sheet.getRange(row, 4).setValue(payload.phone);  // D
-    if (payload.amount) sheet.getRange(row, 5).setValue(payload.amount);              // E
-    if (payload.paymentMode) sheet.getRange(row, 6).setValue(payload.paymentMode);    // F
-    if (payload.upiRef !== undefined) sheet.getRange(row, 7).setValue(payload.upiRef); // G
-    if (payload.purpose !== undefined) sheet.getRange(row, 10).setValue(payload.purpose); // J
-    if (payload.remarks !== undefined) sheet.getRange(row, 11).setValue(payload.remarks); // K
-    
+    if (payload.donorName) sheet.getRange(row, 3).setValue(payload.donorName); // C
+    if (payload.phone !== undefined)
+      sheet.getRange(row, 4).setValue(payload.phone); // D
+    if (payload.amount) sheet.getRange(row, 5).setValue(payload.amount); // E
+    if (payload.paymentMode)
+      sheet.getRange(row, 6).setValue(payload.paymentMode); // F
+    if (payload.upiRef !== undefined)
+      sheet.getRange(row, 7).setValue(payload.upiRef); // G
+    if (payload.purpose !== undefined)
+      sheet.getRange(row, 10).setValue(payload.purpose); // J
+    if (payload.remarks !== undefined)
+      sheet.getRange(row, 11).setValue(payload.remarks); // K
+
     sheet.getRange(row, 14).setValue(now()); // N: Updated At
 
     AuditService.log({
@@ -123,8 +143,14 @@ var DonationService = {
       action: 'updateDonation',
       module: 'Donations',
       recordId: payload.donationId,
-      oldValue: JSON.stringify({ amount: oldDonation.amount, name: oldDonation.donorName }),
-      newValue: JSON.stringify({ amount: payload.amount || oldDonation.amount, name: payload.donorName || oldDonation.donorName }),
+      oldValue: JSON.stringify({
+        amount: oldDonation.amount,
+        name: oldDonation.donorName,
+      }),
+      newValue: JSON.stringify({
+        amount: payload.amount || oldDonation.amount,
+        name: payload.donorName || oldDonation.donorName,
+      }),
     });
 
     return success('Donation updated successfully');
@@ -144,7 +170,10 @@ var DonationService = {
 
     // Authorization: Only Admins can cancel donations
     if (!UserService.authorize(user, [CONFIG.roles.admin])) {
-      return error(ERROR_CODES.ROLE_NOT_ALLOWED, 'Only admins can cancel donations');
+      return error(
+        ERROR_CODES.ROLE_NOT_ALLOWED,
+        'Only admins can cancel donations'
+      );
     }
 
     var row = DonationService._findDonationRow(payload.donationId);
@@ -154,13 +183,13 @@ var DonationService = {
 
     var sheet = getSheet(CONFIG.sheets.donations);
     sheet.getRange(row, 12).setValue(CONFIG.status.cancelled); // L: Status
-    sheet.getRange(row, 14).setValue(now());                   // N: Updated At
-    
+    sheet.getRange(row, 14).setValue(now()); // N: Updated At
+
     // Store cancellation reason in Remarks if provided
     if (payload.cancellationReason) {
       var existingRemarks = sheet.getRange(row, 11).getValue();
-      var newRemarks = existingRemarks 
-        ? existingRemarks + ' | Cancelled: ' + payload.cancellationReason 
+      var newRemarks = existingRemarks
+        ? existingRemarks + ' | Cancelled: ' + payload.cancellationReason
         : 'Cancelled: ' + payload.cancellationReason;
       sheet.getRange(row, 11).setValue(newRemarks);
     }
@@ -196,7 +225,10 @@ var DonationService = {
     var sheet = getSheet(CONFIG.sheets.donations);
     var currentData = sheet.getRange(row, 1, 1, 14).getValues()[0];
 
-    return success('Donation retrieved', DonationService._mapDonation(currentData));
+    return success(
+      'Donation retrieved',
+      DonationService._mapDonation(currentData)
+    );
   },
 
   /**
@@ -220,11 +252,18 @@ var DonationService = {
 
       // Basic filtering
       if (payload.status && donation.status !== payload.status) match = false;
-      if (payload.purpose && donation.purpose !== payload.purpose) match = false;
-      if (payload.paymentMode && donation.paymentMode !== payload.paymentMode) match = false;
-      
+      if (payload.purpose && donation.purpose !== payload.purpose)
+        match = false;
+      if (payload.paymentMode && donation.paymentMode !== payload.paymentMode)
+        match = false;
+
       // Case-insensitive substring match for donor name
-      if (payload.donorName && donation.donorName.toLowerCase().indexOf(payload.donorName.toLowerCase()) === -1) {
+      if (
+        payload.donorName &&
+        donation.donorName
+          .toLowerCase()
+          .indexOf(payload.donorName.toLowerCase()) === -1
+      ) {
         match = false;
       }
 
@@ -234,6 +273,54 @@ var DonationService = {
     }
 
     return success('Donations retrieved', results);
+  },
+
+  /**
+   * Verifies a donation by receipt ID.
+   * Publicly accessible, returns ONLY safe fields.
+   *
+   * @param {Object} payload - Must include receiptId.
+   * @returns {ContentOutput} JSON response.
+   */
+  verify: function (payload) {
+    if (!payload || !payload.receiptId) {
+      return error(ERROR_CODES.MISSING_FIELD, 'Receipt ID is required');
+    }
+
+    var sheet = getSheet(CONFIG.sheets.donations);
+    var data = sheet.getDataRange().getValues();
+
+    for (var i = 1; i < data.length; i++) {
+      // Column B (index 1) is Receipt ID
+      if (
+        String(data[i][1]).toLowerCase() ===
+        String(payload.receiptId).toLowerCase()
+      ) {
+        var row = data[i];
+
+        // Only return public-safe fields
+        var safeData = {
+          donationId: row[0],
+          receiptId: row[1],
+          donorName: row[2],
+          amount: row[4],
+          paymentMode: row[5],
+          collectorName: row[8],
+          purpose: row[9],
+          status: row[11],
+          createdAt: row[12],
+        };
+
+        // If it's cancelled, we might want to return it but mark it clearly
+        if (safeData.status === 'Cancelled') {
+          return success('Receipt is cancelled', safeData);
+        }
+
+        return success('Receipt verified', safeData);
+      }
+    }
+
+    return error(ERROR_CODES.DONATION_NOT_FOUND, 'Receipt not found');
   },
 
   // ==========================================
@@ -250,20 +337,20 @@ var DonationService = {
    */
   _mapDonation: function (row) {
     return {
-      id: row[0],              // A: Donation ID
-      receiptId: row[1],       // B: Receipt ID
-      donorName: row[2],       // C: Donor Name
-      phone: row[3],           // D: Phone
-      amount: row[4],          // E: Amount
-      paymentMode: row[5],     // F: Payment Mode
-      upiRef: row[6],          // G: UPI Ref
-      collectorId: row[7],     // H: Collector ID
-      collectorName: row[8],   // I: Collector Name
-      purpose: row[9],         // J: Purpose
-      remarks: row[10],        // K: Remarks
-      status: row[11],         // L: Status
-      createdAt: row[12],      // M: Created At
-      updatedAt: row[13],      // N: Updated At
+      id: row[0], // A: Donation ID
+      receiptId: row[1], // B: Receipt ID
+      donorName: row[2], // C: Donor Name
+      phone: row[3], // D: Phone
+      amount: row[4], // E: Amount
+      paymentMode: row[5], // F: Payment Mode
+      upiRef: row[6], // G: UPI Ref
+      collectorId: row[7], // H: Collector ID
+      collectorName: row[8], // I: Collector Name
+      purpose: row[9], // J: Purpose
+      remarks: row[10], // K: Remarks
+      status: row[11], // L: Status
+      createdAt: row[12], // M: Created At
+      updatedAt: row[13], // N: Updated At
     };
   },
 
@@ -279,7 +366,9 @@ var DonationService = {
     var data = sheet.getDataRange().getValues();
 
     for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0]).toLowerCase() === String(donationId).toLowerCase()) {
+      if (
+        String(data[i][0]).toLowerCase() === String(donationId).toLowerCase()
+      ) {
         return i + 1;
       }
     }
