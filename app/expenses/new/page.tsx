@@ -2,8 +2,18 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle, Plus, Loader2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle,
+  Plus,
+  Loader2,
+  Download,
+  Share2,
+  MessageCircle,
+} from 'lucide-react';
+import { parseGPMSDate } from '@/lib/utils';
 import { fetchApi } from '@/lib/api';
+import { generateAndDownloadExpenseRecord } from '@/lib/pdfGenerator';
 import { useFeedback } from '@/components/ui/Feedback';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -16,7 +26,7 @@ const EXPENSE_CATEGORIES = [
   'Lighting',
   'Idol',
   'Music',
-  'Miscellaneous'
+  'Miscellaneous',
 ];
 
 interface ExpenseFormData {
@@ -32,7 +42,7 @@ const INITIAL_FORM: ExpenseFormData = {
   description: '',
   amount: '',
   vendor: '',
-  billLink: ''
+  billLink: '',
 };
 
 export default function RecordExpense() {
@@ -40,12 +50,17 @@ export default function RecordExpense() {
   const [form, setForm] = useState<ExpenseFormData>(INITIAL_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
-  
+
   // Store full success data for the receipt
   const [successData, setSuccessData] = useState<{
     expenseId: string;
     amount: number;
     category: string;
+    description: string;
+    vendor: string;
+    paidBy: string;
+    date: string;
+    billLink: string;
   } | null>(null);
 
   const { showLoading, showSuccess, showError, clear } = useFeedback();
@@ -61,7 +76,11 @@ export default function RecordExpense() {
   const validateForm = (): string | null => {
     if (!form.category) return 'Please select an expense category';
     if (!form.description.trim()) return 'Please enter a description';
-    if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0) {
+    if (
+      !form.amount ||
+      isNaN(Number(form.amount)) ||
+      Number(form.amount) <= 0
+    ) {
       return 'Please enter a valid amount';
     }
     return null;
@@ -78,31 +97,53 @@ export default function RecordExpense() {
     setIsSubmitting(true);
 
     try {
-      interface CreateExpenseResponse { id: string }
-      const result = await fetchApi<CreateExpenseResponse>('/expenses/create', {
-        method: 'POST',
-        body: {
-          category: form.category,
-          description: form.description.trim(),
-          amount: Number(form.amount),
-          vendor: form.vendor.trim() || '',
-          billLink: form.billLink.trim() || ''
+      interface CreateExpenseResponse {
+        id: string;
+        category: string;
+        description: string;
+        vendor: string;
+        amount: number;
+        paidBy: string;
+        date: string;
+        billLink: string;
+      }
+      const result = await fetchApi<CreateExpenseResponse>(
+        '/expenses/create',
+        {
+          method: 'POST',
+          body: {
+            category: form.category,
+            description: form.description.trim(),
+            amount: Number(form.amount),
+            vendor: form.vendor.trim() || '',
+            billLink: form.billLink.trim() || '',
+          },
+          showLoading: true,
+          loadingMessage: 'Recording expense...',
         },
-        showLoading: true,
-        loadingMessage: 'Recording expense...',
-      }, { showLoading, showSuccess, showError, clear });
+        { showLoading, showSuccess, showError, clear }
+      );
 
       if (result.success && result.data?.id) {
         setSuccessData({
           expenseId: result.data.id,
           amount: Number(form.amount),
-          category: form.category,
+          category: result.data.category,
+          description: result.data.description,
+          vendor: result.data.vendor,
+          paidBy: result.data.paidBy,
+          date: result.data.date,
+          billLink: result.data.billLink,
         });
       } else if (!result.success) {
         showError(result.message || 'Failed to record expense');
       }
-    } catch (err: any) {
-      showError(err.message || 'An unexpected error occurred');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        showError(err.message || 'An unexpected error occurred');
+      } else {
+        showError('An unexpected error occurred');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -116,6 +157,52 @@ export default function RecordExpense() {
 
   // ── Success Screen (Receipt) ──────────────────────────────────────
   if (successData) {
+    const verificationUrl = `${window.location.origin}/verify/expense/${successData.expenseId}`;
+
+    const handleDownloadPDF = async () => {
+      try {
+        await generateAndDownloadExpenseRecord({
+          expenseId: successData.expenseId,
+          category: successData.category,
+          description: successData.description,
+          vendor: successData.vendor,
+          amount: successData.amount,
+          paidBy: successData.paidBy,
+          date: successData.date,
+          billLink: successData.billLink,
+        });
+        showSuccess('Record downloaded');
+      } catch (e) {
+        showError('Failed to generate PDF');
+      }
+    };
+
+    const handleWhatsAppShare = () => {
+      const dateStr = parseGPMSDate(successData.date).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+      const text = `Official Expense Record for GPMS 2026\n\nExpense ID: ${successData.expenseId}\nCategory: ${successData.category}\nAmount: \u20B9${successData.amount.toLocaleString('en-IN')}\nPaid By: ${successData.paidBy}\nDate: ${dateStr}\n\nVerify this expense record:\n${verificationUrl}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    };
+
+    const handleNativeShare = async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'GPMS Expense Record',
+            text: `Official Expense Record of \u20B9${successData.amount.toLocaleString('en-IN')} for GPMS 2026.`,
+            url: verificationUrl,
+          });
+        } catch (e) {
+          // User cancelled or failed
+        }
+      } else {
+        showError('Native sharing is not supported on this device');
+      }
+    };
+
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
         {/* Header (Simplified) */}
@@ -128,12 +215,12 @@ export default function RecordExpense() {
         <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-8 flex flex-col justify-center">
           <Card className="border-0 shadow-xl overflow-hidden rounded-2xl bg-white relative">
             <div className="absolute top-0 left-0 w-full h-2 bg-red-500" />
-            
+
             <CardContent className="p-8 text-center space-y-6">
               <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-8 h-8 text-red-600" />
               </div>
-              
+
               <div>
                 <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">
                   Expense Recorded
@@ -148,13 +235,43 @@ export default function RecordExpense() {
                 <p className="text-lg font-semibold text-slate-900 mb-4">
                   {successData.category}
                 </p>
-                
+
                 <p className="text-sm text-slate-500 mb-1">Amount</p>
                 <CurrencyDisplay
                   amount={successData.amount}
                   size="lg"
                   className="justify-center text-red-900"
                 />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3 pt-2">
+                <Button
+                  onClick={handleDownloadPDF}
+                  className="w-full h-12 text-base bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold shadow-md"
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Download Expense PDF
+                </Button>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleWhatsAppShare}
+                    className="w-full h-12 text-base font-semibold border-slate-300 text-green-600 hover:text-green-700 hover:bg-green-50"
+                  >
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    WhatsApp
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleNativeShare}
+                    className="w-full h-12 text-base font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
+                  >
+                    <Share2 className="w-5 h-5 mr-2" />
+                    More Options
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -194,14 +311,15 @@ export default function RecordExpense() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Record Expense</h1>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            Record Expense
+          </h1>
         </div>
       </header>
 
       {/* Form */}
       <main className="max-w-3xl mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="space-y-5">
-          
           {/* Validation Error Banner */}
           {validationError && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 font-medium">
@@ -211,11 +329,16 @@ export default function RecordExpense() {
 
           {/* Amount */}
           <div>
-            <label htmlFor="amount" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="amount"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               Amount <span className="text-red-500">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-lg">₹</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-lg">
+                ₹
+              </span>
               <input
                 id="amount"
                 type="text"
@@ -235,7 +358,7 @@ export default function RecordExpense() {
               Category <span className="text-red-500">*</span>
             </label>
             <div className="flex flex-wrap gap-2">
-              {EXPENSE_CATEGORIES.map(cat => (
+              {EXPENSE_CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   type="button"
@@ -254,7 +377,10 @@ export default function RecordExpense() {
 
           {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               Description <span className="text-red-500">*</span>
             </label>
             <input
@@ -270,7 +396,10 @@ export default function RecordExpense() {
 
           {/* Vendor */}
           <div>
-            <label htmlFor="vendor" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="vendor"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               Vendor <span className="text-slate-400 text-xs">(optional)</span>
             </label>
             <input
@@ -286,8 +415,12 @@ export default function RecordExpense() {
 
           {/* Bill Link */}
           <div>
-            <label htmlFor="billLink" className="block text-sm font-medium text-slate-700 mb-1.5">
-              Bill/Receipt Link <span className="text-slate-400 text-xs">(optional)</span>
+            <label
+              htmlFor="billLink"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
+              Bill/Receipt Link{' '}
+              <span className="text-slate-400 text-xs">(optional)</span>
             </label>
             <input
               id="billLink"

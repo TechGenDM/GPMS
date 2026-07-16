@@ -2,19 +2,30 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle, IndianRupee, Plus } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle,
+  IndianRupee,
+  Plus,
+  Download,
+  Share2,
+  MessageCircle,
+} from 'lucide-react';
+import { parseGPMSDate } from '@/lib/utils';
 import { fetchApi } from '@/lib/api';
 import { useFeedback } from '@/components/ui/Feedback';
 import { Card, CardContent } from '@/components/ui/Card';
 import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 import { Button } from '@/components/ui/button';
+import { generateAndDownloadReceipt } from '@/lib/pdfGenerator';
 
 // ── Constants matching backend expectations ──────────────────────────
 const PURPOSES = [
   'General Donation',
-  'Prasad',
+  'Murti',
   'Decoration',
-  'Puja Items',
+  'Prasad',
+  'Cultural Program',
   'Other',
 ] as const;
 
@@ -33,6 +44,9 @@ interface DonationFormData {
 
 interface CreateDonationResponse {
   id: string;
+  receiptId: string;
+  collectorName: string;
+  createdAt: string;
 }
 
 const INITIAL_FORM: DonationFormData = {
@@ -48,7 +62,8 @@ const INITIAL_FORM: DonationFormData = {
 // ── Validation ───────────────────────────────────────────────────────
 function validateForm(form: DonationFormData): string | null {
   if (!form.donorName.trim()) return 'Donor name is required';
-  if (!form.amount || Number(form.amount) <= 0) return 'Amount must be greater than zero';
+  if (!form.amount || Number(form.amount) <= 0)
+    return 'Amount must be greater than zero';
   if (!form.paymentMode) return 'Please select a payment mode';
   return null;
 }
@@ -67,13 +82,21 @@ export default function NewDonationPage() {
   // Success state
   const [successData, setSuccessData] = useState<{
     id: string;
+    receiptId: string;
     donorName: string;
     amount: number;
+    purpose: string;
+    paymentMode: string;
+    collectorName: string;
+    date: string;
   } | null>(null);
 
   // ── Handlers ─────────────────────────────────────────────────────
   const updateField = useCallback(
-    <K extends keyof DonationFormData>(field: K, value: DonationFormData[K]) => {
+    <K extends keyof DonationFormData>(
+      field: K,
+      value: DonationFormData[K]
+    ) => {
       setForm((prev) => ({ ...prev, [field]: value }));
       setValidationError(null);
     },
@@ -93,28 +116,37 @@ export default function NewDonationPage() {
 
       setSubmitting(true);
 
-      const res = await fetchApi<CreateDonationResponse>('/donations/create', {
-        method: 'POST',
-        body: {
-          donorName: form.donorName.trim(),
-          phone: form.phone.trim(),
-          amount: Number(form.amount),
-          purpose: form.purpose,
-          paymentMode: form.paymentMode,
-          upiRef: form.paymentMode === 'UPI' ? form.upiRef.trim() : '',
-          remarks: form.remarks.trim(),
+      const res = await fetchApi<CreateDonationResponse>(
+        '/donations/create',
+        {
+          method: 'POST',
+          body: {
+            donorName: form.donorName.trim(),
+            phone: form.phone.trim(),
+            amount: Number(form.amount),
+            purpose: form.purpose,
+            paymentMode: form.paymentMode,
+            upiRef: form.paymentMode === 'UPI' ? form.upiRef.trim() : '',
+            remarks: form.remarks.trim(),
+          },
+          showLoading: true,
+          loadingMessage: 'Recording donation...',
         },
-        showLoading: true,
-        loadingMessage: 'Recording donation...',
-      }, feedback);
+        feedback
+      );
 
       setSubmitting(false);
 
       if (res.success && res.data) {
         setSuccessData({
           id: res.data.id,
+          receiptId: res.data.receiptId,
           donorName: form.donorName.trim(),
           amount: Number(form.amount),
+          purpose: form.purpose,
+          paymentMode: form.paymentMode,
+          collectorName: res.data.collectorName,
+          date: res.data.createdAt,
         });
       }
     },
@@ -129,11 +161,58 @@ export default function NewDonationPage() {
 
   // ── Success State ────────────────────────────────────────────────
   if (successData) {
+    const verificationUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${successData.receiptId}`;
+
+    const handleDownloadPdf = async () => {
+      try {
+        await generateAndDownloadReceipt({
+          receiptId: successData.receiptId,
+          donorName: successData.donorName,
+          amount: successData.amount,
+          paymentMode: successData.paymentMode,
+          purpose: successData.purpose,
+          date: successData.date,
+          collectorName: successData.collectorName,
+        });
+        feedback.showSuccess('Receipt downloaded');
+      } catch (e) {
+        feedback.showError('Failed to generate PDF');
+      }
+    };
+
+    const handleWhatsAppShare = () => {
+      const dateStr = parseGPMSDate(successData.date).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+      const text = `\uD83D\uDE4F Thank you, ${successData.donorName}, for your generous contribution towards Ganesh Puja 2026!\n\n\uD83D\uDCB0 Amount: \u20B9${successData.amount.toLocaleString('en-IN')}\n\uD83E\uDDFE Receipt ID: ${successData.receiptId}\n\uD83D\uDCB3 Payment Mode: ${successData.paymentMode}\n\uD83C\uDFAF Purpose: ${successData.purpose}\n\uD83D\uDC64 Collected By: ${successData.collectorName}\n\uD83D\uDCC5 Date: ${dateStr}\n\n\uD83D\uDD0D Verify your official donation receipt:\n${verificationUrl}\n\nThank you for your support and contribution. \uD83D\uDE4F\n— Ganesh Puja Committee 2026, Near Kharsawan Police Station, Jharkhand.`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    };
+
+    const handleNativeShare = async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'GPMS Donation Receipt',
+            text: `Thank you for your donation of ₹${successData.amount.toLocaleString('en-IN')}. Receipt ID: ${successData.receiptId}`,
+            url: verificationUrl,
+          });
+        } catch (e) {
+          // User cancelled or failed
+        }
+      } else {
+        feedback.showError('Native sharing is not supported on this device');
+      }
+    };
+
     return (
       <div className="min-h-screen bg-slate-50 pb-20">
         <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
           <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Donation Recorded</h1>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Donation Recorded
+            </h1>
           </div>
         </header>
 
@@ -142,16 +221,50 @@ export default function NewDonationPage() {
             <CardContent className="pt-8 pb-8 text-center space-y-4">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
               <div>
-                <p className="text-sm text-green-700 font-medium mb-1">Donation ID</p>
-                <p className="text-lg font-bold text-green-900 font-mono">{successData.id}</p>
+                <p className="text-sm text-green-700 font-medium mb-1">
+                  Receipt ID
+                </p>
+                <p className="text-lg font-bold text-green-900 font-mono">
+                  {successData.receiptId}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-green-700 font-medium mb-1">{successData.donorName}</p>
+                <p className="text-sm text-green-700 font-medium mb-1">
+                  {successData.donorName}
+                </p>
                 <CurrencyDisplay
                   amount={successData.amount}
                   size="lg"
                   className="justify-center text-green-900"
                 />
+              </div>
+
+              <div className="pt-4 grid grid-cols-2 gap-3">
+                <Button
+                  onClick={handleDownloadPdf}
+                  className="w-full bg-slate-800 hover:bg-slate-900 text-white"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  PDF Receipt
+                </Button>
+                <Button
+                  onClick={handleWhatsAppShare}
+                  className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  WhatsApp
+                </Button>
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  onClick={handleNativeShare}
+                  className="w-full border-green-300 text-green-800 hover:bg-green-100"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  More Sharing Options
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -190,14 +303,15 @@ export default function NewDonationPage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Record Donation</h1>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            Record Donation
+          </h1>
         </div>
       </header>
 
       {/* Form */}
       <main className="max-w-3xl mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="space-y-5">
-
           {/* Validation Error Banner */}
           {validationError && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 font-medium">
@@ -207,7 +321,10 @@ export default function NewDonationPage() {
 
           {/* Donor Name */}
           <div>
-            <label htmlFor="donorName" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="donorName"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               Donor Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -224,8 +341,12 @@ export default function NewDonationPage() {
 
           {/* Phone */}
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-1.5">
-              Phone Number <span className="text-slate-400 text-xs">(optional)</span>
+            <label
+              htmlFor="phone"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
+              Phone Number{' '}
+              <span className="text-slate-400 text-xs">(optional)</span>
             </label>
             <input
               id="phone"
@@ -240,11 +361,16 @@ export default function NewDonationPage() {
 
           {/* Amount */}
           <div>
-            <label htmlFor="amount" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="amount"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               Amount <span className="text-red-500">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-lg">₹</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-lg">
+                ₹
+              </span>
               <input
                 id="amount"
                 type="text"
@@ -311,8 +437,12 @@ export default function NewDonationPage() {
           {/* UPI Reference — Conditional */}
           {form.paymentMode === 'UPI' && (
             <div>
-              <label htmlFor="upiRef" className="block text-sm font-medium text-slate-700 mb-1.5">
-                UPI Reference <span className="text-slate-400 text-xs">(optional)</span>
+              <label
+                htmlFor="upiRef"
+                className="block text-sm font-medium text-slate-700 mb-1.5"
+              >
+                UPI Reference{' '}
+                <span className="text-slate-400 text-xs">(optional)</span>
               </label>
               <input
                 id="upiRef"
@@ -328,7 +458,10 @@ export default function NewDonationPage() {
 
           {/* Remarks */}
           <div>
-            <label htmlFor="remarks" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="remarks"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               Remarks <span className="text-slate-400 text-xs">(optional)</span>
             </label>
             <textarea
