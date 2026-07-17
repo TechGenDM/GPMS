@@ -236,3 +236,40 @@ function validateSettings(data) {
 
   return { valid: true };
 }
+
+/**
+ * Validates a bill file upload.
+ *
+ * @param {Object} file - File payload { base64, mimeType, name }
+ * @returns {Object} Validation result.
+ */
+function validateBillFile(file) {
+  if (!file || !file.base64 || !file.mimeType || !file.name) {
+    return {
+      valid: false,
+      code: ERROR_CODES.VALIDATION_ERROR,
+      message: 'Invalid file payload',
+    };
+  }
+
+  var validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+  if (validTypes.indexOf(file.mimeType) === -1) {
+    return {
+      valid: false,
+      code: ERROR_CODES.INVALID_FILE_TYPE,
+      message: 'Invalid file type. Only PDF, JPG, and PNG are allowed.',
+    };
+  }
+
+  // Calculate approx size from base64 (string length * 3/4)
+  var approxSizeMB = (file.base64.length * 0.75) / (1024 * 1024);
+  if (approxSizeMB > 5) {
+    return {
+      valid: false,
+      code: ERROR_CODES.FILE_TOO_LARGE,
+      message: 'File is too large. Maximum size is 5MB.',
+    };
+  }
+
+  return { valid: true };
+}

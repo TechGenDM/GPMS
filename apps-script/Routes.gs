@@ -45,6 +45,7 @@ function getRoutes() {
     searchExpenses: ExpenseService.search,
     getRecentExpenses: ExpenseService.getRecentExpenses,
     verifyExpense: ExpenseService.verify,
+    getCategories: ExpenseService.getCategories,
 
     // --- Users / Auth ---
     authenticate: UserService.authenticate,

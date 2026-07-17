@@ -11,7 +11,55 @@
 
 var ExpenseService = {
   /**
-   * Creates a new expense record.
+   * Retrieves active expense categories.
+   *
+   * @param {Object} user - The authenticated User object.
+   * @param {Object} payload - Unused payload.
+   * @returns {ContentOutput} JSON response.
+   */
+  getCategories: function (user, payload) {
+    var sheet = getSheet(CONFIG.sheets.categories);
+    var data = sheet.getDataRange().getValues();
+    var categories = [];
+    
+    var catColIdx = -1;
+    var startRow = 0;
+    
+    // Find the header row and column
+    for (var r = 0; r < data.length; r++) {
+      for (var c = 0; c < data[r].length; c++) {
+        if (String(data[r][c]).trim().toLowerCase() === 'category') {
+          catColIdx = c;
+          startRow = r + 1;
+          break;
+        }
+      }
+      if (catColIdx !== -1) break;
+    }
+    
+    if (catColIdx !== -1) {
+      for (var i = startRow; i < data.length; i++) {
+        if (data[i][catColIdx]) {
+          var catName = String(data[i][catColIdx]).trim();
+          if (catName) {
+            categories.push(catName);
+          }
+        }
+      }
+    } else {
+      // Fallback
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][0]) {
+          categories.push(String(data[i][0]).trim());
+        }
+      }
+    }
+
+    return success('Categories retrieved', categories);
+  },
+
+  /**
+   * Records a new expense.
    *
    * @param {Object} user - The authenticated User object.
    * @param {Object} payload - Expense data.
@@ -26,27 +74,74 @@ var ExpenseService = {
 
     // 2. Generate ID
     var expenseId = ReceiptService.generateExpenseId();
-    var date = now();
+    var timestamp = now();
+    
+    var finalBillLink = payload.billLink || '';
+    var fileId = null;
+
+    if (payload.billFile && payload.billFile.base64) {
+      var fileValidation = validateBillFile(payload.billFile);
+      if (!fileValidation.valid) {
+        return error(fileValidation.code, fileValidation.message);
+      }
+      
+      // Get folder ID from settings
+      var settingsSheet = getSheet(CONFIG.sheets.settings);
+      var row = findRow(settingsSheet, 1, 'Expense Bills Folder ID');
+      if (row === -1) {
+        return error(ERROR_CODES.INTERNAL_ERROR, 'Expense Bills Folder ID is not configured in Settings.');
+      }
+      var folderId = settingsSheet.getRange(row, 2).getValue();
+      
+      try {
+        var folder = DriveApp.getFolderById(folderId);
+        
+        // Convert base64 to blob. Remove data URI prefix if present.
+        var base64Data = payload.billFile.base64;
+        if (base64Data.indexOf('base64,') !== -1) {
+          base64Data = base64Data.split('base64,')[1];
+        }
+        
+        var blob = Utilities.newBlob(Utilities.base64Decode(base64Data), payload.billFile.mimeType, expenseId + '_' + payload.billFile.name);
+        
+        var file = folder.createFile(blob);
+        finalBillLink = file.getUrl();
+        fileId = file.getId();
+      } catch (e) {
+        return error(ERROR_CODES.UPLOAD_FAILED, 'Failed to upload bill file: ' + e.message);
+      }
+    }
 
     // 3. Save to sheet (11 columns: A–K)
     var sheet = getSheet(CONFIG.sheets.expenses);
-    safeAppendRow(
-      sheet,
-      [
-        expenseId, // A: Expense ID
-        payload.category, // B: Category
-        payload.description, // C: Description
-        payload.vendor || '', // D: Vendor
-        payload.amount, // E: Amount
-        user.id, // F: Paid By ID
-        user.fullName, // G: Paid By Name
-        payload.billLink || '', // H: Bill Link
-        CONFIG.status.active, // I: Status
-        date, // J: Created At
-        '', // K: Updated At
-      ],
-      0
-    ); // 0 is the index for column A (Expense ID)
+    try {
+      safeAppendRow(
+        sheet,
+        [
+          expenseId, // A: Expense ID
+          payload.category, // B: Category
+          payload.description, // C: Description
+          payload.vendor || '', // D: Vendor
+          payload.amount, // E: Amount
+          user.id, // F: Paid By ID
+          user.fullName, // G: Paid By Name
+          finalBillLink, // H: Bill Link
+          CONFIG.status.active, // I: Status
+          timestamp, // J: CreatedAt
+          timestamp, // K: UpdatedAt
+        ],
+        0
+      );
+    } catch (e) {
+      if (fileId) {
+        try {
+          DriveApp.getFileById(fileId).setTrashed(true);
+        } catch (delErr) {
+          // Ignore
+        }
+      }
+      return error(ERROR_CODES.INTERNAL_ERROR, 'Failed to save expense: ' + e.message);
+    } // 0 is the index for column A (Expense ID)
 
     // 4. Audit log
     AuditService.log({
@@ -69,7 +164,7 @@ var ExpenseService = {
       vendor: payload.vendor || '',
       amount: payload.amount,
       paidBy: user.fullName,
-      date: date,
+      date: timestamp,
       billLink: payload.billLink || '',
     });
   },
@@ -238,6 +333,7 @@ var ExpenseService = {
       paidByName: rawExpense.paidByName, // Safe to show name
       date: rawExpense.createdAt,
       status: rawExpense.status,
+      hasBill: !!rawExpense.billLink,
     };
 
     return success('Expense verified successfully', safeData);
