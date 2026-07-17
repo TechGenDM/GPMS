@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Users,
   Activity,
+  FileText,
 } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { useFeedback } from '@/components/ui/Feedback';
@@ -141,6 +142,16 @@ export default function DashboardPage() {
                 </Button>
               </>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/records')}
+              className="text-slate-600 hover:text-slate-900 flex px-2 sm:px-3"
+              title="Records"
+            >
+              <FileText className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Records</span>
+            </Button>
             <Button
               variant="ghost"
               size="sm"

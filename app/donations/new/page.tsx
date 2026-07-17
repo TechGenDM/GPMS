@@ -18,6 +18,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 import { Button } from '@/components/ui/button';
 import { generateAndDownloadReceipt } from '@/lib/pdfGenerator';
+import { shareToWhatsApp, shareNative } from '@/lib/shareUtils';
 
 // ── Constants matching backend expectations ──────────────────────────
 const PURPOSES = [
@@ -181,27 +182,28 @@ export default function NewDonationPage() {
     };
 
     const handleWhatsAppShare = () => {
-      const dateStr = parseGPMSDate(successData.date).toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
+      shareToWhatsApp({
+        receiptId: successData.receiptId,
+        donorName: successData.donorName,
+        amount: successData.amount,
+        paymentMode: successData.paymentMode,
+        purpose: successData.purpose,
+        collectorName: successData.collectorName,
+        date: successData.date,
       });
-      const text = `\uD83D\uDE4F Thank you, ${successData.donorName}, for your generous contribution towards Ganesh Puja 2026!\n\n\uD83D\uDCB0 Amount: \u20B9${successData.amount.toLocaleString('en-IN')}\n\uD83E\uDDFE Receipt ID: ${successData.receiptId}\n\uD83D\uDCB3 Payment Mode: ${successData.paymentMode}\n\uD83C\uDFAF Purpose: ${successData.purpose}\n\uD83D\uDC64 Collected By: ${successData.collectorName}\n\uD83D\uDCC5 Date: ${dateStr}\n\n\uD83D\uDD0D Verify your official donation receipt:\n${verificationUrl}\n\nThank you for your support and contribution. \uD83D\uDE4F\n— Ganesh Puja Committee 2026, Near Kharsawan Police Station, Jharkhand.`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
     const handleNativeShare = async () => {
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: 'GPMS Donation Receipt',
-            text: `Thank you for your donation of ₹${successData.amount.toLocaleString('en-IN')}. Receipt ID: ${successData.receiptId}`,
-            url: verificationUrl,
-          });
-        } catch (e) {
-          // User cancelled or failed
-        }
-      } else {
+      const shared = await shareNative({
+        receiptId: successData.receiptId,
+        donorName: successData.donorName,
+        amount: successData.amount,
+        paymentMode: successData.paymentMode,
+        purpose: successData.purpose,
+        collectorName: successData.collectorName,
+        date: successData.date,
+      });
+      if (!shared && typeof navigator.share === 'undefined') {
         feedback.showError('Native sharing is not supported on this device');
       }
     };
