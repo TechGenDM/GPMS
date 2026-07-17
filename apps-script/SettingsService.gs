@@ -12,10 +12,15 @@ var SettingsService = {
   /**
    * Retrieves a single setting value by key.
    *
+   * @param {Object} user - The authenticated User object.
    * @param {Object} payload - Must include { key: "settingName" }.
    * @returns {ContentOutput} JSON response with setting value.
    */
-  get: function (payload) {
+  get: function (user, payload) {
+    if (!UserService.authorize(user, [CONFIG.roles.superadmin])) {
+      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to view settings');
+    }
+
     if (!payload || !payload.key) {
       return error(ERROR_CODES.MISSING_FIELD, 'Setting key is required');
     }
@@ -42,10 +47,15 @@ var SettingsService = {
    * Updates a setting value by key.
    * Creates the setting if it doesn't exist.
    *
-   * @param {Object} payload - Must include { key, value, userId, userName }.
+   * @param {Object} user - The authenticated User object.
+   * @param {Object} payload - Must include { key, value }.
    * @returns {ContentOutput} JSON response.
    */
-  update: function (payload) {
+  update: function (user, payload) {
+    if (!UserService.authorize(user, [CONFIG.roles.superadmin])) {
+      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to update settings');
+    }
+
     if (!payload || !payload.key) {
       return error(ERROR_CODES.MISSING_FIELD, 'Setting key is required');
     }
@@ -64,20 +74,20 @@ var SettingsService = {
         payload.key,
         payload.value,
         now(),
-        payload.userName || 'System',
+        user.fullName || 'System',
       ]);
     } else {
       // Update existing setting
       oldValue = sheet.getRange(row, 2).getValue();
       sheet.getRange(row, 2).setValue(payload.value);
       sheet.getRange(row, 3).setValue(now());
-      sheet.getRange(row, 4).setValue(payload.userName || 'System');
+      sheet.getRange(row, 4).setValue(user.fullName || 'System');
     }
 
     // Audit log
     AuditService.log({
-      userId: payload.userId || '',
-      userName: payload.userName || 'System',
+      userId: user.id || '',
+      userName: user.fullName || 'System',
       action: 'updateSetting',
       module: 'Settings',
       recordId: payload.key,
@@ -94,10 +104,14 @@ var SettingsService = {
   /**
    * Retrieves all settings as a key-value map.
    *
+   * @param {Object} user - The authenticated User object.
    * @param {Object} [payload] - Not used, but accepted for consistency.
    * @returns {ContentOutput} JSON response with all settings.
    */
-  getAll: function (payload) {
+  getAll: function (user, payload) {
+    if (!UserService.authorize(user, [CONFIG.roles.superadmin])) {
+      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to view settings');
+    }
     var sheet = getSheet(CONFIG.sheets.settings);
     var data = sheet.getDataRange().getValues();
     var settings = {};

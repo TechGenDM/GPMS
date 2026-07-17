@@ -22,6 +22,16 @@ export const proxy = auth((req) => {
     return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
+  // Role-based protection
+  if (isLoggedIn) {
+    const role = req.auth?.user?.role;
+    const isRestrictedRoute = path.startsWith('/users') || path.startsWith('/settings') || path.startsWith('/audit');
+    
+    if (role === 'Volunteer' && isRestrictedRoute) {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+  }
+
   return NextResponse.next();
 });
 

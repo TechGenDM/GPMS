@@ -127,10 +127,19 @@ var UserService = {
    * Creates a new user.
    * Protected operation — typically called by Admin panel.
    *
+   * @param {Object} user - The authenticated User object.
    * @param {Object} payload - User data (fullName, email, phone, role, status, adminUserId).
    * @returns {ContentOutput} JSON response.
    */
-  createUser: function (payload) {
+  createUser: function (user, payload) {
+    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
+      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to create users');
+    }
+
+    // Force Volunteer role for Admin-created users to prevent privilege escalation
+    if (user.role === CONFIG.roles.admin) {
+      payload.role = CONFIG.roles.volunteer;
+    }
     var validation = validateUser(payload);
     if (!validation.valid) {
       return error(validation.code, validation.message);
@@ -157,8 +166,8 @@ var UserService = {
     ]);
 
     AuditService.log({
-      userId: payload.adminUserId || 'SYSTEM',
-      userName: payload.adminUserName || 'System',
+      userId: user.id || 'SYSTEM',
+      userName: user.fullName || 'System',
       action: 'createUser',
       module: 'Users',
       recordId: userId,
@@ -171,10 +180,15 @@ var UserService = {
   /**
    * Updates an existing user.
    *
+   * @param {Object} user - The authenticated User object.
    * @param {Object} payload - User data (userId, fullName, phone, role, adminUserId).
    * @returns {ContentOutput} JSON response.
    */
-  updateUser: function (payload) {
+  updateUser: function (user, payload) {
+    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
+      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to update users');
+    }
+
     if (!payload || !payload.userId) {
       return error(ERROR_CODES.MISSING_FIELD, 'User ID is required');
     }
@@ -185,6 +199,17 @@ var UserService = {
     }
 
     var sheet = getSheet(CONFIG.sheets.users);
+    var targetUserRole = sheet.getRange(row, 5).getValue();
+
+    // Prevent Admin from changing roles
+    if (user.role === CONFIG.roles.admin) {
+      delete payload.role; // Strip any role modification attempt
+    }
+
+    // Prevent SuperAdmin from changing their own role
+    if (user.role === CONFIG.roles.superadmin && payload.userId === user.id && payload.role && payload.role !== targetUserRole) {
+      return error(ERROR_CODES.FORBIDDEN, 'You cannot change your own role');
+    }
 
     // We only update specific fields, not email or status (status is managed via disable)
     if (payload.fullName) sheet.getRange(row, 2).setValue(payload.fullName);
@@ -192,14 +217,14 @@ var UserService = {
     if (payload.role) sheet.getRange(row, 5).setValue(payload.role);
 
     AuditService.log({
-      userId: payload.adminUserId || 'SYSTEM',
-      userName: payload.adminUserName || 'System',
+      userId: user.id || 'SYSTEM',
+      userName: user.fullName || 'System',
       action: 'updateUser',
       module: 'Users',
       recordId: payload.userId,
       newValue: JSON.stringify({
         fullName: payload.fullName,
-        role: payload.role,
+        role: payload.role || targetUserRole,
       }),
     });
 
@@ -209,10 +234,15 @@ var UserService = {
   /**
    * Soft deletes a user by changing their status to Disabled.
    *
+   * @param {Object} user - The authenticated User object.
    * @param {Object} payload - Must include { userId, adminUserId }.
    * @returns {ContentOutput} JSON response.
    */
-  disableUser: function (payload) {
+  disableUser: function (user, payload) {
+    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
+      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to disable users');
+    }
+
     if (!payload || !payload.userId) {
       return error(ERROR_CODES.MISSING_FIELD, 'User ID is required');
     }
@@ -223,17 +253,32 @@ var UserService = {
     }
 
     var sheet = getSheet(CONFIG.sheets.users);
+    var targetUserRole = sheet.getRange(row, 5).getValue();
 
-    // Protection: Cannot disable self (optional but good practice)
-    if (payload.userId === payload.adminUserId) {
+    // Protection: Cannot disable self (safeguard for SuperAdmin and Admin)
+    if (payload.userId === user.id) {
       return error(ERROR_CODES.FORBIDDEN, 'You cannot disable yourself');
+    }
+
+    // Protection: The last active SuperAdmin cannot be disabled
+    if (targetUserRole === CONFIG.roles.superadmin) {
+      var allData = sheet.getDataRange().getValues();
+      var activeSuperAdmins = 0;
+      for (var i = 1; i < allData.length; i++) {
+        if (allData[i][4] === CONFIG.roles.superadmin && allData[i][5] === CONFIG.status.active) {
+          activeSuperAdmins++;
+        }
+      }
+      if (activeSuperAdmins <= 1) {
+        return error(ERROR_CODES.FORBIDDEN, 'Cannot disable the last active SuperAdmin');
+      }
     }
 
     sheet.getRange(row, 6).setValue('Disabled'); // Using hardcoded or config string, though config.status.cancelled might apply. Let's stick to 'Disabled' as per requirements.
 
     AuditService.log({
-      userId: payload.adminUserId || 'SYSTEM',
-      userName: payload.adminUserName || 'System',
+      userId: user.id || 'SYSTEM',
+      userName: user.fullName || 'System',
       action: 'disableUser',
       module: 'Users',
       recordId: payload.userId,
@@ -245,9 +290,13 @@ var UserService = {
   /**
    * Retrieves all users.
    *
+   * @param {Object} user - The authenticated User object.
    * @returns {ContentOutput} JSON response with array of User objects.
    */
-  getAllUsers: function () {
+  getAllUsers: function (user) {
+    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
+      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to view users');
+    }
     var sheet = getSheet(CONFIG.sheets.users);
     var data = sheet.getDataRange().getValues();
     var users = [];

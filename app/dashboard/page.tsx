@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import {
   LogOut,
   ArrowUpRight,
@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Calendar,
   AlertCircle,
+  Users,
 } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { useFeedback } from '@/components/ui/Feedback';
@@ -42,10 +43,14 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const feedback = useFeedback();
+
+  const userRole = session?.user?.role;
+  const canManageUsers = userRole === 'Admin' || userRole === 'SuperAdmin';
 
   const loadDashboard = useCallback(
     async (isRefresh = false) => {
@@ -58,20 +63,18 @@ export default function DashboardPage() {
           {
             method: 'POST',
             showLoading: !isRefresh,
-            loadingMessage: 'Loading dashboard...',
-          },
-          isRefresh ? undefined : feedback
+          }
         );
 
         if (res.success && res.data) {
           setData(res.data);
         } else {
-          setError(res.message || 'Failed to load dashboard');
+          setError(res.message || 'Failed to load dashboard data');
         }
-      } catch {
-        setError('Network error — please check your connection');
+      } catch (err) {
+        setError('Error connecting to server. Please try again.');
       } finally {
-        setRefreshing(false);
+        if (isRefresh) setRefreshing(false);
       }
     },
     [feedback]
@@ -113,6 +116,17 @@ export default function DashboardPage() {
             GPMS Dashboard
           </h1>
           <div className="flex items-center gap-1">
+            {canManageUsers && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/users')}
+                className="text-slate-600 hover:text-slate-900 hidden sm:flex"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Users
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"

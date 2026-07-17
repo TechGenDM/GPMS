@@ -45,6 +45,7 @@ const CONFIG = {
 
   // Roles
   roles: {
+    superadmin: 'SuperAdmin',
     admin: 'Admin',
     volunteer: 'Volunteer',
     viewer: 'Viewer',

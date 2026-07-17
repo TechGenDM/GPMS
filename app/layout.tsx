@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 };
 
 import { FeedbackProvider } from '@/components/ui/Feedback';
+import { SessionProvider } from 'next-auth/react';
 
 export default function RootLayout({
   children,
@@ -31,7 +32,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <FeedbackProvider>{children}</FeedbackProvider>
+        <SessionProvider>
+          <FeedbackProvider>{children}</FeedbackProvider>
+        </SessionProvider>
       </body>
     </html>
   );

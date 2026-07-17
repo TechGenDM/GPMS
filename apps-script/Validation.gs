@@ -174,11 +174,11 @@ function validateUser(data) {
 
   // Validate role against CONFIG
   var validRoles = Object.values(CONFIG.roles);
-  if (validRoles.indexOf(data.role) === -1) {
+  if (validRoles.indexOf(String(data.role)) === -1) {
     return {
       valid: false,
       code: ERROR_CODES.INVALID_ROLE,
-      message: 'Invalid role specified',
+      message: 'Invalid role specified: ' + data.role + ' (Valid: ' + validRoles.join(',') + ')',
     };
   }
 
