@@ -19,6 +19,19 @@ function fixCurrencyFormatting() {
       message: 'Currency formatted to INR',
     });
   } catch (e) {
-    return JSON.stringify({ success: false, error: e.message });
+    Logger.log(e);
+  }
+}
+
+/**
+ * Run this function to authorize Google Drive permissions
+ */
+function authorizeDrive() {
+  try {
+    // This simple call forces Google to ask for Drive permissions
+    DriveApp.getRootFolder();
+    Logger.log("Drive authorized successfully!");
+  } catch (e) {
+    Logger.log("Error: " + e.message);
   }
 }
