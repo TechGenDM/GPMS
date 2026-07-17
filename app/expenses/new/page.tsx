@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -10,6 +10,9 @@ import {
   Download,
   Share2,
   MessageCircle,
+  Upload,
+  X,
+  RefreshCw,
 } from 'lucide-react';
 import { parseGPMSDate } from '@/lib/utils';
 import { fetchApi } from '@/lib/api';
@@ -19,22 +22,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 
-const EXPENSE_CATEGORIES = [
-  'Decoration',
-  'Prasad',
-  'Logistics',
-  'Lighting',
-  'Idol',
-  'Music',
-  'Miscellaneous',
-];
-
 interface ExpenseFormData {
   category: string;
   description: string;
   amount: string;
   vendor: string;
-  billLink: string;
+  billFile: { base64: string; mimeType: string; name: string } | null;
 }
 
 const INITIAL_FORM: ExpenseFormData = {
@@ -42,7 +35,7 @@ const INITIAL_FORM: ExpenseFormData = {
   description: '',
   amount: '',
   vendor: '',
-  billLink: '',
+  billFile: null,
 };
 
 export default function RecordExpense() {
@@ -50,6 +43,11 @@ export default function RecordExpense() {
   const [form, setForm] = useState<ExpenseFormData>(INITIAL_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Store full success data for the receipt
   const [successData, setSuccessData] = useState<{
@@ -65,6 +63,39 @@ export default function RecordExpense() {
 
   const { showLoading, showSuccess, showError, clear } = useFeedback();
 
+  const fetchCategories = useCallback(() => {
+    let ignore = false;
+    const load = async () => {
+      setIsLoadingCategories(true);
+      setCategoriesError(null);
+      try {
+        const result = await fetchApi<string[]>('/categories', { method: 'GET' });
+        if (!ignore) {
+          if (result.success && result.data) {
+            setCategories(result.data);
+          } else {
+            setCategoriesError(result.message || 'Failed to load categories');
+          }
+        }
+      } catch (err) {
+        if (!ignore) {
+          setCategoriesError('Failed to load categories');
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoadingCategories(false);
+        }
+      }
+    };
+    load();
+    return () => { ignore = true; };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = fetchCategories();
+    return cleanup;
+  }, [fetchCategories]);
+
   const updateField = useCallback(
     <K extends keyof ExpenseFormData>(field: K, value: ExpenseFormData[K]) => {
       setForm((prev) => ({ ...prev, [field]: value }));
@@ -72,6 +103,43 @@ export default function RecordExpense() {
     },
     []
   );
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setValidationError('File is too large. Maximum size is 5MB.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // Validate type
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      setValidationError('Invalid file type. Only PDF, JPG, and PNG are allowed.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setValidationError(null);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      updateField('billFile', {
+        base64: base64String,
+        mimeType: file.type,
+        name: file.name,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeFile = () => {
+    updateField('billFile', null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const validateForm = (): string | null => {
     if (!form.category) return 'Please select an expense category';
@@ -116,7 +184,7 @@ export default function RecordExpense() {
             description: form.description.trim(),
             amount: Number(form.amount),
             vendor: form.vendor.trim() || '',
-            billLink: form.billLink.trim() || '',
+            billFile: form.billFile,
           },
           showLoading: true,
           loadingMessage: 'Recording expense...',
@@ -357,22 +425,42 @@ export default function RecordExpense() {
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Category <span className="text-red-500">*</span>
             </label>
-            <div className="flex flex-wrap gap-2">
-              {EXPENSE_CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => updateField('category', cat)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                    form.category === cat
-                      ? 'bg-red-600 text-white shadow-md'
-                      : 'bg-white text-slate-600 border border-slate-300 hover:border-red-300 hover:bg-red-50'
-                  }`}
+            
+            {isLoadingCategories ? (
+              <div className="flex items-center space-x-2 text-slate-500 py-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Loading categories...</span>
+              </div>
+            ) : categoriesError ? (
+              <div className="flex items-center space-x-2 text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-100">
+                <span className="text-sm">{categoriesError}</span>
+                <button 
+                  type="button" 
+                  onClick={fetchCategories}
+                  className="flex items-center ml-2 px-2 py-1 bg-white border border-red-200 rounded text-xs hover:bg-red-50 transition-colors"
                 >
-                  {cat}
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Retry
                 </button>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => updateField('category', cat)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      form.category === cat
+                        ? 'bg-red-600 text-white shadow-md'
+                        : 'bg-white text-slate-600 border border-slate-300 hover:border-red-300 hover:bg-red-50'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Description */}
@@ -413,31 +501,62 @@ export default function RecordExpense() {
             />
           </div>
 
-          {/* Bill Link */}
+          {/* Bill Upload */}
           <div>
             <label
-              htmlFor="billLink"
+              htmlFor="billFile"
               className="block text-sm font-medium text-slate-700 mb-1.5"
             >
-              Bill/Receipt Link{' '}
-              <span className="text-slate-400 text-xs">(optional)</span>
+              Upload Bill <span className="text-slate-400 text-xs">(optional, PDF/JPG/PNG up to 5MB)</span>
             </label>
-            <input
-              id="billLink"
-              type="url"
-              autoComplete="off"
-              placeholder="https://drive.google.com/..."
-              value={form.billLink}
-              onChange={(e) => updateField('billLink', e.target.value)}
-              className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-shadow"
-            />
+            
+            {form.billFile ? (
+              <div className="flex items-center justify-between p-3 border border-slate-200 bg-white rounded-xl shadow-sm">
+                <div className="flex items-center truncate mr-3">
+                  <div className="p-2 bg-red-50 rounded-lg text-red-600 mr-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div className="truncate">
+                    <p className="text-sm font-medium text-slate-700 truncate">{form.billFile.name}</p>
+                    <p className="text-xs text-slate-400">Ready to upload</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <input
+                  ref={fileInputRef}
+                  id="billFile"
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png,image/jpg"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                  <p className="text-sm font-medium text-slate-700">Tap to select a file</p>
+                  <p className="text-xs text-slate-500 mt-1">PDF, JPG, PNG (Max 5MB)</p>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}
           <div className="pt-6">
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoadingCategories}
               className="w-full h-12 text-base font-semibold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg transition-all"
             >
               {isSubmitting ? (

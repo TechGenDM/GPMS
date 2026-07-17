@@ -25,6 +25,7 @@ export default function LoginPage() {
                 await signIn('google', { redirectTo: '/dashboard' });
               }}
             >
+              Don&apos;t have an account?{' '}
               <button
                 type="submit"
                 className="w-full flex items-center justify-center gap-3 bg-white text-slate-700 font-semibold py-3 px-4 border border-slate-300 rounded-xl hover:bg-slate-50 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all active:scale-[0.98]"

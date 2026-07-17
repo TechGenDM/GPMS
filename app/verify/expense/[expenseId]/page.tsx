@@ -15,6 +15,7 @@ interface VerifyExpenseResponse {
   paidByName: string;
   date: string;
   status: string;
+  hasBill: boolean;
 }
 
 export default function VerifyExpensePage() {
@@ -155,6 +156,12 @@ export default function VerifyExpensePage() {
                     month: 'short',
                     year: 'numeric',
                   })}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 py-2">
+                <span className="text-gray-500 text-sm">Bill Attached</span>
+                <span className="col-span-2 font-medium text-right text-gray-900">
+                  {data.hasBill ? 'Yes' : 'No'}
                 </span>
               </div>
             </div>
