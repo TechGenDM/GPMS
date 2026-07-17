@@ -22,12 +22,14 @@ var ReceiptService = {
    * Generates a unique Receipt ID.
    * Protected by LockService to prevent race conditions.
    *
+   * @param {boolean} [skipLock] - If true, skips acquiring the lock.
    * @returns {string} Receipt ID (e.g., RCT-20250714-00042).
    */
-  generateReceiptId: function () {
+  generateReceiptId: function (skipLock) {
     return ReceiptService._generateId(
       'receiptCounter',
-      CONFIG.prefixes.receipt
+      CONFIG.prefixes.receipt,
+      skipLock
     );
   },
 
@@ -35,12 +37,14 @@ var ReceiptService = {
    * Generates a unique Donation ID.
    * Protected by LockService to prevent race conditions.
    *
+   * @param {boolean} [skipLock] - If true, skips acquiring the lock.
    * @returns {string} Donation ID (e.g., DON-20250714-00042).
    */
-  generateDonationId: function () {
+  generateDonationId: function (skipLock) {
     return ReceiptService._generateId(
       'donationCounter',
-      CONFIG.prefixes.donation
+      CONFIG.prefixes.donation,
+      skipLock
     );
   },
 
@@ -48,12 +52,14 @@ var ReceiptService = {
    * Generates a unique Expense ID.
    * Protected by LockService to prevent race conditions.
    *
+   * @param {boolean} [skipLock] - If true, skips acquiring the lock.
    * @returns {string} Expense ID (e.g., EXP-20250714-00015).
    */
-  generateExpenseId: function () {
+  generateExpenseId: function (skipLock) {
     return ReceiptService._generateId(
       'expenseCounter',
-      CONFIG.prefixes.expense
+      CONFIG.prefixes.expense,
+      skipLock
     );
   },
 
@@ -92,38 +98,42 @@ var ReceiptService = {
    * @returns {string} Generated ID.
    * @private
    */
-  _generateId: function (counterKey, prefix) {
-    var lock = LockService.getScriptLock();
-
-    try {
-      // Wait up to 10 seconds to acquire lock
-      lock.waitLock(10000);
-    } catch (e) {
-      throw new Error(
-        'Could not acquire lock for ID generation. Please try again.'
-      );
+  _generateId: function (counterKey, prefix, skipLock) {
+    if (skipLock) {
+      return ReceiptService._generateIdInternal(counterKey, prefix);
     }
-
+    var lock = LockService.getScriptLock();
     try {
-      var sheet = getSheet(CONFIG.sheets.metadata);
-      var row = findRow(sheet, 1, counterKey);
-      var counter = 0;
-
-      if (row === -1) {
-        // Counter doesn't exist yet — create it
-        counter = 1;
-        sheet.appendRow([counterKey, counter]);
-      } else {
-        // Read, increment, save
-        counter = Number(sheet.getRange(row, 2).getValue()) + 1;
-        sheet.getRange(row, 2).setValue(counter);
-      }
-
-      SpreadsheetApp.flush(); // Force write before releasing lock
-
-      return generateID(prefix, counter);
+      lock.waitLock(10000);
+      return ReceiptService._generateIdInternal(counterKey, prefix);
+    } catch (e) {
+      throw new Error('Could not acquire lock for ID generation. Please try again.');
     } finally {
       lock.releaseLock();
     }
+  },
+
+  /**
+   * Actual ID generation logic without acquiring a lock.
+   * Assumes the caller has already acquired the lock.
+   */
+  _generateIdInternal: function (counterKey, prefix) {
+    var sheet = getSheet(CONFIG.sheets.metadata);
+    var row = findRow(sheet, 1, counterKey);
+    var counter = 0;
+
+    if (row === -1) {
+      // Counter doesn't exist yet — create it
+      counter = 1;
+      sheet.appendRow([counterKey, counter]);
+    } else {
+      // Read, increment, save
+      counter = Number(sheet.getRange(row, 2).getValue()) + 1;
+      sheet.getRange(row, 2).setValue(counter);
+    }
+
+    SpreadsheetApp.flush(); // Force write
+
+    return generateID(prefix, counter);
   },
 };

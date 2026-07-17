@@ -36,11 +36,11 @@ function validateDonation(data) {
     };
   }
 
-  if (!data.amount || isNaN(Number(data.amount)) || Number(data.amount) <= 0) {
+  if (!data.amount || isNaN(Number(data.amount)) || Number(data.amount) <= 0 || Number(data.amount) > 9999999) {
     return {
       valid: false,
       code: ERROR_CODES.INVALID_AMOUNT,
-      message: 'Amount must be greater than zero',
+      message: 'Amount must be a valid number between 1 and 9,999,999',
     };
   }
 
@@ -86,11 +86,11 @@ function validateExpense(data) {
     };
   }
 
-  if (!data.amount || isNaN(Number(data.amount)) || Number(data.amount) <= 0) {
+  if (!data.amount || isNaN(Number(data.amount)) || Number(data.amount) <= 0 || Number(data.amount) > 9999999) {
     return {
       valid: false,
       code: ERROR_CODES.INVALID_AMOUNT,
-      message: 'Amount must be greater than zero',
+      message: 'Amount must be a valid number between 1 and 9,999,999',
     };
   }
 

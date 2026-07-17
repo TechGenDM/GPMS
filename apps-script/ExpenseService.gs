@@ -72,10 +72,19 @@ var ExpenseService = {
       return error(validation.code, validation.message);
     }
 
-    // 2. Generate ID
-    var expenseId = ReceiptService.generateExpenseId();
-    var timestamp = now();
-    
+    var transactionId = payload.transactionId;
+    if (!transactionId) return error(ERROR_CODES.MISSING_FIELD, 'Transaction ID is required for idempotency');
+
+    var sheet = getSheet(CONFIG.sheets.expenses);
+
+    // 1. Initial dirty read for idempotency (fast path)
+    var existingRow = findRow(sheet, 12, transactionId); // Column 12 (L)
+    if (existingRow !== -1) {
+      var currentData = sheet.getRange(existingRow, 1, 1, 12).getValues()[0];
+      return success('Expense recorded (idempotent)', ExpenseService._mapExpense(currentData));
+    }
+
+    // 2. Upload Bill File (Slow operation, NO LOCK)
     var finalBillLink = payload.billLink || '';
     var fileId = null;
 
@@ -85,7 +94,6 @@ var ExpenseService = {
         return error(fileValidation.code, fileValidation.message);
       }
       
-      // Get folder ID from settings
       var settingsSheet = getSheet(CONFIG.sheets.settings);
       var row = findRow(settingsSheet, 1, 'Expense Bills Folder ID');
       if (row === -1) {
@@ -96,14 +104,13 @@ var ExpenseService = {
       try {
         var folder = DriveApp.getFolderById(folderId);
         
-        // Convert base64 to blob. Remove data URI prefix if present.
         var base64Data = payload.billFile.base64;
         if (base64Data.indexOf('base64,') !== -1) {
           base64Data = base64Data.split('base64,')[1];
         }
         
-        var blob = Utilities.newBlob(Utilities.base64Decode(base64Data), payload.billFile.mimeType, expenseId + '_' + payload.billFile.name);
-        
+        // Generate a temporary name (will rename if needed)
+        var blob = Utilities.newBlob(Utilities.base64Decode(base64Data), payload.billFile.mimeType, 'TEMP_' + payload.billFile.name);
         var file = folder.createFile(blob);
         finalBillLink = file.getUrl();
         fileId = file.getId();
@@ -112,9 +119,30 @@ var ExpenseService = {
       }
     }
 
-    // 3. Save to sheet (11 columns: A–K)
-    var sheet = getSheet(CONFIG.sheets.expenses);
+    // 3. The Critical Transaction (Locked)
+    var lock = LockService.getScriptLock();
     try {
+      lock.waitLock(15000);
+      
+      // Double check idempotency under lock
+      existingRow = findRow(sheet, 12, transactionId);
+      if (existingRow !== -1) {
+        if (fileId) {
+          try { DriveApp.getFileById(fileId).setTrashed(true); } catch(delErr){}
+        }
+        var currentData = sheet.getRange(existingRow, 1, 1, 12).getValues()[0];
+        return success('Expense recorded (idempotent)', ExpenseService._mapExpense(currentData));
+      }
+
+      // Generate ID inside lock
+      var expenseId = ReceiptService.generateExpenseId(true);
+      var timestamp = now();
+      
+      // Rename file with actual expenseId now that we have it
+      if (fileId) {
+         try { DriveApp.getFileById(fileId).setName(expenseId + '_' + payload.billFile.name); } catch(renErr){}
+      }
+
       safeAppendRow(
         sheet,
         [
@@ -129,19 +157,20 @@ var ExpenseService = {
           CONFIG.status.active, // I: Status
           timestamp, // J: CreatedAt
           timestamp, // K: UpdatedAt
+          transactionId, // L: Transaction ID
         ],
         0
       );
+      
+      SpreadsheetApp.flush();
     } catch (e) {
       if (fileId) {
-        try {
-          DriveApp.getFileById(fileId).setTrashed(true);
-        } catch (delErr) {
-          // Ignore
-        }
+        try { DriveApp.getFileById(fileId).setTrashed(true); } catch (delErr) {}
       }
       return error(ERROR_CODES.INTERNAL_ERROR, 'Failed to save expense: ' + e.message);
-    } // 0 is the index for column A (Expense ID)
+    } finally {
+      lock.releaseLock();
+    }
 
     // 4. Audit log
     AuditService.log({

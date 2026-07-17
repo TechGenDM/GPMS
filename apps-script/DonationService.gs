@@ -40,33 +40,62 @@ var DonationService = {
       return error(validation.code, validation.message);
     }
 
-    // 2. Generate IDs
-    var donationId = ReceiptService.generateDonationId();
-    var receiptId = ReceiptService.generateReceiptId();
-    var date = now();
+    var transactionId = payload.transactionId;
+    if (!transactionId) {
+      return error(ERROR_CODES.MISSING_FIELD, 'Transaction ID is required for idempotency');
+    }
 
-    // 3. Save to sheet (14 columns: A–N)
-    var sheet = getSheet(CONFIG.sheets.donations);
-    safeAppendRow(
-      sheet,
-      [
-        donationId, // A: Donation ID
-        receiptId, // B: Receipt ID
-        payload.donorName, // C: Donor Name
-        payload.phone || '', // D: Phone
-        payload.amount, // E: Amount
-        payload.paymentMode, // F: Payment Mode
-        payload.upiRef || '', // G: UPI Ref
-        user.id, // H: Collector ID (authenticated user)
-        user.fullName, // I: Collector Name (authenticated user)
-        payload.purpose || '', // J: Purpose
-        payload.remarks || '', // K: Remarks
-        CONFIG.status.active, // L: Status
-        date, // M: Created At
-        '', // N: Updated At
-      ],
-      0
-    ); // 0 is the index for column A (Donation ID)
+    var lock = LockService.getScriptLock();
+    try {
+      lock.waitLock(15000); // 15 second lock wait
+
+      var sheet = getSheet(CONFIG.sheets.donations);
+
+      // Idempotency check: Column 15 (O) is Transaction ID
+      var existingRow = findRow(sheet, 15, transactionId);
+      if (existingRow !== -1) {
+        // Idempotent success: return existing record
+        var currentData = sheet.getRange(existingRow, 1, 1, 15).getValues()[0];
+        return success(
+          'Donation recorded (idempotent)',
+          DonationService._mapDonation(currentData)
+        );
+      }
+
+      // 2. Generate IDs (skip inner locks)
+      var donationId = ReceiptService.generateDonationId(true);
+      var receiptId = ReceiptService.generateReceiptId(true);
+      var date = now();
+
+      // 3. Save to sheet (15 columns: A–O)
+      safeAppendRow(
+        sheet,
+        [
+          donationId, // A: Donation ID
+          receiptId, // B: Receipt ID
+          payload.donorName, // C: Donor Name
+          payload.phone || '', // D: Phone
+          payload.amount, // E: Amount
+          payload.paymentMode, // F: Payment Mode
+          payload.upiRef || '', // G: UPI Ref
+          user.id, // H: Collector ID (authenticated user)
+          user.fullName, // I: Collector Name
+          payload.purpose || 'General', // J: Purpose
+          payload.remarks || '', // K: Remarks
+          CONFIG.status.active, // L: Status
+          date, // M: Created At
+          date, // N: Updated At
+          transactionId, // O: Transaction ID
+        ],
+        0 // ID Col index (A)
+      );
+      
+      SpreadsheetApp.flush(); // Ensure row is written before releasing lock
+    } catch (e) {
+      return error(ERROR_CODES.INTERNAL_ERROR, 'Failed to process transaction: ' + e.message);
+    } finally {
+      lock.releaseLock();
+    }
 
     // 4. Audit log
     AuditService.log({

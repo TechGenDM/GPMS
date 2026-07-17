@@ -13,15 +13,32 @@ export async function POST(request: Request) {
       );
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     // Call Apps Script
-    const response = await fetch(appsScriptUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-      redirect: 'follow', // Apps Script redirects on deploy — follow it
-    });
+    let response;
+    try {
+      response = await fetch(appsScriptUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+        redirect: 'follow', // Apps Script redirects on deploy — follow it
+        signal: controller.signal,
+      });
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        return NextResponse.json(
+          { success: false, message: 'Request timed out' },
+          { status: 504 }
+        );
+      }
+      throw e;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     const rawText = await response.text();
     let data;

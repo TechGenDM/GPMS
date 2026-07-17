@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -75,6 +75,11 @@ function validateForm(form: DonationFormData): string | null {
 export default function NewDonationPage() {
   const router = useRouter();
   const feedback = useFeedback();
+  const transactionIdRef = useRef<string>('');
+
+  useEffect(() => {
+    transactionIdRef.current = crypto.randomUUID();
+  }, []);
 
   const [form, setForm] = useState<DonationFormData>(INITIAL_FORM);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -129,6 +134,7 @@ export default function NewDonationPage() {
             paymentMode: form.paymentMode,
             upiRef: form.paymentMode === 'UPI' ? form.upiRef.trim() : '',
             remarks: form.remarks.trim(),
+            transactionId: transactionIdRef.current,
           },
           showLoading: true,
           loadingMessage: 'Recording donation...',
@@ -158,6 +164,7 @@ export default function NewDonationPage() {
     setForm(INITIAL_FORM);
     setSuccessData(null);
     setValidationError(null);
+    transactionIdRef.current = crypto.randomUUID();
   }, []);
 
   // ── Success State ────────────────────────────────────────────────

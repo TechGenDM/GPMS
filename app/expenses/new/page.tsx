@@ -61,6 +61,12 @@ export default function RecordExpense() {
     billLink: string;
   } | null>(null);
 
+  const transactionIdRef = useRef<string>('');
+  
+  useEffect(() => {
+    transactionIdRef.current = crypto.randomUUID();
+  }, []);
+
   const { showLoading, showSuccess, showError, clear } = useFeedback();
 
   const fetchCategories = useCallback(() => {
@@ -185,6 +191,7 @@ export default function RecordExpense() {
             amount: Number(form.amount),
             vendor: form.vendor.trim() || '',
             billFile: form.billFile,
+            transactionId: transactionIdRef.current,
           },
           showLoading: true,
           loadingMessage: 'Recording expense...',
@@ -217,11 +224,13 @@ export default function RecordExpense() {
     }
   };
 
-  const handleRecordAnother = () => {
+  const handleRecordAnother = useCallback(() => {
     setForm(INITIAL_FORM);
     setSuccessData(null);
-    clear();
-  };
+    setValidationError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    transactionIdRef.current = crypto.randomUUID();
+  }, []);
 
   // ── Success Screen (Receipt) ──────────────────────────────────────
   if (successData) {
