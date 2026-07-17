@@ -1,11 +1,19 @@
 import React from 'react';
 import { signIn } from '@/auth';
 import { Card, CardContent } from '@/components/ui/Card';
+import { AlertCircle } from 'lucide-react';
 
-export default function LoginPage() {
+type Props = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function LoginPage(props: Props) {
+  const searchParams = await props.searchParams;
+  const error = searchParams?.error as string | undefined;
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-8">
+      <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
             {/* Simple placeholder for Ganesha icon or committee logo */}
@@ -17,6 +25,35 @@ export default function LoginPage() {
           <p className="text-sm text-slate-500">Management System (GPMS)</p>
         </div>
 
+        {error === 'AccessDenied' && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-2 text-red-600 font-semibold">
+              <AlertCircle className="w-5 h-5" />
+              <p>Access Denied</p>
+            </div>
+            <p className="text-sm text-red-700 leading-relaxed">
+              This Google account is not authorized to access the GPMS management
+              system. Only approved committee members and volunteers can sign in.
+            </p>
+            <p className="text-sm text-red-700 leading-relaxed mt-2">
+              If you believe you should have access, please contact a GPMS
+              administrator to have your account added or activated.
+            </p>
+          </div>
+        )}
+
+        {error && error !== 'AccessDenied' && (
+          <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-1 text-orange-600 font-semibold">
+              <AlertCircle className="w-5 h-5" />
+              <p>Authentication Error</p>
+            </div>
+            <p className="text-sm text-orange-700">
+              There was a problem signing you in. Please try again or use a different account.
+            </p>
+          </div>
+        )}
+
         <Card className="shadow-lg border-0">
           <CardContent className="pt-6 pb-6 px-6">
             <form
@@ -25,7 +62,9 @@ export default function LoginPage() {
                 await signIn('google', { redirectTo: '/dashboard' });
               }}
             >
-              Don&apos;t have an account?{' '}
+              <div className="text-sm font-medium text-slate-600 text-center mb-4">
+                Committee Member Login
+              </div>
               <button
                 type="submit"
                 className="w-full flex items-center justify-center gap-3 bg-white text-slate-700 font-semibold py-3 px-4 border border-slate-300 rounded-xl hover:bg-slate-50 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all active:scale-[0.98]"
