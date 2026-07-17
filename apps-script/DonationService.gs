@@ -167,9 +167,12 @@ var DonationService = {
     if (!payload || !payload.donationId) {
       return error(ERROR_CODES.MISSING_FIELD, 'Donation ID is required');
     }
+    if (!payload.cancellationReason) {
+      return error(ERROR_CODES.MISSING_FIELD, 'Cancellation reason is required');
+    }
 
-    // Authorization: Only Admins can cancel donations
-    if (!UserService.authorize(user, [CONFIG.roles.admin])) {
+    // Authorization: Only Admins/SuperAdmins can cancel donations
+    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
       return error(
         ERROR_CODES.ROLE_NOT_ALLOWED,
         'Only admins can cancel donations'
@@ -200,6 +203,7 @@ var DonationService = {
       action: 'cancelDonation',
       module: 'Donations',
       recordId: payload.donationId,
+      newValue: payload.cancellationReason || 'No reason provided'
     });
 
     return success('Donation cancelled successfully');
@@ -257,14 +261,32 @@ var DonationService = {
       if (payload.paymentMode && donation.paymentMode !== payload.paymentMode)
         match = false;
 
-      // Case-insensitive substring match for donor name
-      if (
-        payload.donorName &&
-        donation.donorName
-          .toLowerCase()
-          .indexOf(payload.donorName.toLowerCase()) === -1
-      ) {
-        match = false;
+      // Date filtering
+      if (payload.startDate) {
+        var sDate = new Date(payload.startDate);
+        sDate.setHours(0, 0, 0, 0);
+        var dDate = new Date(donation.createdAt);
+        if (dDate < sDate) match = false;
+      }
+      if (payload.endDate) {
+        var eDate = new Date(payload.endDate);
+        eDate.setHours(23, 59, 59, 999);
+        var dDate = new Date(donation.createdAt);
+        if (dDate > eDate) match = false;
+      }
+
+      // Unified search query (Receipt ID + donor name + phone)
+      if (payload.searchQuery) {
+        var query = String(payload.searchQuery).toLowerCase();
+        var searchFields = [
+          String(donation.receiptId).toLowerCase(),
+          String(donation.donorName).toLowerCase(),
+          String(donation.phone || '').toLowerCase()
+        ].join(' ');
+        
+        if (searchFields.indexOf(query) === -1) {
+          match = false;
+        }
       }
 
       if (match) {

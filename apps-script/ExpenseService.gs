@@ -223,6 +223,58 @@ var ExpenseService = {
   },
 
   /**
+   * Cancels an existing expense.
+   *
+   * @param {Object} user - The authenticated User object.
+   * @param {Object} payload - Must include expenseId and cancellationReason.
+   * @returns {ContentOutput} JSON response.
+   */
+  cancel: function (user, payload) {
+    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
+      return error(ERROR_CODES.FORBIDDEN, 'Access denied. You do not have permission to cancel expenses.');
+    }
+
+    if (!payload || !payload.expenseId) {
+      return error(ERROR_CODES.MISSING_FIELD, 'Expense ID is required');
+    }
+    if (!payload.cancellationReason) {
+      return error(ERROR_CODES.MISSING_FIELD, 'Cancellation reason is required');
+    }
+
+    var row = ExpenseService._findExpenseRow(payload.expenseId);
+    if (row === -1) {
+      return error(ERROR_CODES.EXPENSE_NOT_FOUND, 'Expense not found');
+    }
+
+    var sheet = getSheet(CONFIG.sheets.expenses);
+    var currentStatus = sheet.getRange(row, 9).getValue();
+
+    if (currentStatus === CONFIG.status.cancelled) {
+      return error(ERROR_CODES.INVALID_STATE, 'Expense is already cancelled');
+    }
+
+    // Set Status to Cancelled (Column I / index 9)
+    sheet.getRange(row, 9).setValue(CONFIG.status.cancelled);
+    sheet.getRange(row, 11).setValue(now()); // UpdatedAt
+
+    // For expenses, there's no "Remarks" column out of the box in the 1-11 standard schema.
+    // I will append it to Description (Column C / index 3) if allowed, or just log in AuditLogs.
+    // Wait, the prompt says "Preserve the reason in the cancellation AuditLog entry along with actor, timestamp and record ID. Do not modify frozen database columns without approval."
+    // So I only need to log it in AuditLogs!
+
+    AuditService.log({
+      userId: user.id,
+      userName: user.fullName,
+      action: 'cancelExpense',
+      module: 'Expenses',
+      recordId: payload.expenseId,
+      newValue: payload.cancellationReason
+    });
+
+    return success('Expense cancelled successfully');
+  },
+
+  /**
    * Retrieves a single expense by ID.
    *
    * @param {Object} user - The authenticated User object.
@@ -256,6 +308,10 @@ var ExpenseService = {
    * @returns {ContentOutput} JSON response.
    */
   search: function (user, payload) {
+    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
+      return error(ERROR_CODES.FORBIDDEN, 'Access denied. You do not have permission to search expenses.');
+    }
+
     var sheet = getSheet(CONFIG.sheets.expenses);
     var data = sheet.getDataRange().getValues();
     var results = [];
@@ -271,27 +327,32 @@ var ExpenseService = {
       if (payload.category && expense.category !== payload.category)
         match = false;
 
-      if (
-        payload.vendor &&
-        expense.vendor.toLowerCase().indexOf(payload.vendor.toLowerCase()) ===
-          -1
-      ) {
-        match = false;
+      // Date filtering
+      if (payload.startDate) {
+        var sDate = new Date(payload.startDate);
+        sDate.setHours(0, 0, 0, 0);
+        var dDate = new Date(expense.createdAt);
+        if (dDate < sDate) match = false;
       }
-      if (
-        payload.description &&
-        expense.description
-          .toLowerCase()
-          .indexOf(payload.description.toLowerCase()) === -1
-      ) {
-        match = false;
+      if (payload.endDate) {
+        var eDate = new Date(payload.endDate);
+        eDate.setHours(23, 59, 59, 999);
+        var dDate = new Date(expense.createdAt);
+        if (dDate > eDate) match = false;
       }
-      if (
-        payload.expenseId &&
-        String(expense.id).toLowerCase() !==
-          String(payload.expenseId).toLowerCase()
-      ) {
-        match = false;
+
+      // Unified search query (Expense ID + vendor + description)
+      if (payload.searchQuery) {
+        var query = String(payload.searchQuery).toLowerCase();
+        var searchFields = [
+          String(expense.id).toLowerCase(),
+          String(expense.vendor || '').toLowerCase(),
+          String(expense.description || '').toLowerCase()
+        ].join(' ');
+        
+        if (searchFields.indexOf(query) === -1) {
+          match = false;
+        }
       }
 
       if (match) {
