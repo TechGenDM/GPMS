@@ -281,6 +281,7 @@ var DashboardService = {
     var snapshot = {
       donations: { total: 0, today: 0, cash: 0, upi: 0 },
       expenses: { total: 0, today: 0 },
+      expensesByCategory: {},
       balance: 0,
     };
 
@@ -343,6 +344,7 @@ var DashboardService = {
           ? expCols['ID']
           : 0;
     var expAmtCol = expCols['Amount'] !== undefined ? expCols['Amount'] : 5;
+    var expCatCol = expCols['Category'] !== undefined ? expCols['Category'] : 2;
     var expStatusCol = expCols['Status'] !== undefined ? expCols['Status'] : 7;
     var expDateCol =
       expCols['Date'] !== undefined
@@ -360,8 +362,12 @@ var DashboardService = {
 
       var expAmt = parseFloat(expData[j][expAmtCol]) || 0;
       var expDateStr = expData[j][expDateCol];
+      var cat = String(expData[j][expCatCol] || 'Uncategorized');
 
       snapshot.expenses.total += expAmt;
+
+      if (!snapshot.expensesByCategory[cat]) snapshot.expensesByCategory[cat] = 0;
+      snapshot.expensesByCategory[cat] += expAmt;
 
       var expDate =
         expDateStr instanceof Date ? expDateStr : new Date(expDateStr);
