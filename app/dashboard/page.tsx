@@ -13,6 +13,7 @@ import {
   Calendar,
   AlertCircle,
   Users,
+  Activity,
 } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { useFeedback } from '@/components/ui/Feedback';
@@ -117,15 +118,28 @@ export default function DashboardPage() {
           </h1>
           <div className="flex items-center gap-1">
             {canManageUsers && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/users')}
-                className="text-slate-600 hover:text-slate-900 hidden sm:flex"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Users
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push('/audit')}
+                  className="text-slate-600 hover:text-slate-900 flex px-2 sm:px-3"
+                  title="Audit Logs"
+                >
+                  <Activity className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Audit Logs</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push('/users')}
+                  className="text-slate-600 hover:text-slate-900 flex px-2 sm:px-3"
+                  title="Users"
+                >
+                  <Users className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Users</span>
+                </Button>
+              </>
             )}
             <Button
               variant="ghost"
@@ -143,10 +157,11 @@ export default function DashboardPage() {
               variant="ghost"
               size="sm"
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className="text-slate-600 hover:text-slate-900"
+              className="text-slate-600 hover:text-slate-900 flex px-2 sm:px-3"
+              title="Logout"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
+              <LogOut className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         </div>

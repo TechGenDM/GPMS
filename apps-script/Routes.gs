@@ -61,6 +61,10 @@ function getRoutes() {
     getExpenseStats: DashboardService.getExpenseStats,
     getDashboardSummary: DashboardService.getDashboardSummary,
     getPublicDashboard: DashboardService.getPublicDashboard,
+
+    // --- Audit Logs ---
+    getRecentLogs: AuditService.getRecentLogs,
+    logExport: AuditService.logExport,
   };
 }
 

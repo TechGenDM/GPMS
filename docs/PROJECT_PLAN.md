@@ -79,7 +79,7 @@ We track progress using Sprints to focus on delivering complete, usable vertical
 - Search Interface (Donations & Expenses)
 - Public Dashboard View
 
-### Sprint 7: Admin & Reports
+### Sprint 7: Admin & Reports (✅ Done)
 
 - User Management UI (Admins only)
 - Settings UI

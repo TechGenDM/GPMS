@@ -93,6 +93,14 @@ var UserService = {
     // Update the object before returning
     user.lastLogin = now();
 
+    AuditService.log({
+      userId: user.id,
+      userName: user.fullName,
+      action: 'login',
+      module: 'Auth',
+      newValue: 'User authenticated successfully',
+    });
+
     return success('Authentication successful', user);
   },
 
