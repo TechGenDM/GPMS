@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ganesh Puja Management System (GPMS)
 
-## Getting Started
+GPMS is a modern, mobile-first web application designed for the Ganesh Puja Committee (2026) to manage donations, expenses, and digital receipts efficiently. It completely replaces physical receipt books with a fast, secure, and verifiable digital system.
 
-First, run the development server:
+## Architecture
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Frontend:** Next.js (App Router), React, Tailwind CSS
+- **Authentication:** NextAuth (Auth.js) via Google OAuth
+- **Backend / Database:** Google Apps Script + Google Sheets + Google Drive
+- **Hosting:** Vercel
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Key Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Role-Based Access Control:** SuperAdmin, Admin, Volunteer, and Viewer roles.
+- **Donation Tracking:** Record cash and UPI donations instantly.
+- **Expense Tracking:** Record committee expenses with direct Google Drive bill uploads.
+- **PDF Generation & QR Codes:** Generate official, shareable PDF receipts with verifiable QR codes.
+- **Idempotency & Concurrency:** Advanced lock-based Google Apps Script backend prevents duplicate entries even on slow mobile networks.
+- **WhatsApp Integration:** 1-click sharing of receipts via WhatsApp or Native Web Share.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environments
 
-## Learn More
+- **Production URL:** The application is hosted live on Vercel.
+- **Google Sheets:** Acts as the single source of truth for all structured data (Donations, Expenses, Users, Logs).
 
-To learn more about Next.js, take a look at the following resources:
+## Technical Documentation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Refer to the `docs/` folder for system documentation:
+- `DATABASE.md`: Schema, indexes, and required Sheet protections.
+- `TESTING.md`: Manual production acceptance checklist.
+- `LAUNCH_V1.md`: Official V1 Production Launch Sign-off.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*Built for the 2026 Ganesh Puja Committee.*
