@@ -1,0 +1,99 @@
+<svg viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B1130"/>
+      <stop offset="55%" stop-color="#2A0F26"/>
+      <stop offset="100%" stop-color="#3A1220"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F2A93B"/>
+      <stop offset="55%" stop-color="#D9A857"/>
+      <stop offset="100%" stop-color="#E1442B"/>
+    </linearGradient>
+    <linearGradient id="traceGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D9A857" stop-opacity="0.95"/>
+      <stop offset="70%" stop-color="#E1442B" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#E1442B" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFD9A0" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#FFD9A0" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="clip">
+      <rect x="0" y="0" width="1200" height="400" rx="28"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#clip)">
+    <rect x="0" y="0" width="1200" height="400" fill="url(#bgGrad)"/>
+
+    <!-- faint mandala rings, sun rising top-right -->
+    <circle cx="1080" cy="50" r="160" fill="none" stroke="#D9A857" stroke-width="1.5" opacity="0.10"/>
+    <circle cx="1080" cy="50" r="220" fill="none" stroke="#D9A857" stroke-width="1" opacity="0.07"/>
+    <circle cx="1080" cy="50" r="280" fill="none" stroke="#F2A93B" stroke-width="1" opacity="0.05"/>
+
+    <!-- zari fleck texture -->
+    <g fill="#D9A857">
+      <circle cx="90" cy="60" r="1.6" opacity="0.25"/>
+      <circle cx="640" cy="45" r="1.4" opacity="0.2"/>
+      <circle cx="760" cy="90" r="1.8" opacity="0.22"/>
+      <circle cx="900" cy="150" r="1.4" opacity="0.18"/>
+      <circle cx="980" cy="220" r="1.6" opacity="0.2"/>
+      <circle cx="1040" cy="320" r="1.4" opacity="0.18"/>
+      <circle cx="60" cy="330" r="1.6" opacity="0.2"/>
+      <circle cx="150" cy="350" r="1.3" opacity="0.16"/>
+      <circle cx="620" cy="340" r="1.5" opacity="0.18"/>
+      <circle cx="720" cy="360" r="1.3" opacity="0.16"/>
+      <circle cx="500" cy="60" r="1.4" opacity="0.18"/>
+      <circle cx="350" cy="40" r="1.3" opacity="0.16"/>
+      <circle cx="1120" cy="130" r="1.5" opacity="0.2"/>
+      <circle cx="1150" cy="260" r="1.3" opacity="0.16"/>
+    </g>
+
+    <!-- warm glow behind emblem -->
+    <ellipse cx="195" cy="200" rx="150" ry="150" fill="url(#glow)"/>
+
+    <!-- Ganesha emblem: ears -->
+    <path d="M125,120 C90,130 85,190 110,230 C125,250 150,235 150,190 C150,150 155,125 125,120 Z"
+          fill="none" stroke="url(#goldGrad)" stroke-width="3"/>
+    <path d="M255,120 C290,130 295,190 270,230 C255,250 230,235 230,190 C230,150 225,125 255,120 Z"
+          fill="none" stroke="url(#goldGrad)" stroke-width="3"/>
+
+    <!-- head -->
+    <circle cx="190" cy="192" r="56" fill="#1B1130" stroke="url(#goldGrad)" stroke-width="3"/>
+
+    <!-- crown -->
+    <path d="M167,139 L190,92 L213,139 Z" fill="none" stroke="url(#goldGrad)" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="190" cy="84" r="6" fill="none" stroke="url(#goldGrad)" stroke-width="2.5"/>
+
+    <!-- third eye -->
+    <circle cx="190" cy="174" r="3" fill="#E1442B"/>
+
+    <!-- trunk curling into circuit trace -->
+    <path d="M177,247 C152,268 155,300 188,312 C217,320 246,302 236,278 C230,264 212,262 214,276 C215,286 228,290 240,282 C265,272 300,278 340,280"
+          fill="none" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round"/>
+
+    <path d="M340,280 L380,280 L380,240 L430,240 L430,300 L480,300 L480,260 L525,260"
+          fill="none" stroke="url(#traceGrad)" stroke-width="3" stroke-linecap="square"/>
+    <circle cx="380" cy="280" r="3.5" fill="#D9A857" opacity="0.85"/>
+    <circle cx="380" cy="240" r="3.5" fill="#D9A857" opacity="0.7"/>
+    <circle cx="430" cy="240" r="3.5" fill="#E1442B" opacity="0.6"/>
+    <circle cx="430" cy="300" r="3.5" fill="#D9A857" opacity="0.45"/>
+    <circle cx="480" cy="300" r="3" fill="#E1442B" opacity="0.3"/>
+    <circle cx="480" cy="260" r="3" fill="#D9A857" opacity="0.18"/>
+
+    <!-- wordmark -->
+    <text x="402" y="205" font-family="Verdana, Geneva, sans-serif" font-weight="700" font-size="76"
+          letter-spacing="4" fill="url(#goldGrad)">GPMS</text>
+    <text x="405" y="238" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="21"
+          fill="#EDE6DD" opacity="0.88">Ganesh Puja Management System</text>
+    <text x="405" y="266" font-family="Verdana, Geneva, sans-serif" font-size="12.5" letter-spacing="2.5"
+          fill="#F2A93B" opacity="0.75">DIGITAL RECEIPTS &#183; REAL-TIME LEDGER &#183; ZERO FRAUD</text>
+
+    <!-- bottom rule with three flame accents: donations / expenses / verification -->
+    <line x1="60" y1="358" x2="1140" y2="358" stroke="url(#goldGrad)" stroke-width="1.2" opacity="0.4"/>
+    <path d="M300,347 C296,353 296,358 300,362 C304,358 304,353 300,347 Z" fill="#F2A93B" opacity="0.8"/>
+    <path d="M600,347 C596,353 596,358 600,362 C604,358 604,353 600,347 Z" fill="#E1442B" opacity="0.8"/>
+    <path d="M900,347 C896,353 896,358 900,362 C904,358 904,353 900,347 Z" fill="#D9A857" opacity="0.8"/>
+  </g>
+</svg>

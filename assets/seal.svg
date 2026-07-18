@@ -1,0 +1,42 @@
+<svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F2A93B"/>
+      <stop offset="55%" stop-color="#D9A857"/>
+      <stop offset="100%" stop-color="#E1442B"/>
+    </linearGradient>
+    <radialGradient id="glow2" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#FFD9A0" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#FFD9A0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="110" cy="110" r="106" fill="#1B1130"/>
+  <circle cx="110" cy="110" r="106" fill="url(#glow2)"/>
+  <circle cx="110" cy="110" r="100" fill="none" stroke="url(#goldGrad2)" stroke-width="3"/>
+  <circle cx="110" cy="110" r="88" fill="none" stroke="url(#goldGrad2)" stroke-width="1" opacity="0.5"/>
+
+  <!-- ears -->
+  <path d="M62,90 C40,98 36,138 54,164 C64,178 82,168 82,138 C82,112 84,94 62,90 Z"
+        fill="none" stroke="url(#goldGrad2)" stroke-width="2.5"/>
+  <path d="M158,90 C180,98 184,138 166,164 C156,178 138,168 138,138 C138,112 136,94 158,90 Z"
+        fill="none" stroke="url(#goldGrad2)" stroke-width="2.5"/>
+
+  <!-- head -->
+  <circle cx="110" cy="112" r="38" fill="none" stroke="url(#goldGrad2)" stroke-width="2.5"/>
+
+  <!-- crown -->
+  <path d="M94,79 L110,50 L126,79 Z" fill="none" stroke="url(#goldGrad2)" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="110" cy="43" r="4" fill="none" stroke="url(#goldGrad2)" stroke-width="2"/>
+
+  <!-- third eye -->
+  <circle cx="110" cy="100" r="2" fill="#E1442B"/>
+
+  <!-- closed trunk curl -->
+  <path d="M100,150 C82,163 82,184 102,192 C120,199 136,186 129,171 C124,161 110,161 111,171 C112,179 122,181 130,176"
+        fill="none" stroke="url(#goldGrad2)" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- verified check badge, bottom right of seal -->
+  <circle cx="168" cy="168" r="20" fill="#1B1130" stroke="url(#goldGrad2)" stroke-width="2.5"/>
+  <path d="M159,168 L166,175 L179,160" fill="none" stroke="#F2A93B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
