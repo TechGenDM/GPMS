@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Read donation fields from the request body
     const body = await request.json();
-    const { donorName, phone, amount, paymentMode, upiRef, purpose, remarks } =
+    const { donorName, phone, amount, paymentMode, upiRef, purpose, remarks, transactionId } =
       body;
 
     const response = await fetch(appsScriptUrl, {
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
           upiRef: upiRef || '',
           purpose: purpose || '',
           remarks: remarks || '',
+          transactionId, // Included for backend idempotency
         },
       }),
       redirect: 'follow',

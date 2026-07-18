@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
           vendor: body.vendor || '',
           billLink: body.billLink || '',
           billFile: body.billFile || null,
+          transactionId: body.transactionId,
         },
       }),
       redirect: 'follow',
