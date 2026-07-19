@@ -8,7 +8,7 @@ export interface ShareDonationData {
   purpose: string;
   collectorName?: string;
   date: string;
-  donorPhone?: string;
+  donorPhone?: string | number;
 }
 
 export const getVerificationUrl = (receiptId: string) => {
@@ -25,11 +25,11 @@ export const generateWhatsAppShareText = (data: ShareDonationData, verificationU
   return `🙏 Thank you, ${data.donorName}, for your generous contribution towards Ganesh Puja 2026!\n\n💰 Amount: ₹${data.amount.toLocaleString('en-IN')}\n🧾 Receipt ID: ${data.receiptId}\n💳 Payment Mode: ${data.paymentMode}\n🎯 Purpose: ${data.purpose}\n👤 Collected By: ${data.collectorName || 'N/A'}\n📅 Date: ${dateStr}\n\n🔍 Verify your official donation receipt:\n${verificationUrl}\n\nThank you for your support and contribution. 🙏\n— Ganesh Puja Committee 2026, Near Kharsawan Police Station, Jharkhand.`;
 };
 
-export const normalizeWhatsAppNumber = (phone?: string): string => {
+export const normalizeWhatsAppNumber = (phone?: string | number): string => {
   if (!phone) return '';
   
   // Remove all non-digit characters (spaces, +, hyphens, etc.)
-  const digitsOnly = phone.replace(/\D/g, '');
+  const digitsOnly = String(phone).replace(/\D/g, '');
   
   if (!digitsOnly) return '';
 
