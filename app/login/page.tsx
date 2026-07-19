@@ -17,12 +17,10 @@ export default async function LoginPage(props: Props) {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 flex items-center justify-center mb-4">
-            <Image
+            <img
               src="/seal.svg"
               alt="GPMS Seal"
-              width={64}
-              height={64}
-              className="rounded-full"
+              className="w-16 h-16 rounded-full"
             />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
