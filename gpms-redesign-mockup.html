@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GPMS — redesign mockup</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#170F26;
+  --ink-2:#241A3D;
+  --ink-glow:#32234A;
+  --cream:#FBF7EE;
+  --cream-2:#F3ECDC;
+  --hair:#E6DFCD;
+  --gold:#F0B84D;
+  --gold-soft:#F6CD79;
+  --ember:#E1602C;
+  --maroon:#7A2430;
+  --maroon-soft:#8F3038;
+  --sage:#4C7A4F;
+  --text:#241C33;
+  --muted:#8B8494;
+  --grad: linear-gradient(120deg, var(--gold-soft), var(--ember));
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background:#EDEAE3;
+  font-family:'Inter',sans-serif;
+  padding:48px 16px 80px;
+}
+.stage{
+  display:flex;
+  flex-wrap:wrap;
+  gap:40px;
+  justify-content:center;
+  align-items:flex-start;
+  max-width:1300px;
+  margin:0 auto;
+}
+.col{display:flex; flex-direction:column; align-items:center; gap:14px;}
+.label{
+  font-size:12px; letter-spacing:.12em; text-transform:uppercase;
+  color:#6b6474; font-weight:600;
+}
+.frame{
+  width:376px;
+  border-radius:34px;
+  background:#111;
+  padding:10px;
+  box-shadow:0 20px 40px rgba(0,0,0,.18);
+}
+.screen{
+  width:100%;
+  height:812px;
+  border-radius:26px;
+  overflow:hidden;
+  position:relative;
+  background:var(--cream);
+  display:flex;
+  flex-direction:column;
+}
+.scroll{
+  overflow-y:auto;
+  flex:1;
+}
+.scroll::-webkit-scrollbar{width:0;}
+
+/* shared bits */
+.eyebrow{
+  font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold-soft); font-weight:600;
+}
+.grad-text{
+  background:var(--grad);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  font-family:'Playfair Display',serif;
+}
+.divider{ display:flex; align-items:center; gap:6px; margin:18px 0; }
+.divider span{ flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+.divider i{ width:5px; height:5px; transform:rotate(45deg); background:var(--ember); flex-shrink:0; }
+.divider i:nth-child(2n){ background:var(--gold); }
+
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 20px; background:var(--cream); border-bottom:1px solid var(--hair);
+}
+.brand{ display:flex; align-items:center; gap:9px; }
+.brand-name{ font-family:'Playfair Display',serif; font-weight:700; font-size:20px; letter-spacing:.02em; }
+.icon-row{ display:flex; gap:14px; color:var(--text); opacity:.55; }
+.icon-row svg{ width:17px; height:17px; }
+
+.hero{
+  margin:16px 20px 0;
+  border-radius:20px;
+  padding:26px 20px 22px;
+  text-align:center;
+  background:
+    radial-gradient(circle at 22% 18%, var(--ink-glow), transparent 55%),
+    radial-gradient(circle at 80% 85%, #201533, transparent 50%),
+    var(--ink);
+  background-size:cover;
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{
+  content:'';
+  position:absolute; inset:0;
+  background-image:radial-gradient(rgba(240,184,77,.35) 1px, transparent 1px);
+  background-size:16px 16px;
+  opacity:.15;
+}
+.hero-amount{
+  font-size:38px; font-weight:700; margin-top:4px; position:relative;
+}
+.hero .rupee{ font-family:'Inter',sans-serif; font-weight:500; }
+
+.cards2{
+  display:grid; grid-template-columns:1fr 1fr; gap:12px;
+  padding:16px 20px 0;
+}
+.card{
+  background:#fff; border:1px solid var(--hair); border-radius:16px;
+  padding:14px 14px 16px; position:relative; overflow:hidden;
+}
+.card::after{
+  content:''; position:absolute; left:0; right:0; bottom:0; height:3px;
+  background:var(--grad);
+}
+.card-head{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); font-weight:600; margin-bottom:10px; }
+.card-num{ font-family:'Playfair Display',serif; font-weight:700; font-size:23px; }
+.sub-row{ display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-top:8px; }
+.sub-row b{ color:var(--text); font-weight:600; }
+
+.mini2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:14px 20px 0; }
+.mini{ background:var(--cream-2); border-radius:14px; padding:12px 14px; }
+.mini .card-head{ margin-bottom:6px; }
+.mini .num{ font-family:'Playfair Display',serif; font-weight:700; font-size:18px; }
+
+.section-title{ font-family:'Playfair Display',serif; font-weight:700; font-size:16px; padding:0 20px; margin-top:6px; }
+.cat-card{ margin:10px 20px 0; background:#fff; border:1px solid var(--hair); border-radius:14px; padding:14px 16px; }
+.cat-row{ display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:8px; }
+.bar-track{ height:7px; border-radius:4px; background:var(--cream-2); overflow:hidden; }
+.bar-fill{ height:100%; width:82%; background:var(--grad); }
+
+.activity{ margin:10px 20px 0; }
+.act-row{ display:flex; justify-content:space-between; align-items:center; padding:12px 4px; border-bottom:1px solid var(--hair); font-size:13px; }
+.act-name{ font-weight:600; }
+.act-sub{ font-size:11.5px; color:var(--muted); }
+.act-amt.pos{ color:var(--sage); font-weight:700; }
+.act-amt.neg{ color:var(--maroon); font-weight:700; }
+
+.actions{
+  display:flex; gap:12px; padding:16px 20px 22px; background:var(--cream);
+  border-top:1px solid var(--hair);
+}
+.btn{
+  flex:1; border:none; border-radius:14px; padding:14px 0; font-weight:700; font-size:14.5px;
+  display:flex; align-items:center; justify-content:center; gap:6px; font-family:'Inter',sans-serif;
+}
+.btn-donate{ background:var(--grad); color:#3a2205; }
+.btn-expense{ background:var(--maroon); color:#F6E4E1; }
+
+/* public page specifics */
+.pub-head{ padding:22px 20px 0; }
+.pub-title{ font-family:'Playfair Display',serif; font-weight:700; font-size:26px; }
+.pub-sub{ font-size:12px; letter-spacing:.06em; color:var(--muted); margin-top:4px; }
+.login-link{ font-size:13px; font-weight:600; color:var(--ember); display:flex; align-items:center; gap:4px; }
+.note-box{
+  margin:16px 20px 0; background:var(--cream-2); border:1px solid var(--hair); border-radius:16px;
+  padding:18px; text-align:center;
+}
+.note-box svg{ margin-bottom:8px; }
+.note-box p{ font-family:'Playfair Display',serif; font-style:italic; font-size:13.5px; color:#4a4256; line-height:1.6; }
+.pub-footer{ text-align:center; padding:26px 20px 30px; }
+.pub-footer p{ font-size:11px; color:var(--muted); margin-top:10px; }
+
+/* login page */
+.login-screen{
+  height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:40px 26px; text-align:center; position:relative; overflow:hidden;
+  background:
+    radial-gradient(circle at 30% 24%, var(--ink-glow), transparent 55%),
+    radial-gradient(circle at 75% 80%, #241736, transparent 50%),
+    var(--ink);
+}
+.login-screen::before{
+  content:''; position:absolute; inset:0;
+  background-image:radial-gradient(rgba(240,184,77,.3) 1px, transparent 1px);
+  background-size:18px 18px; opacity:.18;
+}
+.seal-wrap{ position:relative; z-index:1; margin-bottom:22px; }
+.seal-glow{
+  position:absolute; inset:-30px; border-radius:50%;
+  background:radial-gradient(circle, rgba(240,184,77,.28), transparent 70%);
+  z-index:-1;
+}
+.login-title{ font-family:'Playfair Display',serif; font-weight:700; font-size:30px; position:relative; z-index:1; }
+.login-sub{ font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:#CBBBD8; margin-top:8px; position:relative; z-index:1; }
+.login-card{
+  margin-top:30px; width:100%; background:var(--cream); border-radius:20px; padding:26px 22px;
+  border:1px solid rgba(240,184,77,.4); position:relative; z-index:1;
+}
+.login-card h4{ font-family:'Playfair Display',serif; font-size:16px; font-weight:700; margin-bottom:16px; }
+.g-btn{
+  width:100%; border:1px solid #DDD8CC; background:#fff; border-radius:12px; padding:12px 0;
+  display:flex; align-items:center; justify-content:center; gap:10px; font-weight:600; font-size:14px; color:#3a3540;
+}
+.login-caption{ font-size:11px; color:var(--muted); margin-top:16px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="col">
+    <div class="label">Dashboard</div>
+    <div class="frame"><div class="screen">
+      <div class="topbar">
+        <div class="brand">
+          <svg viewBox="0 0 60 60" width="28" height="28">
+            <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#F6CD79"/><stop offset="1" stop-color="#E1602C"/>
+            </linearGradient></defs>
+            <circle cx="30" cy="30" r="27" fill="#170F26" stroke="url(#g1)" stroke-width="2"/>
+            <polygon points="30,12 34,20 26,20" fill="none" stroke="url(#g1)" stroke-width="1.5"/>
+            <ellipse cx="16" cy="30" rx="7" ry="11" fill="none" stroke="url(#g1)" stroke-width="1.5"/>
+            <ellipse cx="44" cy="30" rx="7" ry="11" fill="none" stroke="url(#g1)" stroke-width="1.5"/>
+            <circle cx="30" cy="30" r="11" fill="none" stroke="url(#g1)" stroke-width="1.5"/>
+            <circle cx="30" cy="27" r="1.2" fill="url(#g1)"/>
+            <path d="M27 38 Q24 44 29 46 Q33 47 31 43" fill="none" stroke="url(#g1)" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="brand-name grad-text">GPMS</span>
+        </div>
+        <div class="icon-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c1-4 4-6 6.5-6s5.5 2 6.5 6"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14c2 0 5 1.5 6 4.5"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 11A8 8 0 1 0 18 16"/><path d="M20 5v6h-6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9"/><path d="M11 12h9m0 0-3-3m3 3-3 3"/></svg>
+        </div>
+      </div>
+
+      <div class="scroll">
+        <div class="hero">
+          <div class="eyebrow">Current balance</div>
+          <div class="hero-amount grad-text"><span class="rupee" style="color:#F6CD79">₹</span>-8,196</div>
+        </div>
+
+        <div class="cards2">
+          <div class="card">
+            <div class="card-head" style="color:#4C7A4F">↗ Collections</div>
+            <div class="card-num">₹1,804</div>
+            <div class="sub-row"><span>Cash</span><b>₹302</b></div>
+            <div class="sub-row"><span>UPI</span><b>₹1,502</b></div>
+          </div>
+          <div class="card">
+            <div class="card-head" style="color:#7A2430">↘ Expenses</div>
+            <div class="card-num">₹10,000</div>
+          </div>
+        </div>
+
+        <div class="mini2">
+          <div class="mini">
+            <div class="card-head">Today's collections</div>
+            <div class="num" style="color:#4C7A4F">+₹1,703</div>
+          </div>
+          <div class="mini">
+            <div class="card-head">Today's expenses</div>
+            <div class="num" style="color:#7A2430">-₹10,000</div>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:20px">Expenses by category</div>
+        <div class="cat-card">
+          <div class="cat-row"><span>Decoration</span><span>₹10,000</span></div>
+          <div class="bar-track"><div class="bar-fill"></div></div>
+        </div>
+
+        <div class="section-title" style="margin-top:20px">Recent activity</div>
+        <div class="activity">
+          <div class="act-row">
+            <div><div class="act-name">Decoration setup</div><div class="act-sub">Expense · today</div></div>
+            <div class="act-amt neg">-₹10,000</div>
+          </div>
+          <div class="act-row">
+            <div><div class="act-name">UPI donation</div><div class="act-sub">Collection · today</div></div>
+            <div class="act-amt pos">+₹1,502</div>
+          </div>
+          <div class="act-row">
+            <div><div class="act-name">Cash donation</div><div class="act-sub">Collection · today</div></div>
+            <div class="act-amt pos">+₹302</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-donate">+ Donation</button>
+        <button class="btn btn-expense">− Expense</button>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col">
+    <div class="label">Public transparency page</div>
+    <div class="frame"><div class="screen">
+      <div class="topbar">
+        <div class="brand">
+          <svg viewBox="0 0 60 60" width="26" height="26">
+            <defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#F6CD79"/><stop offset="1" stop-color="#E1602C"/>
+            </linearGradient></defs>
+            <circle cx="30" cy="30" r="27" fill="#170F26" stroke="url(#g2)" stroke-width="2"/>
+            <polygon points="30,12 34,20 26,20" fill="none" stroke="url(#g2)" stroke-width="1.5"/>
+            <ellipse cx="16" cy="30" rx="7" ry="11" fill="none" stroke="url(#g2)" stroke-width="1.5"/>
+            <ellipse cx="44" cy="30" rx="7" ry="11" fill="none" stroke="url(#g2)" stroke-width="1.5"/>
+            <circle cx="30" cy="30" r="11" fill="none" stroke="url(#g2)" stroke-width="1.5"/>
+            <circle cx="30" cy="27" r="1.2" fill="url(#g2)"/>
+            <path d="M27 38 Q24 44 29 46 Q33 47 31 43" fill="none" stroke="url(#g2)" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="brand-name grad-text" style="font-size:18px">GPMS</span>
+        </div>
+        <div class="login-link">Committee login <span>→</span></div>
+      </div>
+
+      <div class="scroll">
+        <div class="pub-head">
+          <div class="pub-title">Our committee</div>
+          <div class="pub-sub">GANESH PUJA 2026 — FINANCIAL TRANSPARENCY</div>
+        </div>
+
+        <div class="hero" style="margin-top:18px">
+          <div class="eyebrow">Current balance</div>
+          <div class="hero-amount grad-text"><span class="rupee" style="color:#F6CD79">₹</span>-8,196</div>
+        </div>
+
+        <div class="cards2">
+          <div class="card">
+            <div class="card-head" style="color:#4C7A4F">↗ Total collection</div>
+            <div class="card-num">₹1,804</div>
+          </div>
+          <div class="card">
+            <div class="card-head" style="color:#7A2430">↘ Total expenses</div>
+            <div class="card-num">₹10,000</div>
+          </div>
+        </div>
+
+        <div class="note-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9832E" stroke-width="1.5"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M3 10h18M16 14h2"/></svg>
+          <p>All funds are managed by the organizing committee. Donations and expenses are tracked digitally for full transparency.</p>
+        </div>
+
+        <div class="pub-footer">
+          <div class="divider"><span></span><i></i><span></span><i></i><span></span></div>
+          <p>Powered by GPMS — Ganesh Puja Management System</p>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col">
+    <div class="label">Committee login</div>
+    <div class="frame"><div class="screen">
+      <div class="login-screen">
+        <div class="seal-wrap">
+          <div class="seal-glow"></div>
+          <svg viewBox="0 0 110 110" width="96" height="96">
+            <defs><linearGradient id="g3" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#F6CD79"/><stop offset="1" stop-color="#E1602C"/>
+            </linearGradient></defs>
+            <circle cx="55" cy="55" r="48" fill="#170F26" stroke="url(#g3)" stroke-width="2.5"/>
+            <circle cx="55" cy="55" r="41" fill="none" stroke="url(#g3)" stroke-width="1"/>
+            <polygon points="55,28 60,40 50,40" fill="none" stroke="url(#g3)" stroke-width="2"/>
+            <ellipse cx="35" cy="56" rx="12" ry="19" fill="none" stroke="url(#g3)" stroke-width="2"/>
+            <ellipse cx="75" cy="56" rx="12" ry="19" fill="none" stroke="url(#g3)" stroke-width="2"/>
+            <circle cx="55" cy="56" r="19" fill="none" stroke="url(#g3)" stroke-width="2"/>
+            <circle cx="55" cy="51" r="2" fill="url(#g3)"/>
+            <path d="M49 68 Q43 78 52 82 Q59 84 55 77" fill="none" stroke="url(#g3)" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="80" cy="80" r="11" fill="#170F26" stroke="url(#g3)" stroke-width="2"/>
+            <path d="M75 80l3.5 3.5L86 76" fill="none" stroke="url(#g3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="login-title grad-text">Ganesh Puja</div>
+        <div class="login-sub">Management system (GPMS)</div>
+
+        <div class="login-card">
+          <h4>Committee member login</h4>
+          <button class="g-btn">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.6 9.2c0-.6-.05-1.2-.15-1.75H9v3.3h4.8a4.1 4.1 0 0 1-1.78 2.7v2.2h2.88C16.5 14 17.6 11.85 17.6 9.2z"/><path fill="#34A853" d="M9 18c2.4 0 4.42-.8 5.9-2.15l-2.88-2.2c-.8.55-1.83.87-3.02.87-2.32 0-4.28-1.57-4.98-3.68H1.05v2.3A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M4.02 10.84A5.4 5.4 0 0 1 3.74 9c0-.64.11-1.26.28-1.84V4.86H1.05A9 9 0 0 0 0 9c0 1.45.35 2.83 1.05 4.14l3-2.3z"/><path fill="#EA4335" d="M9 3.58c1.3 0 2.48.45 3.4 1.32l2.55-2.55C13.4.9 11.4 0 9 0A9 9 0 0 0 1.05 4.86l3 2.3C4.72 5.05 6.68 3.58 9 3.58z"/></svg>
+            Sign in with Google
+          </button>
+          <div class="login-caption">Authorized volunteers only. By signing in, you agree to the committee's data policies.</div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -173,46 +173,45 @@ export default function RecordsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center">
+    <div className="min-h-screen bg-cream pb-20 font-sans">
+      <header className="bg-cream border-b border-hair sticky top-0 z-10 p-[18px_20px]">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-[9px]">
             <button
               onClick={() => router.push('/dashboard')}
-              className="p-2 -ml-2 mr-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
+              className="p-[6px] -ml-2 text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors rounded-lg flex items-center justify-center"
               aria-label="Back to Dashboard"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-[20px] h-[20px]" />
             </button>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Records</h1>
+            <h1 className="font-playfair font-bold text-[20px] text-ink tracking-[0.02em]">Records</h1>
           </div>
           <div className="flex items-center gap-2">
             {isAdmin && (
-              <Button onClick={handleExportCSV} variant="outline" size="sm" className="flex" disabled={loading || filteredData.length === 0}>
-                <Download className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Export CSV</span>
-                <span className="sm:hidden">Export</span>
+              <Button onClick={handleExportCSV} variant="outline" size="sm" className="flex items-center gap-1.5 h-9" disabled={loading || filteredData.length === 0}>
+                <Download className="w-[16px] h-[16px]" />
+                <span className="hidden sm:inline text-[13px] font-bold">Export CSV</span>
+                <span className="sm:hidden text-[13px] font-bold">Export</span>
               </Button>
             )}
           </div>
         </div>
       </header>
-
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {isAdmin && (
-          <div className="flex bg-white rounded-lg p-1 shadow-sm border border-slate-200 w-full max-w-sm">
+          <div className="flex bg-white rounded-[14px] p-1 shadow-sm border border-hair w-full max-w-sm">
             <button
               onClick={() => setActiveTab('donations')}
-              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'donations' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              className={`flex-1 py-[10px] px-4 text-[14px] font-bold rounded-[10px] transition-colors ${
+                activeTab === 'donations' ? 'bg-ink text-cream shadow-sm' : 'text-muted-ink hover:text-ink hover:bg-hair/30'
               }`}
             >
               Donations
             </button>
             <button
               onClick={() => setActiveTab('expenses')}
-              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'expenses' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              className={`flex-1 py-[10px] px-4 text-[14px] font-bold rounded-[10px] transition-colors ${
+                activeTab === 'expenses' ? 'bg-ink text-cream shadow-sm' : 'text-muted-ink hover:text-ink hover:bg-hair/30'
               }`}
             >
               Expenses
@@ -220,16 +219,16 @@ export default function RecordsPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div className="bg-white rounded-[16px] shadow-sm border border-hair p-[16px]">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="sm:col-span-2 relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-3 top-[10px] text-muted-ink" />
               <input
                 type="text"
                 placeholder={activeTab === 'donations' ? "Search Receipt ID, Name, Phone..." : "Search Expense ID, Vendor, Desc..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 py-2 pr-3 text-sm border border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+                className="w-full pl-[36px] py-[8px] pr-3 text-[14px] text-ink border border-hair rounded-[12px] shadow-sm focus:ring-1 focus:ring-ink focus:border-ink focus:outline-none placeholder:text-muted-ink"
               />
             </div>
             <div>
@@ -237,7 +236,7 @@ export default function RecordsPage() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-[8px] text-[14px] text-ink border border-hair rounded-[12px] shadow-sm focus:ring-1 focus:ring-ink focus:border-ink focus:outline-none"
               />
             </div>
             <div className="flex gap-2">
@@ -245,40 +244,40 @@ export default function RecordsPage() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-[8px] text-[14px] text-ink border border-hair rounded-[12px] shadow-sm focus:ring-1 focus:ring-ink focus:border-ink focus:outline-none"
               />
-              <Button type="button" onClick={fetchData} variant="default" className="flex-shrink-0" title="Refresh data">
+              <Button type="button" onClick={fetchData} variant="primary" className="flex-shrink-0 h-[42px] px-3" title="Refresh data">
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-[16px] shadow-sm border border-hair overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
-                <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
-                  <th className="px-6 py-4 font-medium">{activeTab === 'donations' ? 'Receipt ID' : 'Expense ID'}</th>
-                  <th className="px-6 py-4 font-medium">{activeTab === 'donations' ? 'Donor' : 'Vendor'}</th>
-                  <th className="px-6 py-4 font-medium text-right">Amount</th>
-                  <th className="px-6 py-4 font-medium">Date</th>
-                  <th className="px-6 py-4 font-medium">Status</th>
+                <tr className="bg-cream-2 text-muted-ink text-[12px] font-bold uppercase tracking-wider border-b border-hair">
+                  <th className="px-6 py-[16px]">{activeTab === 'donations' ? 'Receipt ID' : 'Expense ID'}</th>
+                  <th className="px-6 py-[16px]">{activeTab === 'donations' ? 'Donor' : 'Vendor'}</th>
+                  <th className="px-6 py-[16px] text-right">Amount</th>
+                  <th className="px-6 py-[16px]">Date</th>
+                  <th className="px-6 py-[16px]">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
+              <tbody className="text-[14px]">
                 {loading && allData.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-400" />
-                      Loading records...
+                    <td colSpan={5} className="px-6 py-[48px] text-center text-muted-ink">
+                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-muted-ink/50" />
+                      <span className="font-semibold">Loading records...</span>
                     </td>
                   </tr>
                 ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                      <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      No records found matching your filters.
+                    <td colSpan={5} className="px-6 py-[48px] text-center text-muted-ink">
+                      <AlertCircle className="w-8 h-8 text-muted-ink/30 mx-auto mb-2" />
+                      <span className="font-semibold">No records found matching your filters.</span>
                     </td>
                   </tr>
                 ) : (
@@ -291,21 +290,21 @@ export default function RecordsPage() {
                       <tr 
                         key={`${id}-${idx}`} 
                         onClick={() => setSelectedRecord(row)}
-                        className={`hover:bg-slate-50 cursor-pointer transition-colors ${isCancelled ? 'bg-red-50/50' : ''}`}
+                        className={`hover:bg-hair/20 cursor-pointer transition-colors border-b border-hair last:border-0 ${isCancelled ? 'bg-maroon/5 hover:bg-maroon/10' : ''}`}
                       >
-                        <td className="px-6 py-4 font-mono font-medium text-slate-900 whitespace-nowrap">{id}</td>
-                        <td className="px-6 py-4 font-medium text-slate-700 whitespace-nowrap">{name}</td>
-                        <td className="px-6 py-4 text-right whitespace-nowrap">
-                          <CurrencyDisplay amount={row.amount} size="sm" className={isCancelled ? 'text-slate-500' : 'text-slate-900'} />
+                        <td className="px-6 py-[16px] font-mono font-bold text-ink whitespace-nowrap">{id}</td>
+                        <td className="px-6 py-[16px] font-bold text-ink whitespace-nowrap">{name}</td>
+                        <td className="px-6 py-[16px] text-right whitespace-nowrap">
+                          <CurrencyDisplay amount={row.amount} size="sm" className={`font-bold ${isCancelled ? 'text-muted-ink line-through' : 'text-ink'}`} />
                         </td>
-                        <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
+                        <td className="px-6 py-[16px] font-medium text-muted-ink whitespace-nowrap">
                           {parseGPMSDate(row.date).toLocaleDateString('en-IN', {
                             day: 'numeric', month: 'short', year: 'numeric'
                           })}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                            isCancelled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                        <td className="px-6 py-[16px] whitespace-nowrap">
+                          <span className={`inline-flex items-center px-[8px] py-[4px] rounded-[6px] text-[12px] font-bold tracking-wide ${
+                            isCancelled ? 'bg-[#F4E9EB] text-maroon' : 'bg-[#EAF3EA] text-sage'
                           }`}>
                             {row.status}
                           </span>

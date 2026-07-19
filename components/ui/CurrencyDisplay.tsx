@@ -25,15 +25,15 @@ export function CurrencyDisplay({
   return (
     <div
       className={cn(
-        'font-bold text-slate-900 tracking-tight flex items-baseline',
+        'font-bold text-ink tracking-tight flex items-baseline',
         sizeClasses[size],
         className
       )}
     >
       <span
         className={cn(
-          'text-slate-500 mr-1 opacity-80',
-          className?.includes('text-white') && 'text-blue-200'
+          'text-muted-ink mr-1 opacity-80',
+          className?.includes('text-white') && 'text-cream'
         )}
         style={{ fontSize: '0.85em' }}
       >

@@ -59,21 +59,21 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
 
       {/* Global Overlay */}
       {status !== 'idle' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-300">
-          <div className="bg-white rounded-xl shadow-2xl p-6 flex flex-col items-center justify-center space-y-4 max-w-sm w-11/12 mx-auto transform transition-all duration-300 scale-100">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/40 backdrop-blur-[2px] transition-opacity duration-300">
+          <div className="bg-white rounded-[20px] border border-hair shadow-xl p-[24px] flex flex-col items-center justify-center space-y-4 max-w-sm w-11/12 mx-auto transform transition-all duration-300 scale-100">
             {status === 'loading' && (
-              <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+              <Loader2 className="w-10 h-10 text-ink animate-spin" />
             )}
 
             {status === 'success' && (
-              <CheckCircle className="w-12 h-12 text-green-500 animate-bounce" />
+              <CheckCircle className="w-10 h-10 text-sage animate-bounce" />
             )}
 
             {status === 'error' && (
-              <XCircle className="w-12 h-12 text-red-500 animate-pulse" />
+              <XCircle className="w-10 h-10 text-maroon animate-pulse" />
             )}
 
-            <p className="text-lg font-semibold text-slate-800 text-center">
+            <p className="text-[16px] font-bold text-ink text-center">
               {message}
             </p>
           </div>

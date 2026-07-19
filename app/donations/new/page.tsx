@@ -225,114 +225,121 @@ export default function NewDonationPage() {
     };
 
     return (
-      <div className="min-h-screen bg-slate-50 pb-20">
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <div className="min-h-screen bg-cream pb-20">
+        <header className="bg-cream border-b border-hair sticky top-0 z-10">
           <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
               Donation Recorded
             </h1>
           </div>
         </header>
 
         <main className="max-w-3xl mx-auto px-4 py-8">
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="pt-8 pb-8 text-center space-y-4">
-              <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-              <div>
-                <p className="text-sm text-green-700 font-medium mb-1">
+          <Card className="max-w-md mx-auto rounded-[24px] overflow-hidden border-hair shadow-sm">
+            <CardContent className="p-8 space-y-8">
+              <div className="text-center space-y-3">
+                <CheckCircle className="w-16 h-16 text-sage mx-auto" />
+                <h2 className="text-[24px] font-playfair font-bold text-ink">Success!</h2>
+                <p className="text-[14px] font-medium text-muted-ink">
+                  Donation successfully recorded.
+                </p>
+              </div>
+
+              <div className="bg-cream-2 rounded-[16px] p-6 text-center space-y-2 border border-hair">
+                <p className="text-[13px] font-bold text-muted-ink uppercase tracking-wider">
                   Receipt ID
                 </p>
-                <p className="text-lg font-bold text-green-900 font-mono">
+                <p className="text-[20px] font-playfair font-bold text-ink">
                   {successData.receiptId}
                 </p>
-              </div>
-              <div>
-                <p className="text-sm text-green-700 font-medium mb-1">
-                  {successData.donorName}
-                </p>
-                <CurrencyDisplay
-                  amount={successData.amount}
-                  size="lg"
-                  className="justify-center text-green-900"
-                />
-              </div>
-
-              <div className="pt-4 grid grid-cols-2 gap-3">
-                <Button
-                  onClick={handleDownloadPdf}
-                  className="w-full bg-slate-800 hover:bg-slate-900 text-white"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  PDF Receipt
-                </Button>
-                <Button
-                  onClick={handleWhatsAppShare}
-                  className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  WhatsApp
-                </Button>
+                <div className="pt-2 border-t border-hair/50 mt-3 space-y-1">
+                  <p className="text-[15px] text-ink font-bold mt-2">
+                    {successData.donorName}
+                  </p>
+                  <CurrencyDisplay
+                    amount={successData.amount}
+                    size="lg"
+                    className="justify-center font-bold text-sage"
+                  />
+                </div>
               </div>
 
-              <div className="pt-2">
-                <Button
-                  variant="outline"
-                  onClick={handleNativeShare}
-                  className="w-full border-green-300 text-green-800 hover:bg-green-100"
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  More Sharing Options
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="pt-4 grid grid-cols-2 gap-3">
+              <Button
+                onClick={handleDownloadPdf}
+                className="w-full bg-ink hover:bg-ink/90 text-cream h-[48px] font-bold rounded-[12px]"
+              >
+                <Download className="w-[18px] h-[18px] mr-2" />
+                PDF
+              </Button>
+              <Button
+                onClick={handleWhatsAppShare}
+                className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white h-[48px] font-bold rounded-[12px] border-transparent"
+              >
+                <MessageCircle className="w-[18px] h-[18px] mr-2" />
+                WhatsApp
+              </Button>
+            </div>
 
-          <div className="mt-6 space-y-3">
-            <Button
-              onClick={handleRecordAnother}
-              className="w-full h-12 text-base bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Record Another Donation
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => router.push('/dashboard')}
-              className="w-full h-12 text-base rounded-xl font-semibold border-slate-300"
-            >
-              Back to Dashboard
-            </Button>
-          </div>
-        </main>
-      </div>
-    );
-  }
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                onClick={handleNativeShare}
+                className="w-full h-[48px] font-bold rounded-[12px] text-ink border-hair hover:bg-hair/30"
+              >
+                <Share2 className="w-[18px] h-[18px] mr-2" />
+                More Sharing Options
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="mt-8 space-y-3 max-w-md mx-auto">
+          <Button
+            onClick={handleRecordAnother}
+            className="w-full h-[54px] text-[16px] bg-sage hover:bg-sage/90 text-white rounded-[14px] font-bold border-transparent"
+          >
+            <Plus className="w-[20px] h-[20px] mr-2" />
+            Record Another Donation
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push('/dashboard')}
+            className="w-full h-[54px] text-[16px] rounded-[14px] font-bold border-hair text-ink hover:bg-hair/30"
+          >
+            Back to Dashboard
+          </Button>
+        </div>
+      </main>
+    </div>
+  );
+}
 
   // ── Form State ───────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className="min-h-screen bg-cream pb-20">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <header className="bg-cream border-b border-hair sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
           <button
             onClick={() => router.push('/dashboard')}
-            className="p-2 -ml-2 mr-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-2 -ml-2 mr-2 text-muted-ink hover:text-ink rounded-lg hover:bg-hair/50 transition-colors"
             aria-label="Back to Dashboard"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+          <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
             Record Donation
           </h1>
         </div>
       </header>
 
       {/* Form */}
-      <main className="max-w-3xl mx-auto px-4 py-6">
-        <form onSubmit={handleSubmit} className="space-y-5">
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Validation Error Banner */}
           {validationError && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 font-medium">
+            <div className="bg-[#F4E9EB] border border-maroon/20 rounded-[12px] px-4 py-3 text-[14px] text-maroon font-bold">
               {validationError}
             </div>
           )}
@@ -341,9 +348,9 @@ export default function NewDonationPage() {
           <div>
             <label
               htmlFor="donorName"
-              className="block text-sm font-medium text-slate-700 mb-1.5"
+              className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Donor Name <span className="text-red-500">*</span>
+              Donor Name <span className="text-maroon">*</span>
             </label>
             <input
               id="donorName"
@@ -353,7 +360,7 @@ export default function NewDonationPage() {
               placeholder="Enter donor's name"
               value={form.donorName}
               onChange={(e) => updateField('donorName', e.target.value)}
-              className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+              className="w-full h-[48px] px-4 rounded-[12px] border border-hair bg-white text-ink font-semibold text-[15px] placeholder:text-muted-ink focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
             />
           </div>
 
@@ -361,22 +368,22 @@ export default function NewDonationPage() {
           <div>
             <label
               htmlFor="phone"
-              className="block text-sm font-medium text-slate-700 mb-1.5"
+              className="block text-[14px] font-bold text-ink mb-1.5"
             >
               Phone Number{' '}
-              <span className="text-slate-400 text-xs">(optional)</span>
+              <span className="text-muted-ink text-[12px] font-medium">(optional)</span>
             </label>
             <input
               id="phone"
               type="tel"
               autoComplete="off"
-              placeholder="e.g. 9876543210 (Optional)"
+              placeholder="e.g. 9876543210"
               value={form.phone}
               onChange={(e) => updateField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
               maxLength={10}
               inputMode="numeric"
               pattern="[0-9]*"
-              className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+              className="w-full h-[48px] px-4 rounded-[12px] border border-hair bg-white text-ink font-semibold text-[15px] placeholder:text-muted-ink focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
             />
           </div>
 
@@ -384,12 +391,12 @@ export default function NewDonationPage() {
           <div>
             <label
               htmlFor="amount"
-              className="block text-sm font-medium text-slate-700 mb-1.5"
+              className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Amount <span className="text-red-500">*</span>
+              Amount <span className="text-maroon">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-lg">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-ink font-bold text-[18px]">
                 ₹
               </span>
               <input
@@ -404,15 +411,15 @@ export default function NewDonationPage() {
                   const val = e.target.value.replace(/[^0-9.]/g, '');
                   updateField('amount', val);
                 }}
-                className="w-full h-14 pl-10 pr-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-2xl font-bold placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                className="w-full h-[56px] pl-[36px] pr-4 rounded-[12px] border border-hair bg-white text-ink text-[24px] font-bold placeholder:text-hair focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
               />
             </div>
           </div>
 
           {/* Purpose — Pill Chips */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Purpose <span className="text-slate-400 text-xs">(optional)</span>
+            <label className="block text-[14px] font-bold text-ink mb-2">
+              Purpose <span className="text-muted-ink text-[12px] font-medium">(optional)</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {PURPOSES.map((pur) => (
@@ -420,10 +427,10 @@ export default function NewDonationPage() {
                   key={pur}
                   type="button"
                   onClick={() => updateField('purpose', pur)}
-                  className={`px-4 py-2.5 rounded-full text-sm font-medium transition-all ${
+                  className={`px-[16px] py-[10px] rounded-[24px] text-[14px] font-bold transition-all ${
                     form.purpose === pur
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-white text-slate-700 border border-slate-300 hover:border-blue-400 hover:text-blue-600'
+                      ? 'bg-ink text-cream border-transparent shadow-sm'
+                      : 'bg-white text-ink border border-hair hover:border-ink hover:text-ink'
                   }`}
                 >
                   {pur}
@@ -434,8 +441,8 @@ export default function NewDonationPage() {
 
           {/* Payment Mode — Toggle Buttons */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Payment Mode <span className="text-red-500">*</span>
+            <label className="block text-[14px] font-bold text-ink mb-2">
+              Payment Mode <span className="text-maroon">*</span>
             </label>
             <div className="grid grid-cols-2 gap-3">
               {PAYMENT_MODES.map((mode) => (
@@ -443,10 +450,10 @@ export default function NewDonationPage() {
                   key={mode}
                   type="button"
                   onClick={() => updateField('paymentMode', mode)}
-                  className={`h-12 rounded-xl text-base font-semibold transition-all ${
+                  className={`h-[48px] rounded-[12px] text-[15px] font-bold transition-all border ${
                     form.paymentMode === mode
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-white text-slate-700 border border-slate-300 hover:border-blue-400'
+                      ? 'bg-ink text-cream border-transparent shadow-sm'
+                      : 'bg-white text-ink border-hair hover:border-ink'
                   }`}
                 >
                   {mode === 'Cash' ? '💵' : '📱'} {mode}
@@ -460,10 +467,10 @@ export default function NewDonationPage() {
             <div>
               <label
                 htmlFor="upiRef"
-                className="block text-sm font-medium text-slate-700 mb-1.5"
+                className="block text-[14px] font-bold text-ink mb-1.5"
               >
                 UPI Reference{' '}
-                <span className="text-slate-400 text-xs">(optional)</span>
+                <span className="text-muted-ink text-[12px] font-medium">(optional)</span>
               </label>
               <input
                 id="upiRef"
@@ -472,7 +479,7 @@ export default function NewDonationPage() {
                 placeholder="Transaction ID or UPI ref number"
                 value={form.upiRef}
                 onChange={(e) => updateField('upiRef', e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                className="w-full h-[48px] px-4 rounded-[12px] border border-hair bg-white text-ink font-semibold text-[15px] placeholder:text-muted-ink focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
               />
             </div>
           )}
@@ -481,9 +488,9 @@ export default function NewDonationPage() {
           <div>
             <label
               htmlFor="remarks"
-              className="block text-sm font-medium text-slate-700 mb-1.5"
+              className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Remarks <span className="text-slate-400 text-xs">(optional)</span>
+              Remarks <span className="text-muted-ink text-[12px] font-medium">(optional)</span>
             </label>
             <textarea
               id="remarks"
@@ -491,19 +498,21 @@ export default function NewDonationPage() {
               placeholder="Any additional notes"
               value={form.remarks}
               onChange={(e) => updateField('remarks', e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow resize-none"
+              className="w-full px-4 py-3 rounded-[12px] border border-hair bg-white text-ink font-semibold text-[15px] placeholder:text-muted-ink focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow resize-none"
             />
           </div>
 
           {/* Submit */}
-          <Button
-            type="submit"
-            disabled={submitting}
-            className="w-full h-14 text-lg bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-sm mt-2 disabled:opacity-50"
-          >
-            <IndianRupee className="w-5 h-5 mr-2" />
-            Record Donation
-          </Button>
+          <div className="pt-2">
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="w-full h-[54px] text-[16px] bg-ink hover:bg-ink/90 text-cream rounded-[14px] font-bold shadow-sm disabled:opacity-50 border-transparent"
+            >
+              <IndianRupee className="w-[18px] h-[18px] mr-2" />
+              Record Donation
+            </Button>
+          </div>
         </form>
       </main>
     </div>

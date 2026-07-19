@@ -63,40 +63,40 @@ export default function VerifyExpensePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-          <p className="text-gray-600">Verifying Record...</p>
+          <Loader2 className="w-8 h-8 text-maroon animate-spin" />
+          <p className="font-bold text-muted-ink">Verifying Record...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="max-w-md w-full mx-auto">
+    <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <Card className="max-w-md w-full mx-auto rounded-[24px] border-hair shadow-sm">
         <CardHeader className="text-center pb-2">
           {data ? (
             <>
               {data.status === 'Cancelled' ? (
-                <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                <XCircle className="w-16 h-16 text-maroon mx-auto mb-4" />
               ) : (
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <CheckCircle className="w-16 h-16 text-sage mx-auto mb-4" />
               )}
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="font-playfair text-[24px] font-bold text-ink">
                 {data.status === 'Cancelled'
                   ? 'Record Cancelled'
                   : 'Official Expense Record'}
               </CardTitle>
-              <p className="text-gray-500 mt-1 flex items-center justify-center">
-                <CheckCircle className="w-4 h-4 mr-1 text-green-500" />
+              <p className="text-[14px] font-medium text-muted-ink mt-1 flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 mr-1 text-sage" />
                 Verified GPMS 2026
               </p>
             </>
           ) : (
             <>
-              <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-              <CardTitle className="text-2xl font-bold">
+              <XCircle className="w-16 h-16 text-maroon mx-auto mb-4" />
+              <CardTitle className="font-playfair text-[24px] font-bold text-ink">
                 Record Not Found
               </CardTitle>
             </>
@@ -105,69 +105,68 @@ export default function VerifyExpensePage() {
 
         <CardContent className="pt-6">
           {error && !data ? (
-            <div className="text-center text-red-600 bg-red-50 p-4 rounded-lg">
+            <div className="text-center text-maroon bg-[#F4E9EB] p-4 rounded-[12px] border border-maroon/20 font-bold">
               {error}
             </div>
           ) : data ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-2 py-2 border-b">
-                <span className="text-gray-500 text-sm">Expense ID</span>
-                <span className="col-span-2 font-medium text-right text-gray-900">
+            <div className="space-y-1">
+              <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Expense ID</span>
+                <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                   {data.expenseId}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-2 border-b">
-                <span className="text-gray-500 text-sm">Category</span>
-                <span className="col-span-2 font-medium text-right text-gray-900">
+              <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Category</span>
+                <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                   {data.category}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-2 border-b">
-                <span className="text-gray-500 text-sm">Description</span>
-                <span className="col-span-2 font-medium text-right text-gray-900">
+              <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Description</span>
+                <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                   {data.description}
                 </span>
               </div>
               {data.vendor && (
-                <div className="grid grid-cols-3 gap-2 py-2 border-b">
-                  <span className="text-gray-500 text-sm">Vendor</span>
-                  <span className="col-span-2 font-medium text-right text-gray-900">
+                <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
+                  <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Vendor</span>
+                  <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                     {data.vendor}
                   </span>
                 </div>
               )}
-              <div className="grid grid-cols-3 gap-2 py-2 border-b">
-                <span className="text-gray-500 text-sm">Amount</span>
-                <span className="col-span-2 font-medium text-right text-red-600">
+              <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Amount</span>
+                <span className={`col-span-2 font-bold text-right text-[18px] ${data.status === 'Cancelled' ? 'text-maroon line-through' : 'text-sage'}`}>
                   ₹{Number(data.amount).toLocaleString('en-IN')}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-2 border-b">
-                <span className="text-gray-500 text-sm">Paid By</span>
-                <span className="col-span-2 font-medium text-right text-gray-900">
+              <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Paid By</span>
+                <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                   {data.paidByName}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-2">
-                <span className="text-gray-500 text-sm">Date</span>
-                <span className="col-span-2 font-medium text-right text-gray-900">
-                  {parseGPMSDate(data.date).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2 py-2">
-                <span className="text-gray-500 text-sm">Bill Attached</span>
-                <span className="col-span-2 font-medium text-right text-gray-900">
-                  {data.hasBill ? 'Yes' : 'No'}
+              <div className="grid grid-cols-3 gap-2 py-3">
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Date</span>
+                <span className="col-span-2 font-bold text-right text-ink text-[15px]">
+                  {data.date ? parseGPMSDate(data.date).toLocaleDateString('en-IN', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                  }) : '-'}
                 </span>
               </div>
             </div>
           ) : null}
         </CardContent>
       </Card>
+      
+      <div className="fixed bottom-6 w-full text-center px-4">
+        <p className="text-[12px] font-bold text-muted-ink uppercase tracking-widest">
+          Verified by GPMS
+        </p>
+      </div>
     </div>
   );
 }

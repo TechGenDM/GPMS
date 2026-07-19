@@ -276,76 +276,68 @@ export default function RecordExpense() {
           // User cancelled or failed
         }
       } else {
-        showError('Native sharing is not supported on this device');
-      }
-    };
-
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        {/* Header (Simplified) */}
-        <header className="bg-white border-b border-slate-200">
-          <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-center">
-            <h1 className="text-lg font-bold text-slate-900">Receipt</h1>
+         return (
+      <div className="min-h-screen bg-cream pb-20">
+        <header className="bg-cream border-b border-hair sticky top-0 z-10">
+          <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
+            <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
+              Expense Recorded
+            </h1>
           </div>
         </header>
 
-        <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-8 flex flex-col justify-center">
-          <Card className="border-0 shadow-xl overflow-hidden rounded-2xl bg-white relative">
-            <div className="absolute top-0 left-0 w-full h-2 bg-red-500" />
-
-            <CardContent className="p-8 text-center space-y-6">
-              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-red-600" />
+        <main className="max-w-3xl mx-auto px-4 py-8">
+          <Card className="max-w-md mx-auto rounded-[24px] overflow-hidden border-hair shadow-sm">
+            <CardContent className="p-8 space-y-8">
+              <div className="text-center space-y-3">
+                <CheckCircle className="w-16 h-16 text-sage mx-auto" />
+                <h2 className="text-[24px] font-playfair font-bold text-ink">Success!</h2>
               </div>
 
-              <div>
-                <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">
-                  Expense Recorded
+              <div className="bg-cream-2 rounded-[16px] p-6 text-center space-y-2 border border-hair">
+                <p className="text-[13px] font-bold text-muted-ink uppercase tracking-wider">
+                  Expense ID
                 </p>
-                <h2 className="text-2xl font-bold text-slate-900">
+                <p className="text-[20px] font-playfair font-bold text-ink">
                   {successData.expenseId}
-                </h2>
-              </div>
-
-              <div className="py-6 border-y border-slate-100 border-dashed">
-                <p className="text-sm text-slate-500 mb-1">Category</p>
-                <p className="text-lg font-semibold text-slate-900 mb-4">
-                  {successData.category}
                 </p>
-
-                <p className="text-sm text-slate-500 mb-1">Amount</p>
-                <CurrencyDisplay
-                  amount={successData.amount}
-                  size="lg"
-                  className="justify-center text-red-900"
-                />
+                <div className="pt-2 border-t border-hair/50 mt-3 space-y-1">
+                  <p className="text-[15px] text-ink font-bold mt-2">
+                    {successData.category}
+                  </p>
+                  <CurrencyDisplay
+                    amount={successData.amount}
+                    size="lg"
+                    className="justify-center font-bold text-sage"
+                  />
+                </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col gap-3 pt-2">
+              <div className="pt-4 flex flex-col gap-3">
                 <Button
                   onClick={handleDownloadPDF}
-                  className="w-full h-12 text-base bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold shadow-md"
+                  className="w-full bg-ink hover:bg-ink/90 text-cream h-[48px] font-bold rounded-[12px] border-transparent"
                 >
-                  <Download className="w-5 h-5 mr-2" />
-                  Download Expense PDF
+                  <Download className="w-[18px] h-[18px] mr-2" />
+                  PDF Receipt
                 </Button>
 
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     variant="outline"
                     onClick={handleWhatsAppShare}
-                    className="w-full h-12 text-base font-semibold border-slate-300 text-green-600 hover:text-green-700 hover:bg-green-50"
+                    className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white h-[48px] font-bold rounded-[12px] border-transparent"
                   >
-                    <MessageCircle className="w-5 h-5 mr-2" />
+                    <MessageCircle className="w-[18px] h-[18px] mr-2" />
                     WhatsApp
                   </Button>
                   <Button
                     variant="outline"
                     onClick={handleNativeShare}
-                    className="w-full h-12 text-base font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
+                    className="w-full h-[48px] font-bold rounded-[12px] text-ink border-hair hover:bg-hair/30"
                   >
-                    <Share2 className="w-5 h-5 mr-2" />
+                    <Share2 className="w-[18px] h-[18px] mr-2" />
                     More Options
                   </Button>
                 </div>
@@ -353,18 +345,109 @@ export default function RecordExpense() {
             </CardContent>
           </Card>
 
-          <div className="mt-6 space-y-3">
+          <div className="mt-8 space-y-3 max-w-md mx-auto">
             <Button
               onClick={handleRecordAnother}
-              className="w-full h-12 text-base bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold shadow-md"
+              className="w-full h-[54px] text-[16px] bg-sage hover:bg-sage/90 text-white rounded-[14px] font-bold border-transparent"
             >
-              <Plus className="w-5 h-5 mr-2" />
+              <Plus className="w-[20px] h-[20px] mr-2" />
               Record Another Expense
             </Button>
             <Button
               variant="outline"
               onClick={() => router.push('/dashboard')}
-              className="w-full h-12 text-base rounded-xl font-semibold border-slate-300 text-slate-700"
+              className="w-full h-[54px] text-[16px] rounded-[14px] font-bold border-hair text-ink hover:bg-hair/30"
+            >
+              Back to Dashboard
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-cream pb-20">
+        <header className="bg-cream border-b border-hair sticky top-0 z-10">
+          <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
+            <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
+              Expense Recorded
+            </h1>
+          </div>
+        </header>
+
+        <main className="max-w-3xl mx-auto px-4 py-8">
+          <Card className="max-w-md mx-auto rounded-[24px] overflow-hidden border-hair shadow-sm">
+            <CardContent className="p-8 space-y-8">
+              <div className="text-center space-y-3">
+                <CheckCircle className="w-16 h-16 text-sage mx-auto" />
+                <h2 className="text-[24px] font-playfair font-bold text-ink">Success!</h2>
+              </div>
+
+              <div className="bg-cream-2 rounded-[16px] p-6 text-center space-y-2 border border-hair">
+                <p className="text-[13px] font-bold text-muted-ink uppercase tracking-wider">
+                  Expense ID
+                </p>
+                <p className="text-[20px] font-playfair font-bold text-ink">
+                  {successData.expenseId}
+                </p>
+                <div className="pt-2 border-t border-hair/50 mt-3 space-y-1">
+                  <p className="text-[15px] text-ink font-bold mt-2">
+                    {successData.category}
+                  </p>
+                  <CurrencyDisplay
+                    amount={successData.amount}
+                    size="lg"
+                    className="justify-center font-bold text-sage"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-4 flex flex-col gap-3">
+                <Button
+                  onClick={handleDownloadPDF}
+                  className="w-full bg-ink hover:bg-ink/90 text-cream h-[48px] font-bold rounded-[12px] border-transparent"
+                >
+                  <Download className="w-[18px] h-[18px] mr-2" />
+                  PDF Receipt
+                </Button>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleWhatsAppShare}
+                    className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white h-[48px] font-bold rounded-[12px] border-transparent"
+                  >
+                    <MessageCircle className="w-[18px] h-[18px] mr-2" />
+                    WhatsApp
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleNativeShare}
+                    className="w-full h-[48px] font-bold rounded-[12px] text-ink border-hair hover:bg-hair/30"
+                  >
+                    <Share2 className="w-[18px] h-[18px] mr-2" />
+                    More Options
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="mt-8 space-y-3 max-w-md mx-auto">
+            <Button
+              onClick={handleRecordAnother}
+              className="w-full h-[54px] text-[16px] bg-sage hover:bg-sage/90 text-white rounded-[14px] font-bold border-transparent"
+            >
+              <Plus className="w-[20px] h-[20px] mr-2" />
+              Record Another Expense
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/dashboard')}
+              className="w-full h-[54px] text-[16px] rounded-[14px] font-bold border-hair text-ink hover:bg-hair/30"
             >
               Back to Dashboard
             </Button>
@@ -375,31 +458,32 @@ export default function RecordExpense() {
   }
 
   // ── Form State ───────────────────────────────────────────────────
+  // ── Form State ───────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className="min-h-screen bg-cream pb-20">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <header className="bg-cream border-b border-hair sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
           <button
             type="button"
             onClick={() => router.push('/dashboard')}
-            className="p-2 -ml-2 mr-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-2 -ml-2 mr-2 text-muted-ink hover:text-ink rounded-lg hover:bg-hair/50 transition-colors"
             aria-label="Back to Dashboard"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+          <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
             Record Expense
           </h1>
         </div>
       </header>
 
       {/* Form */}
-      <main className="max-w-3xl mx-auto px-4 py-6">
-        <form onSubmit={handleSubmit} className="space-y-5">
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Validation Error Banner */}
           {validationError && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 font-medium">
+            <div className="bg-[#F4E9EB] border border-maroon/20 rounded-[12px] px-4 py-3 text-[14px] text-maroon font-bold">
               {validationError}
             </div>
           )}
@@ -408,12 +492,12 @@ export default function RecordExpense() {
           <div>
             <label
               htmlFor="amount"
-              className="block text-sm font-medium text-slate-700 mb-1.5"
+              className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Amount <span className="text-red-500">*</span>
+              Amount <span className="text-maroon">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-lg">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-ink font-bold text-[18px]">
                 ₹
               </span>
               <input
@@ -424,29 +508,29 @@ export default function RecordExpense() {
                 placeholder="0"
                 value={form.amount}
                 onChange={(e) => updateField('amount', e.target.value)}
-                className="w-full h-14 pl-8 pr-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-xl font-semibold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-shadow"
+                className="w-full h-[56px] pl-[36px] pr-4 rounded-[12px] border border-hair bg-white text-ink text-[24px] font-bold placeholder:text-hair focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
               />
             </div>
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Category <span className="text-red-500">*</span>
+            <label className="block text-[14px] font-bold text-ink mb-2">
+              Category <span className="text-maroon">*</span>
             </label>
             
             {isLoadingCategories ? (
-              <div className="flex items-center space-x-2 text-slate-500 py-2">
+              <div className="flex items-center space-x-2 text-muted-ink py-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Loading categories...</span>
+                <span className="text-[14px] font-semibold">Loading categories...</span>
               </div>
             ) : categoriesError ? (
-              <div className="flex items-center space-x-2 text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-100">
-                <span className="text-sm">{categoriesError}</span>
+              <div className="flex items-center space-x-2 text-maroon bg-[#F4E9EB] px-3 py-2 rounded-[8px] border border-maroon/20">
+                <span className="text-[14px] font-semibold">{categoriesError}</span>
                 <button 
                   type="button" 
                   onClick={fetchCategories}
-                  className="flex items-center ml-2 px-2 py-1 bg-white border border-red-200 rounded text-xs hover:bg-red-50 transition-colors"
+                  className="flex items-center ml-2 px-2 py-1 bg-white border border-maroon/20 rounded-[6px] text-[12px] font-bold hover:bg-maroon/5 transition-colors"
                 >
                   <RefreshCw className="w-3 h-3 mr-1" />
                   Retry
@@ -459,10 +543,10 @@ export default function RecordExpense() {
                     key={cat}
                     type="button"
                     onClick={() => updateField('category', cat)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    className={`px-[16px] py-[10px] rounded-[24px] text-[14px] font-bold transition-all ${
                       form.category === cat
-                        ? 'bg-red-600 text-white shadow-md'
-                        : 'bg-white text-slate-600 border border-slate-300 hover:border-red-300 hover:bg-red-50'
+                        ? 'bg-ink text-cream border-transparent shadow-sm'
+                        : 'bg-white text-ink border border-hair hover:border-ink hover:text-ink'
                     }`}
                   >
                     {cat}
@@ -476,9 +560,9 @@ export default function RecordExpense() {
           <div>
             <label
               htmlFor="description"
-              className="block text-sm font-medium text-slate-700 mb-1.5"
+              className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Description <span className="text-red-500">*</span>
+              Description <span className="text-maroon">*</span>
             </label>
             <input
               id="description"
@@ -487,7 +571,7 @@ export default function RecordExpense() {
               placeholder="e.g. Bamboo purchase for tent"
               value={form.description}
               onChange={(e) => updateField('description', e.target.value)}
-              className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-shadow"
+              className="w-full h-[48px] px-4 rounded-[12px] border border-hair bg-white text-ink font-semibold text-[15px] placeholder:text-muted-ink focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
             />
           </div>
 
@@ -495,9 +579,9 @@ export default function RecordExpense() {
           <div>
             <label
               htmlFor="vendor"
-              className="block text-sm font-medium text-slate-700 mb-1.5"
+              className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Vendor <span className="text-slate-400 text-xs">(optional)</span>
+              Vendor <span className="text-muted-ink text-[12px] font-medium">(optional)</span>
             </label>
             <input
               id="vendor"
@@ -506,7 +590,7 @@ export default function RecordExpense() {
               placeholder="e.g. Sharma Traders"
               value={form.vendor}
               onChange={(e) => updateField('vendor', e.target.value)}
-              className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-shadow"
+              className="w-full h-[48px] px-4 rounded-[12px] border border-hair bg-white text-ink font-semibold text-[15px] placeholder:text-muted-ink focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
             />
           </div>
 
@@ -514,26 +598,26 @@ export default function RecordExpense() {
           <div>
             <label
               htmlFor="billFile"
-              className="block text-sm font-medium text-slate-700 mb-1.5"
+              className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Upload Bill <span className="text-slate-400 text-xs">(optional, PDF/JPG/PNG up to 5MB)</span>
+              Upload Bill <span className="text-muted-ink text-[12px] font-medium">(optional, PDF/JPG/PNG up to 5MB)</span>
             </label>
             
             {form.billFile ? (
-              <div className="flex items-center justify-between p-3 border border-slate-200 bg-white rounded-xl shadow-sm">
+              <div className="flex items-center justify-between p-3 border border-hair bg-white rounded-[12px] shadow-sm">
                 <div className="flex items-center truncate mr-3">
-                  <div className="p-2 bg-red-50 rounded-lg text-red-600 mr-3">
+                  <div className="p-2 bg-sage/10 rounded-lg text-sage mr-3">
                     <CheckCircle className="w-5 h-5" />
                   </div>
                   <div className="truncate">
-                    <p className="text-sm font-medium text-slate-700 truncate">{form.billFile.name}</p>
-                    <p className="text-xs text-slate-400">Ready to upload</p>
+                    <p className="text-[14px] font-bold text-ink truncate">{form.billFile.name}</p>
+                    <p className="text-[12px] font-medium text-muted-ink">Ready to upload</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={removeFile}
-                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-2 text-muted-ink hover:text-maroon hover:bg-maroon/10 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -551,26 +635,26 @@ export default function RecordExpense() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
+                  className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-hair bg-cream hover:bg-hair/30 rounded-[16px] transition-colors"
                 >
-                  <Upload className="w-8 h-8 text-slate-400 mb-2" />
-                  <p className="text-sm font-medium text-slate-700">Tap to select a file</p>
-                  <p className="text-xs text-slate-500 mt-1">PDF, JPG, PNG (Max 5MB)</p>
+                  <Upload className="w-8 h-8 text-muted-ink mb-2" />
+                  <p className="text-[14px] font-bold text-ink">Tap to select a file</p>
+                  <p className="text-[12px] font-medium text-muted-ink mt-1">PDF, JPG, PNG (Max 5MB)</p>
                 </button>
               </div>
             )}
           </div>
 
           {/* Submit Button */}
-          <div className="pt-6">
+          <div className="pt-2">
             <Button
               type="submit"
               disabled={isSubmitting || isLoadingCategories}
-              className="w-full h-12 text-base font-semibold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg transition-all"
+              className="w-full h-[54px] text-[16px] bg-ink hover:bg-ink/90 text-cream rounded-[14px] font-bold shadow-sm disabled:opacity-50 border-transparent"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center">
-                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  <Loader2 className="w-[18px] h-[18px] animate-spin mr-2" />
                   Recording...
                 </span>
               ) : (

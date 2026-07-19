@@ -127,45 +127,45 @@ export function RecordDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md my-8 relative">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-bold text-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px] p-4 overflow-y-auto">
+      <div className="bg-white rounded-[20px] border border-hair shadow-xl w-full max-w-md my-8 relative">
+        <div className="flex items-center justify-between p-[20px_24px] border-b border-hair">
+          <h2 className="font-playfair font-bold text-[18px] text-ink tracking-[0.02em]">
             {isDonation ? 'Donation Details' : 'Expense Details'}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 -mr-2 text-slate-500 hover:bg-slate-100 rounded-full"
+            className="p-2 -mr-2 text-muted-ink hover:text-ink hover:bg-hair/50 rounded-full transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-[24px] space-y-6">
           {/* Header Area */}
           <div className="text-center space-y-2">
             {isCancelled ? (
-              <XCircle className="w-12 h-12 text-red-500 mx-auto" />
+              <XCircle className="w-12 h-12 text-maroon mx-auto" />
             ) : (
-              <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
+              <CheckCircle className="w-12 h-12 text-sage mx-auto" />
             )}
             
-            <p className="text-sm font-medium text-slate-500">
+            <p className="text-[13px] font-bold text-muted-ink uppercase tracking-wider mt-2">
               {isDonation ? 'Receipt ID' : 'Expense ID'}
             </p>
-            <p className="text-lg font-bold text-slate-900 font-mono">
+            <p className="text-[24px] font-playfair font-bold text-ink">
               {isDonation ? record.receiptId : record.id}
             </p>
             
             <CurrencyDisplay
               amount={record.amount}
               size="lg"
-              className={`justify-center ${isCancelled ? 'text-red-700' : (isDonation ? 'text-green-700' : 'text-slate-900')}`}
+              className={`justify-center font-bold ${isCancelled ? 'text-maroon line-through opacity-80' : 'text-ink'}`}
             />
           </div>
 
           {/* Details Grid */}
-          <div className="bg-slate-50 rounded-lg p-4 space-y-3 text-sm">
+          <div className="bg-cream-2 border border-hair rounded-[16px] p-[16px] text-[14px]">
             {isDonation ? (
               <>
                 <DetailRow label="Donor Name" value={record.donorName} />
@@ -180,9 +180,9 @@ export function RecordDetailModal({
                 <DetailRow label="Description" value={record.description} />
                 <DetailRow label="Paid By" value={record.paidBy} />
                 {record.billLink && (
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="text-slate-500">Bill</span>
-                    <a href={record.billLink} target="_blank" rel="noreferrer" className="text-blue-600 font-medium hover:underline">
+                  <div className="flex justify-between border-b border-hair/50 pb-3 mb-3">
+                    <span className="text-muted-ink font-semibold">Bill</span>
+                    <a href={record.billLink} target="_blank" rel="noreferrer" className="text-ink font-bold hover:underline decoration-hair underline-offset-4">
                       View Bill
                     </a>
                   </div>
@@ -201,53 +201,53 @@ export function RecordDetailModal({
             <DetailRow
               label="Status"
               value={
-                <span className={isCancelled ? 'text-red-600 font-semibold' : 'text-green-600 font-semibold'}>
+                <span className={isCancelled ? 'text-maroon font-bold' : 'text-sage font-bold'}>
                   {record.status}
                 </span>
               }
             />
             {isCancelled && record.remarks && (
-              <div className="mt-2 text-red-600 text-xs p-2 bg-red-50 rounded">
+              <div className="mt-3 text-maroon text-[13px] p-3 bg-[#F4E9EB] rounded-[10px] font-semibold">
                 {record.remarks}
               </div>
             )}
           </div>
 
           {/* Actions */}
-          <div className="space-y-3">
+          <div className="space-y-4 pt-2">
             {!isCancelled && isDonation && (
               <div className="grid grid-cols-2 gap-3">
-                <Button onClick={handleDownload} variant="outline" className="w-full">
-                  <Download className="w-4 h-4 mr-2" /> PDF
+                <Button onClick={handleDownload} variant="outline" className="w-full font-bold h-[48px]">
+                  <Download className="w-[18px] h-[18px] mr-2" /> PDF
                 </Button>
                 <div className="flex gap-2">
-                  <Button onClick={handleWhatsApp} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
-                    <MessageCircle className="w-4 h-4" />
+                  <Button onClick={handleWhatsApp} className="flex-1 bg-sage hover:bg-sage/90 text-white border-transparent h-[48px]">
+                    <MessageCircle className="w-[18px] h-[18px]" />
                   </Button>
-                  <Button onClick={handleNativeShare} variant="outline" className="flex-1">
-                    <Share2 className="w-4 h-4" />
+                  <Button onClick={handleNativeShare} variant="outline" className="flex-1 h-[48px]">
+                    <Share2 className="w-[18px] h-[18px]" />
                   </Button>
                 </div>
               </div>
             )}
 
             {!isCancelled && canCancel && (
-              <div className="pt-4 border-t border-slate-200">
+              <div className="pt-4 border-t border-hair">
                 {!isCancelling ? (
                   <Button
                     onClick={() => setIsCancelling(true)}
                     variant="ghost"
-                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="w-full text-maroon hover:text-maroon hover:bg-maroon/5 font-bold h-[48px]"
                   >
-                    <Ban className="w-4 h-4 mr-2" /> Cancel Record
+                    <Ban className="w-[18px] h-[18px] mr-2" /> Cancel Record
                   </Button>
                 ) : (
-                  <div className="space-y-3 bg-red-50 p-3 rounded-lg border border-red-100">
+                  <div className="space-y-3 bg-[#F4E9EB] p-4 rounded-[14px] border border-maroon/20">
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-red-900">
-                        <p className="font-semibold mb-1">Cancel this record?</p>
-                        <p>This action cannot be undone. It will be marked as cancelled.</p>
+                      <AlertCircle className="w-5 h-5 text-maroon mt-0.5 flex-shrink-0" />
+                      <div className="text-[14px] text-maroon">
+                        <p className="font-bold mb-1">Cancel this record?</p>
+                        <p className="opacity-90 leading-snug">This action cannot be undone. It will be marked as cancelled.</p>
                       </div>
                     </div>
                     <input
@@ -256,34 +256,34 @@ export function RecordDetailModal({
                       value={cancelReason}
                       onChange={(e) => setCancelReason(e.target.value)}
                       disabled={isSubmitting}
-                      className="w-full text-sm border-slate-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 disabled:opacity-50 disabled:bg-slate-100"
+                      className="w-full px-[16px] py-[12px] text-[14px] font-semibold text-ink border border-maroon/20 rounded-[12px] shadow-sm focus:ring-1 focus:ring-maroon focus:border-maroon disabled:opacity-50 disabled:bg-hair/20 placeholder:text-maroon/50"
                     />
                     <div className="flex gap-2">
                       <Button
-                        onClick={handleCancelSubmit}
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm py-1 h-auto"
-                        disabled={!cancelReason.trim() || isSubmitting}
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                            Cancelling...
-                          </>
-                        ) : (
-                          'Confirm'
-                        )}
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setIsCancelling(false);
-                          setCancelReason('');
-                        }}
-                        variant="ghost"
-                        disabled={isSubmitting}
-                        className="flex-1 text-slate-600 hover:bg-slate-200 text-sm py-1 h-auto"
-                      >
-                        Abort
-                      </Button>
+                         onClick={handleCancelSubmit}
+                         className="flex-1 bg-maroon hover:bg-maroon/90 text-white font-bold h-[42px]"
+                         disabled={!cancelReason.trim() || isSubmitting}
+                       >
+                         {isSubmitting ? (
+                           <>
+                             <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                             Cancelling...
+                           </>
+                         ) : (
+                           'Confirm'
+                         )}
+                       </Button>
+                       <Button
+                         onClick={() => {
+                           setIsCancelling(false);
+                           setCancelReason('');
+                         }}
+                         variant="ghost"
+                         disabled={isSubmitting}
+                         className="flex-1 text-maroon hover:bg-maroon/10 font-bold h-[42px]"
+                       >
+                         Abort
+                       </Button>
                     </div>
                   </div>
                 )}
@@ -298,9 +298,9 @@ export function RecordDetailModal({
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex justify-between border-b border-slate-200/60 pb-2 last:border-0 last:pb-0">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-900 text-right">{value}</span>
+    <div className="flex justify-between border-b border-hair/50 pb-3 mb-3 last:border-0 last:pb-0 last:mb-0">
+      <span className="text-muted-ink font-semibold">{label}</span>
+      <span className="font-bold text-ink text-right">{value}</span>
     </div>
   );
 }

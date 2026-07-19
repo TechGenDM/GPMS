@@ -127,20 +127,20 @@ export function AuditLogTable() {
 
   const getModuleColor = (moduleName: string) => {
     switch (moduleName) {
-      case 'Users': return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'Auth': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
-      case 'Donations': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'Expenses': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'Settings': return 'bg-slate-100 text-slate-700 border-slate-200';
-      default: return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'Users': return 'bg-ink-glow/10 text-[#32234A] border-[#32234A]/20';
+      case 'Auth': return 'bg-gold-soft/10 text-[#B4823A] border-[#B4823A]/20';
+      case 'Donations': return 'bg-sage/10 text-sage border-sage/20';
+      case 'Expenses': return 'bg-maroon/10 text-maroon border-maroon/20';
+      case 'Settings': return 'bg-ink/10 text-ink border-ink/20';
+      default: return 'bg-muted-ink/10 text-muted-ink border-muted-ink/20';
     }
   };
 
   if (loading && logs.length === 0) {
     return (
       <div className="p-8 text-center">
-        <Activity className="w-8 h-8 text-indigo-600 animate-pulse mx-auto mb-4" />
-        <p className="text-slate-500">Loading audit logs...</p>
+        <Activity className="w-8 h-8 text-maroon animate-pulse mx-auto mb-4" />
+        <p className="text-[14px] font-semibold text-muted-ink">Loading audit logs...</p>
       </div>
     );
   }
@@ -148,12 +148,12 @@ export function AuditLogTable() {
   if (error && logs.length === 0) {
     return (
       <div className="p-8 text-center">
-        <div className="bg-red-50 text-red-600 p-4 rounded-lg inline-flex items-center gap-2 mb-4">
+        <div className="bg-[#F4E9EB] text-maroon p-4 rounded-[12px] inline-flex items-center gap-2 mb-4 border border-maroon/20 font-bold">
           <AlertCircle className="w-5 h-5" />
           {error}
         </div>
         <div>
-          <Button onClick={fetchLogs} variant="outline">
+          <Button onClick={fetchLogs} className="h-[40px] px-4 font-bold rounded-[12px] border-hair text-ink hover:bg-hair/30 bg-transparent border">
             <RefreshCw className="w-4 h-4 mr-2" />
             Try Again
           </Button>
@@ -165,23 +165,23 @@ export function AuditLogTable() {
   return (
     <div className="flex flex-col h-full">
       {/* Controls Bar */}
-      <div className="p-4 border-b border-slate-200 bg-white flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+      <div className="p-4 border-b border-hair bg-white flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-muted-ink absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search user, action..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
+              className="pl-9 pr-4 py-2 border border-hair rounded-[12px] text-[14px] font-semibold focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink w-full sm:w-64 placeholder:text-muted-ink"
             />
           </div>
           
           <select
             value={moduleFilter}
             onChange={e => setModuleFilter(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-full sm:w-40"
+            className="px-3 py-2 border border-hair rounded-[12px] text-[14px] font-semibold focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink bg-white w-full sm:w-40"
           >
             {uniqueModules.map(m => (
               <option key={m} value={m}>{m === 'All' ? 'All Modules' : m}</option>
@@ -191,8 +191,7 @@ export function AuditLogTable() {
 
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           <Button 
-            variant="outline" 
-            size="sm" 
+            className="h-[40px] px-4 font-bold rounded-[12px] border-hair text-ink hover:bg-hair/30 bg-transparent border"
             onClick={fetchLogs}
             disabled={loading}
           >
@@ -200,8 +199,7 @@ export function AuditLogTable() {
             Refresh
           </Button>
           <Button 
-            variant="default" 
-            size="sm" 
+            className="h-[40px] px-4 font-bold rounded-[12px] bg-ink hover:bg-ink/90 text-cream border-transparent disabled:opacity-50"
             onClick={handleExportCSV}
             disabled={filteredLogs.length === 0}
           >
@@ -214,22 +212,22 @@ export function AuditLogTable() {
       {/* Table Area */}
       <div className="overflow-x-auto bg-white min-h-[500px]">
         {filteredLogs.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
+          <div className="p-12 text-center text-[14px] font-semibold text-muted-ink">
             No audit logs found matching your filters.
           </div>
         ) : (
           <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+            <thead className="bg-cream-2 border-b border-hair text-muted-ink">
               <tr>
-                <th className="px-4 py-3 font-medium w-10"></th>
-                <th className="px-4 py-3 font-medium">Timestamp</th>
-                <th className="px-4 py-3 font-medium">User</th>
-                <th className="px-4 py-3 font-medium">Module</th>
-                <th className="px-4 py-3 font-medium">Action</th>
-                <th className="px-4 py-3 font-medium text-right">Record ID</th>
+                <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px] w-10"></th>
+                <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px]">Timestamp</th>
+                <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px]">User</th>
+                <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px]">Module</th>
+                <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px]">Action</th>
+                <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px] text-right">Record ID</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-hair">
               {filteredLogs.map(log => {
                 const isExpanded = expandedRows.has(log.logId);
                 const hasDetails = log.oldValue || log.newValue;
@@ -237,55 +235,55 @@ export function AuditLogTable() {
                 return (
                   <React.Fragment key={log.logId}>
                     <tr 
-                      className={`hover:bg-slate-50 transition-colors ${isExpanded ? 'bg-slate-50' : ''} ${hasDetails ? 'cursor-pointer' : ''}`}
+                      className={`hover:bg-cream-2 transition-colors ${isExpanded ? 'bg-cream-2' : ''} ${hasDetails ? 'cursor-pointer' : ''}`}
                       onClick={() => hasDetails && toggleRow(log.logId)}
                     >
-                      <td className="px-4 py-3 text-slate-400">
+                      <td className="px-4 py-3 text-muted-ink">
                         {hasDetails && (
                           isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center text-slate-600">
-                          <Calendar className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+                        <div className="flex items-center text-[14px] font-semibold text-ink">
+                          <Calendar className="w-3.5 h-3.5 mr-1.5 text-muted-ink" />
                           {new Date(log.timestamp).toLocaleString(undefined, { 
                             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
                           })}
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-medium text-slate-900">
+                      <td className="px-4 py-3 text-[14px] font-bold text-ink">
                         {log.userName}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium border ${getModuleColor(log.module)}`}>
+                        <span className={`px-2 py-0.5 rounded-[6px] text-[12px] font-bold border ${getModuleColor(log.module)}`}>
                           {log.module || 'System'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-700 capitalize">
+                      <td className="px-4 py-3 text-[14px] font-semibold text-ink capitalize">
                         {log.action.replace(/([A-Z])/g, ' $1').trim()}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-500 font-mono text-xs">
+                      <td className="px-4 py-3 text-right text-muted-ink font-mono text-[12px]">
                         {log.recordId || '-'}
                       </td>
                     </tr>
                     
                     {/* Expanded Details Row */}
                     {isExpanded && hasDetails && (
-                      <tr className="bg-slate-50 border-t-0">
-                        <td colSpan={6} className="px-4 py-4 pl-12 border-b border-slate-100">
+                      <tr className="bg-cream-2 border-t-0 border-b border-hair">
+                        <td colSpan={6} className="px-4 py-4 pl-12 border-b border-hair">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {log.oldValue && (
-                              <div className="bg-red-50/50 border border-red-100 rounded-md p-3">
-                                <h4 className="text-xs font-semibold text-red-800 uppercase tracking-wider mb-2">Previous Value</h4>
-                                <pre className="text-xs text-slate-700 whitespace-pre-wrap font-mono overflow-x-auto">
+                              <div className="bg-[#F4E9EB] border border-maroon/20 rounded-[12px] p-3">
+                                <h4 className="text-[12px] font-bold text-maroon uppercase tracking-wider mb-2">Previous Value</h4>
+                                <pre className="text-[12px] text-ink whitespace-pre-wrap font-mono overflow-x-auto">
                                   {log.oldValue}
                                 </pre>
                               </div>
                             )}
                             {log.newValue && (
-                              <div className="bg-emerald-50/50 border border-emerald-100 rounded-md p-3">
-                                <h4 className="text-xs font-semibold text-emerald-800 uppercase tracking-wider mb-2">New Value</h4>
-                                <pre className="text-xs text-slate-700 whitespace-pre-wrap font-mono overflow-x-auto">
+                              <div className="bg-sage/10 border border-sage/20 rounded-[12px] p-3">
+                                <h4 className="text-[12px] font-bold text-sage uppercase tracking-wider mb-2">New Value</h4>
+                                <pre className="text-[12px] text-ink whitespace-pre-wrap font-mono overflow-x-auto">
                                   {log.newValue}
                                 </pre>
                               </div>
@@ -301,7 +299,7 @@ export function AuditLogTable() {
           </table>
         )}
       </div>
-      <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 text-sm text-slate-500 flex justify-between">
+      <div className="bg-cream px-4 py-3 border-t border-hair text-[13px] font-semibold text-muted-ink flex justify-between">
         <span>Showing latest {filteredLogs.length} records</span>
       </div>
     </div>

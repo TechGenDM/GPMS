@@ -1,15 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-
 import { useEffect, useState } from 'react';
-import {
-  IndianRupee,
-  ArrowUpRight,
-  ArrowDownRight,
-  Wallet,
-  RefreshCw,
-} from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
+import sealLogo from '@/public/seal.png';
 
 interface PublicDashboardData {
   committeeName: string;
@@ -18,8 +12,6 @@ interface PublicDashboardData {
   totalExpense: number;
   balance: number;
 }
-
-import sealLogo from '@/public/seal.png';
 
 export default function PublicDashboard() {
   const [dashData, setDashData] = useState<PublicDashboardData | null>(null);
@@ -51,125 +43,137 @@ export default function PublicDashboard() {
   const fmt = (n: number) => new Intl.NumberFormat('en-IN').format(n);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-slate-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+    <div className="min-h-screen bg-cream flex flex-col">
+      {/* Topbar */}
+      <header className="flex items-center justify-between p-[18px_20px] bg-cream border-b border-hair sticky top-0 z-10">
+        <div className="flex items-center gap-[9px]">
+          <div className="relative w-[26px] h-[26px]">
             <Image
               src={sealLogo}
               alt="GPMS Seal"
-              width={32}
-              height={32}
-              className="w-8 h-8 rounded-lg"
+              fill
+              className="rounded-full border-[1.5px] border-gold object-cover"
             />
-            <span className="font-bold text-slate-900 tracking-tight">
-              GPMS
-            </span>
           </div>
-          <a
-            href="/login"
-            className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
-          >
-            Committee Login →
-          </a>
+          <span className="font-playfair font-bold text-[18px] tracking-[0.02em] text-transparent bg-clip-text bg-gradient-to-br from-gold-soft to-ember">
+            GPMS
+          </span>
         </div>
+        <a
+          href="/login"
+          className="text-[13px] font-semibold text-ember flex items-center gap-1 hover:opacity-80 transition-opacity"
+        >
+          Committee login <span>→</span>
+        </a>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+      {/* Main Scroll Area */}
+      <main className="flex-1 overflow-y-auto max-w-2xl mx-auto w-full">
         {loading ? (
-          /* Skeleton */
-          <div className="space-y-6 animate-pulse">
+          <div className="p-5 space-y-6 animate-pulse">
             <div className="space-y-2">
-              <div className="h-7 w-56 bg-slate-200 rounded-lg" />
-              <div className="h-4 w-40 bg-slate-100 rounded" />
+              <div className="h-8 w-48 bg-hair/50 rounded-lg" />
+              <div className="h-4 w-64 bg-hair/30 rounded" />
             </div>
-            <div className="h-28 bg-slate-200 rounded-2xl" />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-24 bg-slate-200 rounded-2xl" />
-              <div className="h-24 bg-slate-200 rounded-2xl" />
+            <div className="h-32 bg-hair/40 rounded-[20px]" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="h-28 bg-hair/20 rounded-2xl" />
+              <div className="h-28 bg-hair/20 rounded-2xl" />
             </div>
           </div>
         ) : error ? (
-          /* Error */
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-            <p className="text-red-600 font-medium mb-3">{error}</p>
+          <div className="m-5 bg-maroon-soft/10 border border-maroon-soft/20 rounded-2xl p-6 text-center">
+            <p className="text-maroon font-medium mb-3">{error}</p>
             <button
               onClick={fetchData}
-              className="inline-flex items-center gap-2 text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 px-4 py-2 rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-maroon bg-white border border-maroon/20 hover:bg-maroon/5 px-4 py-2 rounded-xl transition-colors shadow-sm"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-4 h-4" />
               Retry
             </button>
           </div>
         ) : dashData ? (
           <>
-            {/* Title */}
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                {dashData.committeeName}
+            <div className="pt-[22px] px-5">
+              <h1 className="font-playfair font-bold text-[26px] text-ink">
+                Our committee
               </h1>
-              <p className="text-slate-500 text-sm mt-1">
-                Ganesh Puja {dashData.year} — Financial Transparency
+              <p className="text-[12px] tracking-[0.06em] text-muted-ink mt-1 uppercase">
+                {dashData.committeeName} {dashData.year} — FINANCIAL TRANSPARENCY
               </p>
             </div>
 
-            {/* Balance Hero */}
-            <div className="bg-blue-600 rounded-2xl p-6 text-center shadow-lg shadow-blue-600/20">
-              <p className="text-blue-100 text-sm font-medium mb-1">
-                Current Balance
-              </p>
-              <p className="text-3xl font-extrabold text-white tracking-tighter">
-                ₹{fmt(dashData.balance)}
-              </p>
+            {/* Hero Balance */}
+            <div 
+              className="m-[16px_20px_0] rounded-[20px] p-[26px_20px_22px] text-center relative overflow-hidden bg-ink"
+              style={{
+                background: `radial-gradient(circle at 22% 18%, var(--color-ink-glow), transparent 55%), radial-gradient(circle at 80% 85%, #201533, transparent 50%), var(--color-ink)`
+              }}
+            >
+              <div className="absolute inset-0 opacity-[0.15]"
+                   style={{
+                     backgroundImage: 'radial-gradient(rgba(240,184,77,.35) 1px, transparent 1px)',
+                     backgroundSize: '16px 16px'
+                   }} />
+              
+              <div className="text-[11px] tracking-[0.16em] uppercase text-gold-soft font-semibold relative z-10">
+                Current balance
+              </div>
+              <div className="text-[38px] font-bold mt-1 relative z-10 font-playfair text-transparent bg-clip-text bg-gradient-to-br from-gold-soft to-ember">
+                <span className="font-sans font-medium text-gold-soft inline-block mr-1">₹</span>
+                {fmt(dashData.balance)}
+              </div>
             </div>
 
-            {/* Collection & Expense Cards */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
-                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                    Total Collection
-                  </span>
+            {/* Cards */}
+            <div className="grid grid-cols-2 gap-3 pt-4 px-5">
+              <div className="bg-white border border-hair rounded-2xl p-[14px_14px_16px] relative overflow-hidden shadow-sm">
+                <div className="flex items-center gap-[6px] text-[12.5px] font-semibold text-sage mb-[10px]">
+                  ↗ Total collection
                 </div>
-                <p className="text-xl font-bold text-slate-900">
+                <div className="font-playfair font-bold text-[23px] text-ink">
                   ₹{fmt(dashData.totalCollection)}
-                </p>
+                </div>
+                <div className="absolute left-0 right-0 bottom-0 h-[3px] bg-gradient-to-br from-gold-soft to-ember" />
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <ArrowDownRight className="w-4 h-4 text-red-500" />
-                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                    Total Expenses
-                  </span>
+              <div className="bg-white border border-hair rounded-2xl p-[14px_14px_16px] relative overflow-hidden shadow-sm">
+                <div className="flex items-center gap-[6px] text-[12.5px] font-semibold text-maroon mb-[10px]">
+                  ↘ Total expenses
                 </div>
-                <p className="text-xl font-bold text-slate-900">
+                <div className="font-playfair font-bold text-[23px] text-ink">
                   ₹{fmt(dashData.totalExpense)}
-                </p>
+                </div>
+                <div className="absolute left-0 right-0 bottom-0 h-[3px] bg-gradient-to-br from-gold-soft to-ember" />
               </div>
             </div>
 
-            {/* Transparency Notice */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-center">
-              <Wallet className="w-6 h-6 text-slate-400 mx-auto mb-2" />
-              <p className="text-sm text-slate-600 leading-relaxed">
-                All funds are managed by the organizing committee.
-                <br />
-                Donations and expenses are tracked digitally for full
-                transparency.
+            {/* Note Box */}
+            <div className="m-[16px_20px_0] bg-cream-2 border border-hair rounded-2xl p-[18px] text-center shadow-sm">
+              <svg className="w-[22px] h-[22px] mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="#C9832E" strokeWidth="1.5">
+                <rect x="3" y="7" width="18" height="12" rx="2"/><path d="M3 10h18M16 14h2"/>
+              </svg>
+              <p className="font-playfair italic text-[13.5px] text-[#4a4256] leading-[1.6]">
+                All funds are managed by the organizing committee. Donations and expenses are tracked digitally for full transparency.
               </p>
             </div>
           </>
         ) : null}
-      </main>
 
-      {/* Footer */}
-      <footer className="text-center py-6 text-xs text-slate-400">
-        Powered by GPMS — Ganesh Puja Management System
-      </footer>
+        {/* Footer */}
+        <div className="text-center p-[26px_20px_30px] mt-4">
+          <div className="flex items-center gap-1.5 my-[18px]">
+            <span className="flex-1 h-px bg-gradient-to-r from-transparent to-gold" />
+            <i className="w-[5px] h-[5px] rotate-45 bg-ember shrink-0" />
+            <span className="flex-1 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
+            <i className="w-[5px] h-[5px] rotate-45 bg-gold shrink-0" />
+            <span className="flex-1 h-px bg-gradient-to-l from-transparent to-gold" />
+          </div>
+          <p className="text-[11px] text-muted-ink mt-[10px]">
+            Powered by GPMS — Ganesh Puja Management System
+          </p>
+        </div>
+      </main>
     </div>
   );
 }
