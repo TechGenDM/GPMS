@@ -127,19 +127,21 @@ export default function DashboardPage() {
               <>
                 <button
                   onClick={() => router.push('/audit')}
-                  className="p-[6px] rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors hidden sm:flex items-center gap-1"
+                  className="p-[6px] rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors flex items-center gap-1"
                   title="Audit Logs"
+                  aria-label="Audit Logs"
                 >
                   <Activity className="w-[18px] h-[18px]" />
-                  <span className="text-[13px] font-semibold">Audit Logs</span>
+                  <span className="hidden sm:inline text-[13px] font-semibold">Audit Logs</span>
                 </button>
                 <button
                   onClick={() => router.push('/users')}
-                  className="p-[6px] rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors hidden sm:flex items-center gap-1"
+                  className="p-[6px] rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors flex items-center gap-1"
                   title="Users"
+                  aria-label="Users"
                 >
                   <Users className="w-[18px] h-[18px]" />
-                  <span className="text-[13px] font-semibold">Users</span>
+                  <span className="hidden sm:inline text-[13px] font-semibold">Users</span>
                 </button>
               </>
             )}
@@ -147,6 +149,7 @@ export default function DashboardPage() {
               onClick={() => router.push('/records')}
               className="p-[6px] rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors flex items-center gap-1"
               title="Records"
+              aria-label="Records"
             >
               <FileText className="w-[18px] h-[18px]" />
               <span className="hidden sm:inline text-[13px] font-semibold">Records</span>
@@ -156,6 +159,7 @@ export default function DashboardPage() {
               disabled={refreshing}
               className="p-[6px] rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors disabled:opacity-50"
               title="Refresh"
+              aria-label="Refresh"
             >
               <RefreshCw className={`w-[18px] h-[18px] ${refreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -163,6 +167,7 @@ export default function DashboardPage() {
               onClick={() => signOut({ callbackUrl: '/login' })}
               className="p-[6px] rounded-lg text-muted-ink hover:text-maroon hover:bg-maroon/5 transition-colors"
               title="Logout"
+              aria-label="Logout"
             >
               <LogOut className="w-[18px] h-[18px]" />
             </button>
