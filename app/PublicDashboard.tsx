@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 import { useEffect, useState } from 'react';
 import {
   IndianRupee,
@@ -52,9 +54,13 @@ export default function PublicDashboard() {
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <IndianRupee className="w-4 h-4 text-white" />
-            </div>
+            <Image
+              src="/seal.svg"
+              alt="GPMS Seal"
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-lg"
+            />
             <span className="font-bold text-slate-900 tracking-tight">
               GPMS
             </span>

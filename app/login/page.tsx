@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { signIn } from '@/auth';
 import { Card, CardContent } from '@/components/ui/Card';
 import { AlertCircle } from 'lucide-react';
@@ -15,9 +16,14 @@ export default async function LoginPage(props: Props) {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-2">
-          <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-            {/* Simple placeholder for Ganesha icon or committee logo */}
-            <span className="text-3xl">🕉️</span>
+          <div className="mx-auto w-16 h-16 flex items-center justify-center mb-4">
+            <Image
+              src="/seal.svg"
+              alt="GPMS Seal"
+              width={64}
+              height={64}
+              className="rounded-full"
+            />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Ganesh Puja
