@@ -76,6 +76,7 @@ export function RecordDetailModal({
     purpose: record.purpose,
     collectorName: record.collectorName || record.createdBy || '',
     date: record.date,
+    donorPhone: record.phone,
   };
 
   const handleWhatsApp = () => {

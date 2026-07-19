@@ -44,6 +44,17 @@ function validateDonation(data) {
     };
   }
 
+  if (data.phone && String(data.phone).trim() !== '') {
+    var phoneStr = String(data.phone).trim();
+    if (!/^[6-9]\d{9}$/.test(phoneStr)) {
+      return {
+        valid: false,
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'Please enter a valid 10-digit mobile number',
+      };
+    }
+  }
+
   if (!data.paymentMode || String(data.paymentMode).trim() === '') {
     return {
       valid: false,

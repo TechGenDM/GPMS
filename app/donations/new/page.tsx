@@ -63,6 +63,11 @@ const INITIAL_FORM: DonationFormData = {
 // ── Validation ───────────────────────────────────────────────────────
 function validateForm(form: DonationFormData): string | null {
   if (!form.donorName.trim()) return 'Donor name is required';
+  if (form.phone.trim()) {
+    if (!/^[6-9]\d{9}$/.test(form.phone.trim())) {
+      return 'Please enter a valid 10-digit mobile number';
+    }
+  }
   if (!form.amount || Number(form.amount) <= 0)
     return 'Amount must be greater than zero';
   if (!form.paymentMode) return 'Please select a payment mode';
@@ -95,6 +100,7 @@ export default function NewDonationPage() {
     paymentMode: string;
     collectorName: string;
     date: string;
+    donorPhone?: string;
   } | null>(null);
 
   // ── Handlers ─────────────────────────────────────────────────────
@@ -154,6 +160,7 @@ export default function NewDonationPage() {
           paymentMode: form.paymentMode,
           collectorName: res.data.collectorName,
           date: res.data.createdAt,
+          donorPhone: form.phone.trim(),
         });
       }
     },
@@ -197,6 +204,7 @@ export default function NewDonationPage() {
         purpose: successData.purpose,
         collectorName: successData.collectorName,
         date: successData.date,
+        donorPhone: successData.donorPhone,
       });
     };
 
@@ -209,6 +217,7 @@ export default function NewDonationPage() {
         purpose: successData.purpose,
         collectorName: successData.collectorName,
         date: successData.date,
+        donorPhone: successData.donorPhone,
       });
       if (!shared && typeof navigator.share === 'undefined') {
         feedback.showError('Native sharing is not supported on this device');
@@ -361,9 +370,12 @@ export default function NewDonationPage() {
               id="phone"
               type="tel"
               autoComplete="off"
-              placeholder="10-digit mobile number"
+              placeholder="e.g. 9876543210 (Optional)"
               value={form.phone}
-              onChange={(e) => updateField('phone', e.target.value)}
+              onChange={(e) => updateField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+              maxLength={10}
+              inputMode="numeric"
+              pattern="[0-9]*"
               className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-base placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
             />
           </div>
