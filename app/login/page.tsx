@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { signIn } from '@/auth';
 import { Card, CardContent } from '@/components/ui/Card';
 import { AlertCircle } from 'lucide-react';
+import sealLogo from '@/public/seal.png';
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -18,7 +19,7 @@ export default async function LoginPage(props: Props) {
         <div className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 flex items-center justify-center mb-4">
             <Image
-              src="/seal.png"
+              src={sealLogo}
               alt="GPMS Seal"
               width={64}
               height={64}

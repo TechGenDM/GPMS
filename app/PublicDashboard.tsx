@@ -19,6 +19,8 @@ interface PublicDashboardData {
   balance: number;
 }
 
+import sealLogo from '@/public/seal.png';
+
 export default function PublicDashboard() {
   const [dashData, setDashData] = useState<PublicDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ export default function PublicDashboard() {
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Image
-              src="/seal.png"
+              src={sealLogo}
               alt="GPMS Seal"
               width={32}
               height={32}
