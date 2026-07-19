@@ -15,7 +15,7 @@ export const getVerificationUrl = (receiptId: string) => {
   return `${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${receiptId}`;
 };
 
-export const generateWhatsAppShareText = (data: ShareDonationData, verificationUrl: string) => {
+export const buildDonationShareMessage = (data: ShareDonationData, verificationUrl: string) => {
   const dateStr = parseGPMSDate(data.date).toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'long',
@@ -49,7 +49,7 @@ export const normalizeWhatsAppNumber = (phone?: string | number): string => {
 
 export const shareToWhatsApp = (data: ShareDonationData) => {
   const url = getVerificationUrl(data.receiptId);
-  const text = generateWhatsAppShareText(data, url);
+  const text = buildDonationShareMessage(data, url);
   const formattedPhone = normalizeWhatsAppNumber(data.donorPhone);
   
   // Use native intent on mobile for a more reliable deep link to the chat
@@ -66,10 +66,12 @@ export const shareToWhatsApp = (data: ShareDonationData) => {
 export const shareNative = async (data: ShareDonationData): Promise<boolean> => {
   if (navigator.share) {
     try {
+      const url = getVerificationUrl(data.receiptId);
+      const text = buildDonationShareMessage(data, url);
+      
       await navigator.share({
         title: 'GPMS Donation Receipt',
-        text: `Thank you for your donation of ₹${data.amount.toLocaleString('en-IN')}. Receipt ID: ${data.receiptId}`,
-        url: getVerificationUrl(data.receiptId),
+        text: text,
       });
       return true;
     } catch (e) {
