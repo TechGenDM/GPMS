@@ -5,9 +5,9 @@ export const proxy = auth((req) => {
   const isLoggedIn = !!req.auth;
   const path = req.nextUrl.pathname;
   const isLoginPage = path === '/login';
-  const isPublicPage = path === '/';
+  const isPublicPage = path === '/' || path.startsWith('/verify');
 
-  // Allow everyone (logged in or out) to access the public root page
+  // Allow everyone (logged in or out) to access the public root page and verify pages
   if (isPublicPage) {
     return NextResponse.next();
   }
