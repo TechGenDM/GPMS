@@ -1,8 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { motion, animate, Variants } from 'motion/react';
+import sealLogo from '@/public/seal.png';
 
 interface PublicDashboardData {
   committeeName: string;
@@ -176,7 +178,7 @@ export default function PublicDashboard() {
                 animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0, 0.3] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
               />
-              <span className="text-lg sm:text-xl text-[#F3B749] pb-0.5">ॐ</span>
+              <Image src={sealLogo} alt="Seal Logo" width={22} height={22} className="opacity-90" />
             </div>
             <span className="font-bold text-[15px] sm:text-[17px] tracking-[0.25em] text-[#E5B560] pl-1" style={{ fontFamily: 'var(--font-dm-mono)' }}>
               GPMS
