@@ -52,8 +52,15 @@ var SettingsService = {
    * @returns {ContentOutput} JSON response.
    */
   update: function (user, payload) {
-    if (!UserService.authorize(user, [CONFIG.roles.superadmin])) {
-      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to update settings');
+    // Special Case: YOUTUBE_LIVE_URL can be updated by SuperAdmin, Admin, and Volunteer.
+    // Everything else requires SuperAdmin.
+    var allowedRoles = [CONFIG.roles.superadmin];
+    if (payload && payload.key === 'YOUTUBE_LIVE_URL') {
+      allowedRoles.push(CONFIG.roles.admin, CONFIG.roles.volunteer);
+    }
+
+    if (!UserService.authorize(user, allowedRoles)) {
+      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to update this setting');
     }
 
     if (!payload || !payload.key) {
