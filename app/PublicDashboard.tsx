@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { motion, animate, Variants } from 'motion/react';
 import {
-  liveStreamConfig,
   announcements,
   socialLinks,
   type Announcement,
@@ -16,6 +15,7 @@ interface PublicDashboardData {
   totalCollection: number;
   totalExpense: number;
   balance: number;
+  youtubeLiveUrl?: string;
 }
 
 // ─── Animated Counter ────────────────────────────────────────
@@ -399,23 +399,8 @@ function SectionDivider({ label }: { label: string }) {
 }
 
 // ─── Live Stream Badge ───────────────────────────────────────
-function LiveStreamBadge() {
-  const { status } = liveStreamConfig;
-
-  if (status === 'live') {
-    return (
-      <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-20 flex items-center gap-2 bg-red-600/90 backdrop-blur-sm text-white text-[11px] sm:text-[12px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded-lg shadow-lg">
-        <motion.div
-          className="w-[7px] h-[7px] rounded-full bg-white"
-          animate={{ opacity: [1, 0.3, 1] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        />
-        LIVE STREAM
-      </div>
-    );
-  }
-
-  if (status === 'upcoming') {
+function LiveStreamBadge({ hasUrl }: { hasUrl: boolean }) {
+  if (hasUrl) {
     return (
       <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-20 flex items-center gap-2 bg-[#D4A353]/90 backdrop-blur-sm text-[#0C0918] text-[11px] sm:text-[12px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded-lg shadow-lg">
         <svg
@@ -426,16 +411,19 @@ function LiveStreamBadge() {
           stroke="currentColor"
           strokeWidth="2.5"
         >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 6v6l4 2" />
+          <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+          <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
+          <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" />
+          <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" />
+          <circle cx="12" cy="12" r="2" fill="currentColor" />
         </svg>
-        UPCOMING
+        LIVE DARSHAN
       </div>
     );
   }
 
   return (
-    <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-20 flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white/70 text-[11px] sm:text-[12px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded-lg">
+    <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-20 flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white/70 text-[11px] sm:text-[12px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded-lg shadow-lg">
       LIVE STREAM
     </div>
   );
@@ -689,7 +677,7 @@ export default function PublicDashboard() {
               {/* ─── LIVE STREAM SECTION ─────────────────── */}
               <motion.div variants={itemVariants} className="mt-6 sm:mt-8">
                 <a
-                  href={liveStreamConfig.youtubeUrl}
+                  href={dashData.youtubeLiveUrl || socialLinks.youtube || '#'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block relative rounded-2xl overflow-hidden border border-[#D4A353]/25 shadow-[0_8px_30px_-10px_rgba(0,0,0,0.7)] group"
@@ -709,7 +697,7 @@ export default function PublicDashboard() {
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0C0918]/70 via-[#0C0918]/15 to-transparent" />
 
                     {/* Status badge */}
-                    <LiveStreamBadge />
+                    <LiveStreamBadge hasUrl={!!dashData.youtubeLiveUrl} />
 
                     {/* Play button */}
                     <YouTubePlayButton />
@@ -755,14 +743,8 @@ export default function PublicDashboard() {
                   </div>
                 </a>
 
-                {/* Upcoming schedule note */}
-                {liveStreamConfig.status === 'upcoming' &&
-                  liveStreamConfig.scheduledDate && (
-                    <p className="text-[11px] text-[#D4A353]/60 text-center mt-2 font-medium">
-                      Scheduled:{' '}
-                      {liveStreamConfig.scheduledDate}
-                    </p>
-                  )}
+
+
               </motion.div>
 
               {/* ─── ANNOUNCEMENT SECTION ────────────────── */}
