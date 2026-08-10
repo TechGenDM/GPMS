@@ -71,6 +71,16 @@ var SettingsService = {
       return error(ERROR_CODES.MISSING_FIELD, 'Setting value is required');
     }
 
+    // YouTube URL validation — backend enforcement.
+    if (payload.key === 'YOUTUBE_LIVE_URL' && payload.value !== '') {
+      var url = String(payload.value).trim();
+      var ytPattern = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/|@[\w.-]+\/live)|youtu\.be\/)/i;
+      if (!ytPattern.test(url)) {
+        return error(ERROR_CODES.VALIDATION_ERROR || 'VALIDATION_ERROR', 'Invalid YouTube URL. Accepted formats: youtube.com/watch?v=, youtube.com/live/, youtu.be/');
+      }
+      payload.value = url; // use trimmed value
+    }
+
     var sheet = getSheet(CONFIG.sheets.settings);
     var row = findRow(sheet, 1, payload.key);
     var oldValue = '';
@@ -131,5 +141,40 @@ var SettingsService = {
     }
 
     return success('All settings retrieved', settings);
+  },
+
+  /**
+   * Retrieves only the Live Darshan configuration.
+   * Scoped read — does NOT expose the full Settings sheet.
+   *
+   * Accessible by SuperAdmin, Admin, and Volunteer.
+   *
+   * @param {Object} user - The authenticated User object.
+   * @param {Object} [payload] - Not used.
+   * @returns {ContentOutput} JSON response with { youtubeUrl, updatedAt, updatedBy }.
+   */
+  getLiveDarshanConfig: function (user, payload) {
+    if (!UserService.authorize(user, [CONFIG.roles.superadmin, CONFIG.roles.admin, CONFIG.roles.volunteer])) {
+      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions');
+    }
+
+    var sheet = getSheet(CONFIG.sheets.settings);
+    var row = findRow(sheet, 1, 'YOUTUBE_LIVE_URL');
+
+    if (row === -1) {
+      return success('Live Darshan config retrieved', {
+        youtubeUrl: '',
+        updatedAt: '',
+        updatedBy: '',
+      });
+    }
+
+    var rowData = sheet.getRange(row, 1, 1, 4).getValues()[0];
+
+    return success('Live Darshan config retrieved', {
+      youtubeUrl: rowData[1] || '',
+      updatedAt: rowData[2] ? String(rowData[2]) : '',
+      updatedBy: rowData[3] || '',
+    });
   },
 };
