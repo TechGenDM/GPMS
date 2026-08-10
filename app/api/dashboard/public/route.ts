@@ -21,6 +21,7 @@ export async function GET() {
         payload: {},
       }),
       redirect: 'follow',
+      cache: 'no-store',
     });
 
     const rawText = await response.text();
@@ -37,7 +38,11 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    });
   } catch (error) {
     console.error('[GPMS API] Unexpected error in public dashboard:', error);
     return NextResponse.json(
