@@ -217,11 +217,14 @@ var DashboardService = {
     var settingsData = settingsSheet.getDataRange().getValues();
     var committeeName = 'Our Committee';
     var year = '2026';
+    var youtubeLiveUrl = '';
 
     for (var i = 1; i < settingsData.length; i++) {
       if (settingsData[i][0] === 'COMMITTEE_NAME')
         committeeName = settingsData[i][1];
       if (settingsData[i][0] === 'YEAR') year = settingsData[i][1];
+      if (settingsData[i][0] === 'YOUTUBE_LIVE_URL')
+        youtubeLiveUrl = settingsData[i][1] || '';
     }
 
     return success('Public dashboard retrieved', {
@@ -230,6 +233,7 @@ var DashboardService = {
       totalCollection: snapshot.donations.total,
       totalExpense: snapshot.expenses.total,
       balance: snapshot.balance,
+      youtubeLiveUrl: youtubeLiveUrl,
     });
   },
 
