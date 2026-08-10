@@ -15,6 +15,8 @@ import {
   Users,
   Activity,
   FileText,
+  ChevronRight,
+  X,
 } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { useFeedback } from '@/components/ui/Feedback';
@@ -43,6 +45,21 @@ interface DashboardData {
   recentActivity: Activity[];
 }
 
+// ─── YouTube URL Validation ────────────────────────────────
+const YOUTUBE_URL_PATTERN = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/|@[\w.-]+\/live)|youtu\.be\/)/i;
+
+function isValidYoutubeUrl(url: string): boolean {
+  if (!url.trim()) return true; // empty is valid (clearing)
+  return YOUTUBE_URL_PATTERN.test(url.trim());
+}
+
+// ─── Live Darshan Config ───────────────────────────────────
+interface LiveDarshanConfig {
+  youtubeUrl: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -53,6 +70,73 @@ export default function DashboardPage() {
 
   const userRole = session?.user?.role;
   const canManageUsers = userRole === 'Admin' || userRole === 'SuperAdmin';
+  const canManageLiveDarshan = userRole === 'SuperAdmin' || userRole === 'Admin' || userRole === 'Volunteer';
+
+  // Live Darshan state
+  const [liveDarshanModalOpen, setLiveDarshanModalOpen] = useState(false);
+  const [liveDarshanConfig, setLiveDarshanConfig] = useState<LiveDarshanConfig | null>(null);
+  const [liveDarshanUrl, setLiveDarshanUrl] = useState('');
+  const [liveDarshanSaving, setLiveDarshanSaving] = useState(false);
+  const [liveDarshanError, setLiveDarshanError] = useState<string | null>(null);
+
+  // Fetch Live Darshan config
+  const loadLiveDarshanConfig = useCallback(async () => {
+    try {
+      const res = await fetch('/api/settings/live-darshan');
+      const json = await res.json();
+      if (json.success && json.data) {
+        setLiveDarshanConfig(json.data);
+      }
+    } catch {
+      // Silently fail — not critical for dashboard load
+    }
+  }, []);
+
+  useEffect(() => {
+    if (canManageLiveDarshan) {
+      loadLiveDarshanConfig();
+    }
+  }, [canManageLiveDarshan, loadLiveDarshanConfig]);
+
+  const openLiveDarshanModal = () => {
+    setLiveDarshanUrl(liveDarshanConfig?.youtubeUrl || '');
+    setLiveDarshanError(null);
+    setLiveDarshanModalOpen(true);
+  };
+
+  const saveLiveDarshanUrl = async () => {
+    const trimmedUrl = liveDarshanUrl.trim();
+
+    // Frontend validation
+    if (trimmedUrl && !isValidYoutubeUrl(trimmedUrl)) {
+      setLiveDarshanError('Invalid YouTube URL. Use youtube.com/watch?v=, youtube.com/live/, or youtu.be/ format.');
+      return;
+    }
+
+    setLiveDarshanSaving(true);
+    setLiveDarshanError(null);
+
+    try {
+      const res = await fetch('/api/settings/live-darshan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: trimmedUrl }),
+      });
+      const json = await res.json();
+
+      if (json.success) {
+        feedback.showSuccess('Live Darshan updated successfully.');
+        setLiveDarshanModalOpen(false);
+        loadLiveDarshanConfig();
+      } else {
+        setLiveDarshanError(json.message || 'Couldn\u2019t update Live Darshan. Please try again.');
+      }
+    } catch {
+      setLiveDarshanError('Couldn\u2019t update Live Darshan. Please try again.');
+    } finally {
+      setLiveDarshanSaving(false);
+    }
+  };
 
   const loadDashboard = useCallback(
     async (isRefresh = false) => {
@@ -323,6 +407,45 @@ export default function DashboardPage() {
           </div>
         ) : null}
 
+        {/* Live Darshan Card */}
+        {canManageLiveDarshan && (
+          <button
+            onClick={openLiveDarshanModal}
+            className="w-full text-left"
+          >
+            <Card className="relative overflow-hidden border-gold-soft/30 hover:border-gold-soft/60 transition-colors">
+              <CardContent className="p-4 flex items-center gap-3">
+                {/* Broadcast icon */}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C9832E]/15 to-[#E66255]/15 flex items-center justify-center shrink-0">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9832E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+                    <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
+                    <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" />
+                    <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" />
+                    <circle cx="12" cy="12" r="2" fill="#C9832E" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[14px] font-bold text-ink">Live Darshan</span>
+                    {liveDarshanConfig?.youtubeUrl ? (
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-sage/15 text-sage px-2 py-0.5 rounded-full">Configured</span>
+                    ) : (
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-muted-ink/10 text-muted-ink px-2 py-0.5 rounded-full">Not configured</span>
+                    )}
+                  </div>
+                  <p className="text-[12px] text-muted-ink mt-0.5 truncate">
+                    {liveDarshanConfig?.youtubeUrl
+                      ? 'YouTube Live is configured'
+                      : 'Tap to configure YouTube Live URL'}
+                  </p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-ink shrink-0" />
+              </CardContent>
+            </Card>
+          </button>
+        )}
+
         {/* Expense by Category */}
         {data && categoryEntries.length > 0 && (
           <div className="space-y-4 pt-4">
@@ -443,6 +566,123 @@ export default function DashboardPage() {
           Expense
         </button>
       </div>
+
+      {/* Live Darshan Modal */}
+      {liveDarshanModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-[24px] sm:rounded-[24px] w-full sm:max-w-md shadow-xl max-h-[85vh] overflow-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 pb-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C9832E]/15 to-[#E66255]/15 flex items-center justify-center">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9832E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+                    <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
+                    <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" />
+                    <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" />
+                    <circle cx="12" cy="12" r="2" fill="#C9832E" />
+                  </svg>
+                </div>
+                <h2 className="text-[18px] font-bold text-ink">Live Darshan</h2>
+              </div>
+              <button
+                onClick={() => setLiveDarshanModalOpen(false)}
+                className="p-1.5 rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <p className="text-[13px] text-muted-ink">
+                Paste your YouTube Live link to show on the public page.
+              </p>
+
+              {/* URL Input */}
+              <div>
+                <label className="text-[12.5px] font-semibold text-ink uppercase tracking-wider block mb-1.5">
+                  YouTube Live URL
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                    <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="none">
+                      <rect width="24" height="24" rx="4" fill="#FF0000" />
+                      <path d="M10 8.5v7l6-3.5-6-3.5z" fill="white" />
+                    </svg>
+                  </div>
+                  <input
+                    type="url"
+                    value={liveDarshanUrl}
+                    onChange={(e) => {
+                      setLiveDarshanUrl(e.target.value);
+                      setLiveDarshanError(null);
+                    }}
+                    placeholder="https://www.youtube.com/live/..."
+                    className="w-full pl-10 pr-4 py-3 bg-cream border border-hair rounded-xl text-[14px] text-ink placeholder:text-muted-ink/50 focus:outline-none focus:border-gold-soft focus:ring-1 focus:ring-gold-soft/30 transition-colors"
+                  />
+                </div>
+                {liveDarshanError && (
+                  <p className="text-[12px] text-maroon mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {liveDarshanError}
+                  </p>
+                )}
+              </div>
+
+              {/* Instruction */}
+              <div className="flex items-start gap-2 bg-[#FFFBF0] border border-gold-soft/15 rounded-xl p-3">
+                <span className="text-[14px] mt-[1px]">💡</span>
+                <p className="text-[12px] text-muted-ink leading-relaxed">
+                  Go to YouTube → Click <strong>Share</strong> → Copy the link and paste it here.
+                </p>
+              </div>
+
+              {/* Status */}
+              <div className="text-[12px] text-muted-ink space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-ink">Current Status:</span>
+                  {liveDarshanConfig?.youtubeUrl ? (
+                    <span className="text-sage font-semibold">Configured</span>
+                  ) : (
+                    <span className="text-muted-ink">Not configured</span>
+                  )}
+                </div>
+                {liveDarshanConfig?.updatedAt && liveDarshanConfig?.updatedBy && (
+                  <p className="text-[11px] text-muted-ink/70">
+                    Last updated: {liveDarshanConfig.updatedAt} by {liveDarshanConfig.updatedBy}
+                  </p>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setLiveDarshanModalOpen(false)}
+                  className="flex-1 py-3 text-[14px] font-bold text-ink bg-cream border border-hair rounded-xl hover:bg-hair/30 transition-colors"
+                  disabled={liveDarshanSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveLiveDarshanUrl}
+                  disabled={liveDarshanSaving}
+                  className="flex-1 py-3 text-[14px] font-bold text-white bg-gradient-to-r from-gold-soft to-ember rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {liveDarshanSaving ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
