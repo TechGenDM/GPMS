@@ -1029,20 +1029,20 @@ export default function PublicDashboard() {
                 </div>
               )}
 
-              {/* Powered by GPMS */}
+              {/* Built by TechGenDM */}
               <div className="flex items-center gap-2.5">
                 <div className="text-right">
                   <p
                     className="text-[8px] sm:text-[9px] font-bold tracking-[0.15em] text-[#D4A353] uppercase"
                     style={{ fontFamily: 'var(--font-dm-mono)' }}
                   >
-                    Powered by GPMS
+                    Built by TechGenDM
                   </p>
                   <p
                     className="text-[6.5px] sm:text-[7px] tracking-[0.1em] text-[#B88636]/70 uppercase font-medium"
                     style={{ fontFamily: 'var(--font-dm-mono)' }}
                   >
-                    Ganesh Puja Management System
+                    Software Developer
                   </p>
                 </div>
                 <div className="w-[40px] h-[40px] sm:w-[44px] sm:h-[44px] rounded-full border border-[#D4A353]/40 flex items-center justify-center bg-[#0C0918] overflow-hidden">
