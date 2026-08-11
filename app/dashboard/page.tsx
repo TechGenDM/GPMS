@@ -60,6 +60,13 @@ interface LiveDarshanConfig {
   updatedBy: string;
 }
 
+// ─── Announcement Config ───────────────────────────────────
+interface AnnouncementConfig {
+  announcement: { text: string; date: string } | null;
+  updatedAt: string;
+  updatedBy: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -92,11 +99,33 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // Announcement state
+  const [announcementModalOpen, setAnnouncementModalOpen] = useState(false);
+  const [announcementConfig, setAnnouncementConfig] = useState<AnnouncementConfig | null>(null);
+  const [announcementText, setAnnouncementText] = useState('');
+  const [announcementDate, setAnnouncementDate] = useState('');
+  const [announcementSaving, setAnnouncementSaving] = useState(false);
+  const [announcementError, setAnnouncementError] = useState<string | null>(null);
+
+  // Fetch Announcement config
+  const loadAnnouncementConfig = useCallback(async () => {
+    try {
+      const res = await fetch('/api/settings/announcement');
+      const json = await res.json();
+      if (json.success && json.data) {
+        setAnnouncementConfig(json.data);
+      }
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
   useEffect(() => {
     if (canManageLiveDarshan) {
       loadLiveDarshanConfig();
+      loadAnnouncementConfig();
     }
-  }, [canManageLiveDarshan, loadLiveDarshanConfig]);
+  }, [canManageLiveDarshan, loadLiveDarshanConfig, loadAnnouncementConfig]);
 
   const openLiveDarshanModal = () => {
     setLiveDarshanUrl(liveDarshanConfig?.youtubeUrl || '');
@@ -135,6 +164,52 @@ export default function DashboardPage() {
       setLiveDarshanError('Couldn\u2019t update Live Darshan. Please try again.');
     } finally {
       setLiveDarshanSaving(false);
+    }
+  };
+
+  const openAnnouncementModal = () => {
+    setAnnouncementText(announcementConfig?.announcement?.text || '');
+    setAnnouncementDate(announcementConfig?.announcement?.date || '');
+    setAnnouncementError(null);
+    setAnnouncementModalOpen(true);
+  };
+
+  const saveAnnouncementConfig = async () => {
+    const trimmedText = announcementText.trim();
+    const trimmedDate = announcementDate.trim();
+
+    if (trimmedText && trimmedText.length > 300) {
+      setAnnouncementError('Announcement text must be under 300 characters.');
+      return;
+    }
+
+    setAnnouncementSaving(true);
+    setAnnouncementError(null);
+
+    let payloadValue = '';
+    if (trimmedText) {
+      payloadValue = JSON.stringify({ text: trimmedText, date: trimmedDate });
+    }
+
+    try {
+      const res = await fetch('/api/settings/announcement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: payloadValue }),
+      });
+      const json = await res.json();
+
+      if (json.success) {
+        feedback.showSuccess('Announcement updated successfully.');
+        setAnnouncementModalOpen(false);
+        loadAnnouncementConfig();
+      } else {
+        setAnnouncementError(json.message || 'Couldn\u2019t update Announcement. Please try again.');
+      }
+    } catch {
+      setAnnouncementError('Couldn\u2019t update Announcement. Please try again.');
+    } finally {
+      setAnnouncementSaving(false);
     }
   };
 
@@ -409,41 +484,73 @@ export default function DashboardPage() {
 
         {/* Live Darshan Card */}
         {canManageLiveDarshan && (
-          <button
-            onClick={openLiveDarshanModal}
-            className="w-full text-left"
-          >
-            <Card className="relative overflow-hidden border-gold-soft/30 hover:border-gold-soft/60 transition-colors">
-              <CardContent className="p-4 flex items-center gap-3">
-                {/* Broadcast icon */}
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C9832E]/15 to-[#E66255]/15 flex items-center justify-center shrink-0">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9832E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
-                    <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
-                    <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" />
-                    <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" />
-                    <circle cx="12" cy="12" r="2" fill="#C9832E" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[14px] font-bold text-ink">Live Darshan</span>
-                    {liveDarshanConfig?.youtubeUrl ? (
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-sage/15 text-sage px-2 py-0.5 rounded-full">Configured</span>
-                    ) : (
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-muted-ink/10 text-muted-ink px-2 py-0.5 rounded-full">Not configured</span>
-                    )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button
+              onClick={openLiveDarshanModal}
+              className="w-full text-left"
+            >
+              <Card className="relative overflow-hidden border-gold-soft/30 hover:border-gold-soft/60 transition-colors h-full">
+                <CardContent className="p-4 flex items-center gap-3 h-full">
+                  {/* Broadcast icon */}
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C9832E]/15 to-[#E66255]/15 flex items-center justify-center shrink-0">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9832E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+                      <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
+                      <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" />
+                      <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" />
+                      <circle cx="12" cy="12" r="2" fill="#C9832E" />
+                    </svg>
                   </div>
-                  <p className="text-[12px] text-muted-ink mt-0.5 truncate">
-                    {liveDarshanConfig?.youtubeUrl
-                      ? 'YouTube Live is configured'
-                      : 'Tap to configure YouTube Live URL'}
-                  </p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-ink shrink-0" />
-              </CardContent>
-            </Card>
-          </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[14px] font-bold text-ink">Live Darshan</span>
+                      {liveDarshanConfig?.youtubeUrl ? (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-sage/15 text-sage px-2 py-0.5 rounded-full">Configured</span>
+                      ) : (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-muted-ink/10 text-muted-ink px-2 py-0.5 rounded-full">Not configured</span>
+                      )}
+                    </div>
+                    <p className="text-[12px] text-muted-ink mt-0.5 truncate">
+                      {liveDarshanConfig?.youtubeUrl
+                        ? 'YouTube Live is configured'
+                        : 'Tap to configure YouTube Live URL'}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-ink shrink-0" />
+                </CardContent>
+              </Card>
+            </button>
+
+            <button
+              onClick={openAnnouncementModal}
+              className="w-full text-left"
+            >
+              <Card className="relative overflow-hidden border-gold-soft/30 hover:border-gold-soft/60 transition-colors h-full">
+                <CardContent className="p-4 flex items-center gap-3 h-full">
+                  {/* Announcement icon */}
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#798C7B]/15 to-[#170F26]/15 flex items-center justify-center shrink-0">
+                    <AlertCircle className="w-5 h-5 text-[#798C7B]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[14px] font-bold text-ink">Announcement</span>
+                      {announcementConfig?.announcement ? (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-sage/15 text-sage px-2 py-0.5 rounded-full">Active</span>
+                      ) : (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-muted-ink/10 text-muted-ink px-2 py-0.5 rounded-full">None</span>
+                      )}
+                    </div>
+                    <p className="text-[12px] text-muted-ink mt-0.5 truncate">
+                      {announcementConfig?.announcement
+                        ? announcementConfig.announcement.text
+                        : 'Tap to set an announcement'}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-ink shrink-0" />
+                </CardContent>
+              </Card>
+            </button>
+          </div>
         )}
 
         {/* Expense by Category */}
@@ -670,6 +777,130 @@ export default function DashboardPage() {
                   className="flex-1 py-3 text-[14px] font-bold text-white bg-gradient-to-r from-gold-soft to-ember rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {liveDarshanSaving ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Announcement Modal */}
+      {announcementModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
+            onClick={() => !announcementSaving && setAnnouncementModalOpen(false)}
+          />
+          <div className="relative w-full max-w-md bg-cream rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-hair">
+              <h3 className="text-[16px] font-bold text-ink font-playfair">Public Announcement</h3>
+              <button
+                onClick={() => setAnnouncementModalOpen(false)}
+                className="p-1.5 text-muted-ink hover:text-ink hover:bg-hair/50 rounded-lg transition-colors"
+                disabled={announcementSaving}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-5">
+              {/* Text Input */}
+              <div>
+                <label htmlFor="announcementText" className="block text-[13px] font-bold text-ink mb-1.5">
+                  Announcement Text
+                </label>
+                <textarea
+                  id="announcementText"
+                  value={announcementText}
+                  onChange={(e) => {
+                    setAnnouncementText(e.target.value);
+                    setAnnouncementError(null);
+                  }}
+                  placeholder="e.g. Pandit ji will arrive at 8:30 AM on 14th Aug..."
+                  className="w-full px-4 py-3 bg-cream border border-hair rounded-xl text-[14px] text-ink placeholder:text-muted-ink/50 focus:outline-none focus:border-gold-soft focus:ring-1 focus:ring-gold-soft/30 transition-colors min-h-[80px]"
+                  maxLength={300}
+                />
+                <div className="text-right mt-1">
+                  <span className={`text-[11px] ${announcementText.length >= 300 ? 'text-maroon font-bold' : 'text-muted-ink'}`}>
+                    {announcementText.length} / 300
+                  </span>
+                </div>
+              </div>
+
+              {/* Date Input */}
+              <div>
+                <label htmlFor="announcementDate" className="block text-[13px] font-bold text-ink mb-1.5">
+                  Display Date <span className="text-muted-ink font-normal">(Optional)</span>
+                </label>
+                <input
+                  id="announcementDate"
+                  type="text"
+                  value={announcementDate}
+                  onChange={(e) => {
+                    setAnnouncementDate(e.target.value);
+                    setAnnouncementError(null);
+                  }}
+                  placeholder="e.g. 13 Aug 2025"
+                  className="w-full px-4 py-3 bg-cream border border-hair rounded-xl text-[14px] text-ink placeholder:text-muted-ink/50 focus:outline-none focus:border-gold-soft focus:ring-1 focus:ring-gold-soft/30 transition-colors"
+                />
+              </div>
+
+              {announcementError && (
+                <p className="text-[12px] text-maroon mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {announcementError}
+                </p>
+              )}
+
+              {/* Instruction */}
+              <div className="flex items-start gap-2 bg-[#FFFBF0] border border-gold-soft/15 rounded-xl p-3">
+                <span className="text-[14px] mt-[1px]">💡</span>
+                <p className="text-[12px] text-muted-ink leading-relaxed">
+                  This text will appear instantly at the top of the Public Page. To remove the announcement, clear the text and save.
+                </p>
+              </div>
+
+              {/* Status */}
+              <div className="text-[12px] text-muted-ink space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-ink">Current Status:</span>
+                  {announcementConfig?.announcement ? (
+                    <span className="text-sage font-semibold">Active</span>
+                  ) : (
+                    <span className="text-muted-ink">None</span>
+                  )}
+                </div>
+                {announcementConfig?.updatedAt && announcementConfig?.updatedBy && (
+                  <p className="text-[11px] text-muted-ink/70">
+                    Last updated: {announcementConfig.updatedAt} by {announcementConfig.updatedBy}
+                  </p>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setAnnouncementModalOpen(false)}
+                  className="flex-1 py-3 text-[14px] font-bold text-ink bg-cream border border-hair rounded-xl hover:bg-hair/30 transition-colors"
+                  disabled={announcementSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveAnnouncementConfig}
+                  disabled={announcementSaving}
+                  className="flex-1 py-3 text-[14px] font-bold text-white bg-gradient-to-r from-gold-soft to-ember rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {announcementSaving ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
                       Saving…

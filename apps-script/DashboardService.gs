@@ -218,6 +218,7 @@ var DashboardService = {
     var committeeName = 'Our Committee';
     var year = '2026';
     var youtubeLiveUrl = '';
+    var announcement = null;
 
     for (var i = 1; i < settingsData.length; i++) {
       if (settingsData[i][0] === 'COMMITTEE_NAME')
@@ -225,6 +226,13 @@ var DashboardService = {
       if (settingsData[i][0] === 'YEAR') year = settingsData[i][1];
       if (settingsData[i][0] === 'YOUTUBE_LIVE_URL')
         youtubeLiveUrl = settingsData[i][1] || '';
+      if (settingsData[i][0] === 'PUBLIC_ANNOUNCEMENT') {
+        try {
+          announcement = settingsData[i][1] ? JSON.parse(settingsData[i][1]) : null;
+        } catch(e) {
+          announcement = null;
+        }
+      }
     }
 
     return success('Public dashboard retrieved', {
@@ -234,6 +242,7 @@ var DashboardService = {
       totalExpense: snapshot.expenses.total,
       balance: snapshot.balance,
       youtubeLiveUrl: youtubeLiveUrl,
+      announcement: announcement,
     });
   },
 

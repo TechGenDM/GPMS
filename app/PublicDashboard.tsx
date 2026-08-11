@@ -3,9 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, animate, Variants } from 'motion/react';
 import {
-  announcements,
   socialLinks,
-  type Announcement,
 } from '@/lib/public-page-config';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -16,6 +14,7 @@ interface PublicDashboardData {
   totalExpense: number;
   balance: number;
   youtubeLiveUrl?: string;
+  announcement?: { text: string; date: string } | null;
 }
 
 // ─── Animated Counter ────────────────────────────────────────
@@ -497,8 +496,6 @@ export default function PublicDashboard() {
     },
   };
 
-  const latestAnnouncement: Announcement | null =
-    announcements.length > 0 ? announcements[0] : null;
 
   const activeSocials = Object.entries(socialLinks).filter(
     ([, url]) => url.trim() !== ''
@@ -748,7 +745,7 @@ export default function PublicDashboard() {
               </motion.div>
 
               {/* ─── ANNOUNCEMENT SECTION ────────────────── */}
-              {latestAnnouncement && (
+              {dashData?.announcement && (
                 <motion.div
                   variants={itemVariants}
                   className="mt-5 sm:mt-6 bg-[#16102A] border border-[#D4A353]/15 rounded-2xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 shadow-lg"
@@ -775,12 +772,10 @@ export default function PublicDashboard() {
                       className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-[#D4A353] uppercase mb-1"
                       style={{ fontFamily: 'var(--font-dm-mono)' }}
                     >
-                      {announcements.length === 1
-                        ? 'One Update'
-                        : `${announcements.length} Updates`}
+                      Update
                     </p>
                     <p className="text-[13px] sm:text-[14px] text-white/85 font-medium leading-snug">
-                      {latestAnnouncement.text}
+                      {dashData.announcement.text}
                     </p>
                   </div>
 
@@ -799,9 +794,11 @@ export default function PublicDashboard() {
                       <line x1="8" y1="2" x2="8" y2="6" />
                       <line x1="3" y1="10" x2="21" y2="10" />
                     </svg>
-                    <span className="text-[11px] sm:text-[12px] font-medium whitespace-nowrap">
-                      {latestAnnouncement.date}
-                    </span>
+                    {dashData.announcement.date && (
+                      <span className="text-[11px] sm:text-[12px] font-medium whitespace-nowrap">
+                        {dashData.announcement.date}
+                      </span>
+                    )}
                   </div>
                 </motion.div>
               )}

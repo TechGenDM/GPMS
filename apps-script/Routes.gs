@@ -29,6 +29,7 @@ function getRoutes() {
     updateSetting: SettingsService.update,
     getAllSettings: SettingsService.getAll,
     getLiveDarshanConfig: SettingsService.getLiveDarshanConfig,
+    getAnnouncementConfig: SettingsService.getAnnouncementConfig,
 
     // --- Donations ---
     createDonation: DonationService.create,
