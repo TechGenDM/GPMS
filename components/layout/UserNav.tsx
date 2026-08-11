@@ -21,7 +21,7 @@ export async function UserNav() {
       <form
         action={async () => {
           'use server';
-          await signOut({ redirectTo: '/login' });
+          await signOut({ redirectTo: '/' });
         }}
       >
         <button
