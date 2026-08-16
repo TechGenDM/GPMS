@@ -5,7 +5,7 @@ export const proxy = auth((req) => {
   const isLoggedIn = !!req.auth;
   const path = req.nextUrl.pathname;
   const isLoginPage = path === '/login';
-  const isPublicPage = path === '/' || path.startsWith('/verify');
+  const isPublicPage = path === '/' || path.startsWith('/verify') || path === '/site.webmanifest';
 
   // Allow everyone (logged in or out) to access the public root page and verify pages
   if (isPublicPage) {
@@ -36,5 +36,5 @@ export const proxy = auth((req) => {
 });
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|webmanifest|json)$).*)'],
 };
