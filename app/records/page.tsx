@@ -12,6 +12,7 @@ import {
   FileText,
   Ban,
   ArrowLeft,
+  Paperclip,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RecordDetailModal } from '@/components/records/RecordDetailModal';
@@ -375,8 +376,13 @@ export default function RecordsPage() {
                         onClick={() => setSelectedRecord(row)}
                         className={`hover:bg-hair/20 cursor-pointer transition-colors border-b border-hair last:border-0 ${isCancelled ? 'bg-maroon/5 hover:bg-maroon/10' : ''}`}
                       >
-                        <td className="px-6 py-[16px] font-mono font-bold text-ink whitespace-nowrap">
+                        <td className="px-6 py-[16px] font-mono font-bold text-ink whitespace-nowrap flex items-center gap-2">
                           {id}
+                          {(row.paymentProofLink || row.billLink) && (
+                            <span title="Has attachment" className="flex items-center">
+                              <Paperclip className="w-4 h-4 text-sage flex-shrink-0" />
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-[16px] font-bold text-ink whitespace-nowrap">
                           {name}

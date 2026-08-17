@@ -8,6 +8,7 @@ import {
 import { generateAndDownloadReceipt } from '@/lib/pdfGenerator';
 import { Button } from '@/components/ui/button';
 import { parseGPMSDate } from '@/lib/utils';
+import { DocumentPreviewModal } from '@/components/records/DocumentPreviewModal';
 import {
   X,
   Download,
@@ -18,6 +19,8 @@ import {
   XCircle,
   AlertCircle,
   RefreshCw,
+  FileText,
+  ExternalLink,
 } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 
@@ -46,6 +49,7 @@ export function RecordDetailModal({
   const [isCancelling, setIsCancelling] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [previewDocument, setPreviewDocument] = useState<{url: string, title: string} | null>(null);
 
   if (!isOpen || !record) return null;
 
@@ -186,19 +190,6 @@ export function RecordDetailModal({
                 <DetailRow label="Vendor" value={record.vendor || 'N/A'} />
                 <DetailRow label="Description" value={record.description} />
                 <DetailRow label="Paid By" value={record.paidBy} />
-                {record.billLink && (
-                  <div className="flex justify-between border-b border-hair/50 pb-3 mb-3">
-                    <span className="text-muted-ink font-semibold">Bill</span>
-                    <a
-                      href={record.billLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-ink font-bold hover:underline decoration-hair underline-offset-4"
-                    >
-                      View Bill
-                    </a>
-                  </div>
-                )}
               </>
             )}
 
@@ -230,6 +221,41 @@ export function RecordDetailModal({
               </div>
             )}
           </div>
+
+          {/* Verification Documents Section */}
+          {((isDonation && record.paymentProofLink) || (!isDonation && record.billLink)) && (
+            <div className="pt-4 border-t border-hair">
+              <h3 className="text-[13px] font-bold text-muted-ink uppercase tracking-wider mb-3">
+                Verification Documents
+              </h3>
+              {isDonation && record.paymentProofLink && (
+                <Button 
+                  onClick={() => setPreviewDocument({url: record.paymentProofLink, title: 'Payment Proof'})}
+                  variant="outline" 
+                  className="w-full font-bold h-[48px] justify-between px-4 bg-white"
+                >
+                  <span className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-sage" />
+                    View Payment Proof
+                  </span>
+                  <ExternalLink className="w-4 h-4 text-muted-ink" />
+                </Button>
+              )}
+              {!isDonation && record.billLink && (
+                <Button 
+                  onClick={() => setPreviewDocument({url: record.billLink, title: 'Bill Document'})}
+                  variant="outline" 
+                  className="w-full font-bold h-[48px] justify-between px-4 bg-white"
+                >
+                  <span className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-sage" />
+                    View Bill
+                  </span>
+                  <ExternalLink className="w-4 h-4 text-muted-ink" />
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="space-y-4 pt-2">
@@ -324,6 +350,13 @@ export function RecordDetailModal({
           </div>
         </div>
       </div>
+
+      <DocumentPreviewModal 
+        isOpen={!!previewDocument}
+        onClose={() => setPreviewDocument(null)}
+        documentUrl={previewDocument?.url || ''}
+        title={previewDocument?.title}
+      />
     </div>
   );
 }
