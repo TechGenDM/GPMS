@@ -30,8 +30,8 @@ function authorizeDrive() {
   try {
     // This simple call forces Google to ask for Drive permissions
     DriveApp.getRootFolder();
-    Logger.log("Drive authorized successfully!");
+    Logger.log('Drive authorized successfully!');
   } catch (e) {
-    Logger.log("Error: " + e.message);
+    Logger.log('Error: ' + e.message);
   }
 }

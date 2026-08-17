@@ -5,7 +5,8 @@ export const proxy = auth((req) => {
   const isLoggedIn = !!req.auth;
   const path = req.nextUrl.pathname;
   const isLoginPage = path === '/login';
-  const isPublicPage = path === '/' || path.startsWith('/verify') || path === '/site.webmanifest';
+  const isPublicPage =
+    path === '/' || path.startsWith('/verify') || path === '/site.webmanifest';
 
   // Allow everyone (logged in or out) to access the public root page and verify pages
   if (isPublicPage) {
@@ -25,8 +26,11 @@ export const proxy = auth((req) => {
   // Role-based protection
   if (isLoggedIn) {
     const role = req.auth?.user?.role;
-    const isRestrictedRoute = path.startsWith('/users') || path.startsWith('/settings') || path.startsWith('/audit');
-    
+    const isRestrictedRoute =
+      path.startsWith('/users') ||
+      path.startsWith('/settings') ||
+      path.startsWith('/audit');
+
     if (role === 'Volunteer' && isRestrictedRoute) {
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
@@ -36,5 +40,7 @@ export const proxy = auth((req) => {
 });
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|webmanifest|json)$).*)'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|webmanifest|json)$).*)',
+  ],
 };

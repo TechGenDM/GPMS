@@ -43,7 +43,7 @@ export default function RecordExpense() {
   const [form, setForm] = useState<ExpenseFormData>(INITIAL_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
-  
+
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
@@ -62,7 +62,7 @@ export default function RecordExpense() {
   } | null>(null);
 
   const transactionIdRef = useRef<string>('');
-  
+
   useEffect(() => {
     transactionIdRef.current = crypto.randomUUID();
   }, []);
@@ -75,7 +75,9 @@ export default function RecordExpense() {
       setIsLoadingCategories(true);
       setCategoriesError(null);
       try {
-        const result = await fetchApi<string[]>('/categories', { method: 'GET' });
+        const result = await fetchApi<string[]>('/categories', {
+          method: 'GET',
+        });
         if (!ignore) {
           if (result.success && result.data) {
             setCategories(result.data);
@@ -94,7 +96,9 @@ export default function RecordExpense() {
       }
     };
     load();
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -122,9 +126,16 @@ export default function RecordExpense() {
     }
 
     // Validate type
-    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    const validTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'image/jpg',
+    ];
     if (!validTypes.includes(file.type)) {
-      setValidationError('Invalid file type. Only PDF, JPG, and PNG are allowed.');
+      setValidationError(
+        'Invalid file type. Only PDF, JPG, and PNG are allowed.'
+      );
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
@@ -255,11 +266,14 @@ export default function RecordExpense() {
     };
 
     const handleWhatsAppShare = () => {
-      const dateStr = parseGPMSDate(successData.date).toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
+      const dateStr = parseGPMSDate(successData.date).toLocaleDateString(
+        'en-IN',
+        {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }
+      );
       const text = `Official Expense Record for GPMS 2026\n\nExpense ID: ${successData.expenseId}\nCategory: ${successData.category}\nAmount: \u20B9${successData.amount.toLocaleString('en-IN')}\nPaid By: ${successData.paidBy}\nDate: ${dateStr}\n\nVerify this expense record:\n${verificationUrl}`;
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
@@ -276,94 +290,96 @@ export default function RecordExpense() {
           // User cancelled or failed
         }
       } else {
-         return (
-      <div className="min-h-screen bg-cream pb-20">
-        <header className="bg-cream border-b border-hair sticky top-0 z-10">
-          <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
-            <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
-              Expense Recorded
-            </h1>
-          </div>
-        </header>
-
-        <main className="max-w-3xl mx-auto px-4 py-8">
-          <Card className="max-w-md mx-auto rounded-[24px] overflow-hidden border-hair shadow-sm">
-            <CardContent className="p-8 space-y-8">
-              <div className="text-center space-y-3">
-                <CheckCircle className="w-16 h-16 text-sage mx-auto" />
-                <h2 className="text-[24px] font-playfair font-bold text-ink">Success!</h2>
+        return (
+          <div className="min-h-screen bg-cream pb-20">
+            <header className="bg-cream border-b border-hair sticky top-0 z-10">
+              <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
+                <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
+                  Expense Recorded
+                </h1>
               </div>
+            </header>
 
-              <div className="bg-cream-2 rounded-[16px] p-6 text-center space-y-2 border border-hair">
-                <p className="text-[13px] font-bold text-muted-ink uppercase tracking-wider">
-                  Expense ID
-                </p>
-                <p className="text-[20px] font-playfair font-bold text-ink">
-                  {successData.expenseId}
-                </p>
-                <div className="pt-2 border-t border-hair/50 mt-3 space-y-1">
-                  <p className="text-[15px] text-ink font-bold mt-2">
-                    {successData.category}
-                  </p>
-                  <CurrencyDisplay
-                    amount={successData.amount}
-                    size="lg"
-                    className="justify-center font-bold text-sage"
-                  />
-                </div>
-              </div>
+            <main className="max-w-3xl mx-auto px-4 py-8">
+              <Card className="max-w-md mx-auto rounded-[24px] overflow-hidden border-hair shadow-sm">
+                <CardContent className="p-8 space-y-8">
+                  <div className="text-center space-y-3">
+                    <CheckCircle className="w-16 h-16 text-sage mx-auto" />
+                    <h2 className="text-[24px] font-playfair font-bold text-ink">
+                      Success!
+                    </h2>
+                  </div>
 
-              {/* Action Buttons */}
-              <div className="pt-4 flex flex-col gap-3">
+                  <div className="bg-cream-2 rounded-[16px] p-6 text-center space-y-2 border border-hair">
+                    <p className="text-[13px] font-bold text-muted-ink uppercase tracking-wider">
+                      Expense ID
+                    </p>
+                    <p className="text-[20px] font-playfair font-bold text-ink">
+                      {successData.expenseId}
+                    </p>
+                    <div className="pt-2 border-t border-hair/50 mt-3 space-y-1">
+                      <p className="text-[15px] text-ink font-bold mt-2">
+                        {successData.category}
+                      </p>
+                      <CurrencyDisplay
+                        amount={successData.amount}
+                        size="lg"
+                        className="justify-center font-bold text-sage"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="pt-4 flex flex-col gap-3">
+                    <Button
+                      onClick={handleDownloadPDF}
+                      className="w-full bg-ink hover:bg-ink/90 text-cream h-[48px] font-bold rounded-[12px] border-transparent"
+                    >
+                      <Download className="w-[18px] h-[18px] mr-2" />
+                      PDF Receipt
+                    </Button>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={handleWhatsAppShare}
+                        className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white h-[48px] font-bold rounded-[12px] border-transparent"
+                      >
+                        <MessageCircle className="w-[18px] h-[18px] mr-2" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleNativeShare}
+                        className="w-full h-[48px] font-bold rounded-[12px] text-ink border-hair hover:bg-hair/30"
+                      >
+                        <Share2 className="w-[18px] h-[18px] mr-2" />
+                        More Options
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="mt-8 space-y-3 max-w-md mx-auto">
                 <Button
-                  onClick={handleDownloadPDF}
-                  className="w-full bg-ink hover:bg-ink/90 text-cream h-[48px] font-bold rounded-[12px] border-transparent"
+                  onClick={handleRecordAnother}
+                  className="w-full h-[54px] text-[16px] bg-sage hover:bg-sage/90 text-white rounded-[14px] font-bold border-transparent"
                 >
-                  <Download className="w-[18px] h-[18px] mr-2" />
-                  PDF Receipt
+                  <Plus className="w-[20px] h-[20px] mr-2" />
+                  Record Another Expense
                 </Button>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={handleWhatsAppShare}
-                    className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white h-[48px] font-bold rounded-[12px] border-transparent"
-                  >
-                    <MessageCircle className="w-[18px] h-[18px] mr-2" />
-                    WhatsApp
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleNativeShare}
-                    className="w-full h-[48px] font-bold rounded-[12px] text-ink border-hair hover:bg-hair/30"
-                  >
-                    <Share2 className="w-[18px] h-[18px] mr-2" />
-                    More Options
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/dashboard')}
+                  className="w-full h-[54px] text-[16px] rounded-[14px] font-bold border-hair text-ink hover:bg-hair/30"
+                >
+                  Back to Dashboard
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          <div className="mt-8 space-y-3 max-w-md mx-auto">
-            <Button
-              onClick={handleRecordAnother}
-              className="w-full h-[54px] text-[16px] bg-sage hover:bg-sage/90 text-white rounded-[14px] font-bold border-transparent"
-            >
-              <Plus className="w-[20px] h-[20px] mr-2" />
-              Record Another Expense
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => router.push('/dashboard')}
-              className="w-full h-[54px] text-[16px] rounded-[14px] font-bold border-hair text-ink hover:bg-hair/30"
-            >
-              Back to Dashboard
-            </Button>
+            </main>
           </div>
-        </main>
-      </div>
-    );
+        );
       }
     };
 
@@ -382,7 +398,9 @@ export default function RecordExpense() {
             <CardContent className="p-8 space-y-8">
               <div className="text-center space-y-3">
                 <CheckCircle className="w-16 h-16 text-sage mx-auto" />
-                <h2 className="text-[24px] font-playfair font-bold text-ink">Success!</h2>
+                <h2 className="text-[24px] font-playfair font-bold text-ink">
+                  Success!
+                </h2>
               </div>
 
               <div className="bg-cream-2 rounded-[16px] p-6 text-center space-y-2 border border-hair">
@@ -518,17 +536,21 @@ export default function RecordExpense() {
             <label className="block text-[14px] font-bold text-ink mb-2">
               Category <span className="text-maroon">*</span>
             </label>
-            
+
             {isLoadingCategories ? (
               <div className="flex items-center space-x-2 text-muted-ink py-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-[14px] font-semibold">Loading categories...</span>
+                <span className="text-[14px] font-semibold">
+                  Loading categories...
+                </span>
               </div>
             ) : categoriesError ? (
               <div className="flex items-center space-x-2 text-maroon bg-[#F4E9EB] px-3 py-2 rounded-[8px] border border-maroon/20">
-                <span className="text-[14px] font-semibold">{categoriesError}</span>
-                <button 
-                  type="button" 
+                <span className="text-[14px] font-semibold">
+                  {categoriesError}
+                </span>
+                <button
+                  type="button"
                   onClick={fetchCategories}
                   className="flex items-center ml-2 px-2 py-1 bg-white border border-maroon/20 rounded-[6px] text-[12px] font-bold hover:bg-maroon/5 transition-colors"
                 >
@@ -581,7 +603,10 @@ export default function RecordExpense() {
               htmlFor="vendor"
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Vendor <span className="text-muted-ink text-[12px] font-medium">(optional)</span>
+              Vendor{' '}
+              <span className="text-muted-ink text-[12px] font-medium">
+                (optional)
+              </span>
             </label>
             <input
               id="vendor"
@@ -600,9 +625,12 @@ export default function RecordExpense() {
               htmlFor="billFile"
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Upload Bill <span className="text-muted-ink text-[12px] font-medium">(optional, PDF/JPG/PNG up to 5MB)</span>
+              Upload Bill{' '}
+              <span className="text-muted-ink text-[12px] font-medium">
+                (optional, PDF/JPG/PNG up to 5MB)
+              </span>
             </label>
-            
+
             {form.billFile ? (
               <div className="flex items-center justify-between p-3 border border-hair bg-white rounded-[12px] shadow-sm">
                 <div className="flex items-center truncate mr-3">
@@ -610,8 +638,12 @@ export default function RecordExpense() {
                     <CheckCircle className="w-5 h-5" />
                   </div>
                   <div className="truncate">
-                    <p className="text-[14px] font-bold text-ink truncate">{form.billFile.name}</p>
-                    <p className="text-[12px] font-medium text-muted-ink">Ready to upload</p>
+                    <p className="text-[14px] font-bold text-ink truncate">
+                      {form.billFile.name}
+                    </p>
+                    <p className="text-[12px] font-medium text-muted-ink">
+                      Ready to upload
+                    </p>
                   </div>
                 </div>
                 <button
@@ -638,8 +670,12 @@ export default function RecordExpense() {
                   className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-hair bg-cream hover:bg-hair/30 rounded-[16px] transition-colors"
                 >
                   <Upload className="w-8 h-8 text-muted-ink mb-2" />
-                  <p className="text-[14px] font-bold text-ink">Tap to select a file</p>
-                  <p className="text-[12px] font-medium text-muted-ink mt-1">PDF, JPG, PNG (Max 5MB)</p>
+                  <p className="text-[14px] font-bold text-ink">
+                    Tap to select a file
+                  </p>
+                  <p className="text-[12px] font-medium text-muted-ink mt-1">
+                    PDF, JPG, PNG (Max 5MB)
+                  </p>
                 </button>
               </div>
             )}

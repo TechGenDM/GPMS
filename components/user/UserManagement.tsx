@@ -5,8 +5,15 @@ import { useFeedback } from '@/components/ui/Feedback';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { 
-  Search, Plus, MoreVertical, Edit2, UserX, Shield, ShieldAlert, ShieldCheck
+import {
+  Search,
+  Plus,
+  MoreVertical,
+  Edit2,
+  UserX,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface User {
@@ -20,23 +27,27 @@ interface User {
   createdAt: string;
 }
 
-export function UserManagement({ currentUserRole }: { currentUserRole: string }) {
+export function UserManagement({
+  currentUserRole,
+}: {
+  currentUserRole: string;
+}) {
   const { showLoading, showSuccess, showError } = useFeedback();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
     role: 'Volunteer' as User['role'],
-    status: 'Active' as User['status']
+    status: 'Active' as User['status'],
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -64,15 +75,22 @@ export function UserManagement({ currentUserRole }: { currentUserRole: string })
     fetchUsers();
   }, [fetchUsers]);
 
-  const filteredUsers = users.filter(u => 
-    u.fullName.toLowerCase().includes(search.toLowerCase()) ||
-    u.email.toLowerCase().includes(search.toLowerCase()) ||
-    u.phone.includes(search)
+  const filteredUsers = users.filter(
+    (u) =>
+      u.fullName.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      u.phone.includes(search)
   );
 
   const handleOpenCreate = () => {
     setEditingUser(null);
-    setFormData({ fullName: '', email: '', phone: '', role: 'Volunteer', status: 'Active' });
+    setFormData({
+      fullName: '',
+      email: '',
+      phone: '',
+      role: 'Volunteer',
+      status: 'Active',
+    });
     setIsModalOpen(true);
   };
 
@@ -83,14 +101,14 @@ export function UserManagement({ currentUserRole }: { currentUserRole: string })
       email: user.email,
       phone: user.phone,
       role: user.role,
-      status: user.status
+      status: user.status,
     });
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Admin cannot change roles, force to Volunteer on create
     const payload = { ...formData };
     if (currentUserRole === 'Admin') {
@@ -100,17 +118,23 @@ export function UserManagement({ currentUserRole }: { currentUserRole: string })
     setSubmitting(true);
     try {
       const method = editingUser ? 'PUT' : 'POST';
-      const body = editingUser ? { ...payload, userId: editingUser.id } : payload;
-      
+      const body = editingUser
+        ? { ...payload, userId: editingUser.id }
+        : payload;
+
       const res = await fetch('/api/users', {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       });
-      
+
       const data = await res.json();
       if (data.success) {
-        showSuccess(editingUser ? 'User updated successfully' : 'User created successfully');
+        showSuccess(
+          editingUser
+            ? 'User updated successfully'
+            : 'User created successfully'
+        );
         setIsModalOpen(false);
         fetchUsers();
       } else {
@@ -129,9 +153,9 @@ export function UserManagement({ currentUserRole }: { currentUserRole: string })
       const res = await fetch('/api/users', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: userToDisable.id })
+        body: JSON.stringify({ userId: userToDisable.id }),
       });
-      
+
       const data = await res.json();
       if (data.success) {
         showSuccess('User disabled successfully');
@@ -147,17 +171,38 @@ export function UserManagement({ currentUserRole }: { currentUserRole: string })
   };
 
   const getRoleBadge = (role: string) => {
-    switch(role) {
-      case 'SuperAdmin': return <span className="inline-flex items-center gap-1 px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-[#E8E1F3] text-ink-2"><ShieldAlert className="w-[12px] h-[12px]" /> SuperAdmin</span>;
-      case 'Admin': return <span className="inline-flex items-center gap-1 px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-cream-2 text-ink-2"><ShieldCheck className="w-[12px] h-[12px]" /> Admin</span>;
-      default: return <span className="inline-flex items-center gap-1 px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-cream-2 text-sage"><Shield className="w-[12px] h-[12px]" /> Volunteer</span>;
+    switch (role) {
+      case 'SuperAdmin':
+        return (
+          <span className="inline-flex items-center gap-1 px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-[#E8E1F3] text-ink-2">
+            <ShieldAlert className="w-[12px] h-[12px]" /> SuperAdmin
+          </span>
+        );
+      case 'Admin':
+        return (
+          <span className="inline-flex items-center gap-1 px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-cream-2 text-ink-2">
+            <ShieldCheck className="w-[12px] h-[12px]" /> Admin
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-cream-2 text-sage">
+            <Shield className="w-[12px] h-[12px]" /> Volunteer
+          </span>
+        );
     }
   };
 
   const getStatusBadge = (status: string) => {
-    return status === 'Active' 
-      ? <span className="px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-[#E7F0E8] text-sage">Active</span>
-      : <span className="px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-[#F4E9EB] text-maroon">Disabled</span>;
+    return status === 'Active' ? (
+      <span className="px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-[#E7F0E8] text-sage">
+        Active
+      </span>
+    ) : (
+      <span className="px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-[#F4E9EB] text-maroon">
+        Disabled
+      </span>
+    );
   };
 
   return (
@@ -165,7 +210,7 @@ export function UserManagement({ currentUserRole }: { currentUserRole: string })
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-ink" />
-          <input 
+          <input
             type="text"
             placeholder="Search users..."
             value={search}
@@ -173,8 +218,8 @@ export function UserManagement({ currentUserRole }: { currentUserRole: string })
             className="w-full pl-9 pr-4 py-[10px] bg-white border border-hair rounded-[14px] text-[14px] text-ink focus:outline-none focus:ring-1 focus:ring-gold-soft shadow-sm"
           />
         </div>
-        <button 
-          onClick={handleOpenCreate} 
+        <button
+          onClick={handleOpenCreate}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-br from-gold-soft to-ember text-[#3a2205] font-bold text-[14.5px] rounded-[14px] px-5 py-[12px] shadow-md hover:opacity-90 transition-opacity"
         >
           <Plus className="w-4 h-4" /> Add User
@@ -196,33 +241,56 @@ export function UserManagement({ currentUserRole }: { currentUserRole: string })
             <tbody className="divide-y divide-hair">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted-ink text-[14px]">Loading users...</td>
+                  <td
+                    colSpan={5}
+                    className="p-8 text-center text-muted-ink text-[14px]"
+                  >
+                    Loading users...
+                  </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted-ink text-[14px]">No users found.</td>
+                  <td
+                    colSpan={5}
+                    className="p-8 text-center text-muted-ink text-[14px]"
+                  >
+                    No users found.
+                  </td>
                 </tr>
               ) : (
-                filteredUsers.map(user => (
-                  <tr key={user.id} className="hover:bg-cream-2/20 transition-colors">
+                filteredUsers.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="hover:bg-cream-2/20 transition-colors"
+                  >
                     <td className="p-4">
-                      <div className="font-semibold text-[14px] text-ink">{user.fullName}</div>
-                      <div className="text-[12.5px] text-muted-ink mt-0.5">{user.email}</div>
-                      <div className="md:hidden mt-2">{getStatusBadge(user.status)}</div>
+                      <div className="font-semibold text-[14px] text-ink">
+                        {user.fullName}
+                      </div>
+                      <div className="text-[12.5px] text-muted-ink mt-0.5">
+                        {user.email}
+                      </div>
+                      <div className="md:hidden mt-2">
+                        {getStatusBadge(user.status)}
+                      </div>
                     </td>
-                    <td className="p-4 text-ink text-[13px] hidden sm:table-cell">{user.phone}</td>
+                    <td className="p-4 text-ink text-[13px] hidden sm:table-cell">
+                      {user.phone}
+                    </td>
                     <td className="p-4">{getRoleBadge(user.role)}</td>
-                    <td className="p-4 hidden md:table-cell">{getStatusBadge(user.status)}</td>
+                    <td className="p-4 hidden md:table-cell">
+                      {getStatusBadge(user.status)}
+                    </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => handleOpenEdit(user)}
                           className="p-[6px] rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors"
                         >
                           <Edit2 className="w-[18px] h-[18px]" />
                         </button>
                         {user.status === 'Active' && (
-                          <button 
+                          <button
                             onClick={() => setUserToDisable(user)}
                             className="p-[6px] rounded-lg text-muted-ink hover:text-maroon hover:bg-maroon/5 transition-colors"
                           >
@@ -249,50 +317,72 @@ export function UserManagement({ currentUserRole }: { currentUserRole: string })
                 {editingUser ? 'Edit User' : 'Add New User'}
               </h2>
             </div>
-            
-            <form onSubmit={handleSubmit} className="p-[20px_24px_24px] space-y-4">
+
+            <form
+              onSubmit={handleSubmit}
+              className="p-[20px_24px_24px] space-y-4"
+            >
               <div>
-                <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">Full Name</label>
-                <input 
+                <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">
+                  Full Name
+                </label>
+                <input
                   required
-                  type="text" 
+                  type="text"
                   value={formData.fullName}
-                  onChange={e => setFormData({...formData, fullName: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullName: e.target.value })
+                  }
                   className="w-full px-4 py-[10px] bg-white border border-hair rounded-[14px] text-[14px] text-ink focus:outline-none focus:ring-1 focus:ring-gold-soft shadow-sm"
                 />
               </div>
-              
+
               <div>
-                <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">Email</label>
-                <input 
+                <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">
+                  Email
+                </label>
+                <input
                   required
-                  type="email" 
+                  type="email"
                   value={formData.email}
-                  onChange={e => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   disabled={!!editingUser}
                   className="w-full px-4 py-[10px] bg-white border border-hair rounded-[14px] text-[14px] text-ink focus:outline-none focus:ring-1 focus:ring-gold-soft shadow-sm disabled:bg-cream-2/50 disabled:text-muted-ink"
                 />
               </div>
 
               <div>
-                <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">Phone</label>
-                <input 
+                <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">
+                  Phone
+                </label>
+                <input
                   required
-                  type="tel" 
+                  type="tel"
                   pattern="[0-9]{10}"
                   title="10 digit phone number"
                   value={formData.phone}
-                  onChange={e => setFormData({...formData, phone: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
                   className="w-full px-4 py-[10px] bg-white border border-hair rounded-[14px] text-[14px] text-ink focus:outline-none focus:ring-1 focus:ring-gold-soft shadow-sm"
                 />
               </div>
 
               {currentUserRole === 'SuperAdmin' && (
                 <div>
-                  <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">Role</label>
-                  <select 
+                  <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">
+                    Role
+                  </label>
+                  <select
                     value={formData.role}
-                    onChange={e => setFormData({...formData, role: e.target.value as User['role']})}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        role: e.target.value as User['role'],
+                      })
+                    }
                     className="w-full px-4 py-[10px] bg-white border border-hair rounded-[14px] text-[14px] text-ink focus:outline-none focus:ring-1 focus:ring-gold-soft shadow-sm appearance-none"
                   >
                     <option value="Volunteer">Volunteer</option>
@@ -303,15 +393,15 @@ export function UserManagement({ currentUserRole }: { currentUserRole: string })
               )}
 
               <div className="pt-4 flex gap-3">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1 bg-cream-2 border border-hair text-ink font-bold text-[14px] rounded-[14px] px-4 py-[12px] shadow-sm hover:bg-hair/30 transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={submitting}
                   className="flex-1 bg-ink text-cream font-bold text-[14px] rounded-[14px] px-4 py-[12px] shadow-md hover:opacity-90 transition-opacity disabled:opacity-50"
                 >

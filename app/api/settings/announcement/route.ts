@@ -92,7 +92,9 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await response.json();
-    return NextResponse.json(data, { status: response.ok ? 200 : response.status });
+    return NextResponse.json(data, {
+      status: response.ok ? 200 : response.status,
+    });
   } catch (error: unknown) {
     console.error('[GPMS API] Error updating Announcement config:', error);
     return NextResponse.json(

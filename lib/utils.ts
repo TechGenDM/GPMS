@@ -17,11 +17,11 @@ export function parseGPMSDate(dateStr: string): Date {
   if (parts.length === 2) {
     const [datePart, timePart] = parts;
     const dateParts = datePart.split('/');
-    
+
     if (dateParts.length === 3) {
       const [day, month, year] = dateParts;
       const timeParts = timePart.split(':');
-      
+
       const hours = timeParts[0] ? Number(timeParts[0]) : 0;
       const minutes = timeParts[1] ? Number(timeParts[1]) : 0;
       const seconds = timeParts[2] ? Number(timeParts[2]) : 0;

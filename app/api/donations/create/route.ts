@@ -22,8 +22,16 @@ export async function POST(request: NextRequest) {
 
     // Read donation fields from the request body
     const body = await request.json();
-    const { donorName, phone, amount, paymentMode, upiRef, purpose, remarks, transactionId } =
-      body;
+    const {
+      donorName,
+      phone,
+      amount,
+      paymentMode,
+      upiRef,
+      purpose,
+      remarks,
+      transactionId,
+    } = body;
 
     const response = await fetch(appsScriptUrl, {
       method: 'POST',

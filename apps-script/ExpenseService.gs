@@ -21,10 +21,10 @@ var ExpenseService = {
     var sheet = getSheet(CONFIG.sheets.categories);
     var data = sheet.getDataRange().getValues();
     var categories = [];
-    
+
     var catColIdx = -1;
     var startRow = 0;
-    
+
     // Find the header row and column
     for (var r = 0; r < data.length; r++) {
       for (var c = 0; c < data[r].length; c++) {
@@ -36,7 +36,7 @@ var ExpenseService = {
       }
       if (catColIdx !== -1) break;
     }
-    
+
     if (catColIdx !== -1) {
       for (var i = startRow; i < data.length; i++) {
         if (data[i][catColIdx]) {
@@ -73,7 +73,11 @@ var ExpenseService = {
     }
 
     var transactionId = payload.transactionId;
-    if (!transactionId) return error(ERROR_CODES.MISSING_FIELD, 'Transaction ID is required for idempotency');
+    if (!transactionId)
+      return error(
+        ERROR_CODES.MISSING_FIELD,
+        'Transaction ID is required for idempotency'
+      );
 
     var sheet = getSheet(CONFIG.sheets.expenses);
 
@@ -81,7 +85,10 @@ var ExpenseService = {
     var existingRow = findRow(sheet, 12, transactionId); // Column 12 (L)
     if (existingRow !== -1) {
       var currentData = sheet.getRange(existingRow, 1, 1, 12).getValues()[0];
-      return success('Expense recorded (idempotent)', ExpenseService._mapExpense(currentData));
+      return success(
+        'Expense recorded (idempotent)',
+        ExpenseService._mapExpense(currentData)
+      );
     }
 
     // 2. Upload Bill File (Slow operation, NO LOCK)
@@ -93,29 +100,39 @@ var ExpenseService = {
       if (!fileValidation.valid) {
         return error(fileValidation.code, fileValidation.message);
       }
-      
+
       var settingsSheet = getSheet(CONFIG.sheets.settings);
       var row = findRow(settingsSheet, 1, 'Expense Bills Folder ID');
       if (row === -1) {
-        return error(ERROR_CODES.INTERNAL_ERROR, 'Expense Bills Folder ID is not configured in Settings.');
+        return error(
+          ERROR_CODES.INTERNAL_ERROR,
+          'Expense Bills Folder ID is not configured in Settings.'
+        );
       }
       var folderId = settingsSheet.getRange(row, 2).getValue();
-      
+
       try {
         var folder = DriveApp.getFolderById(folderId);
-        
+
         var base64Data = payload.billFile.base64;
         if (base64Data.indexOf('base64,') !== -1) {
           base64Data = base64Data.split('base64,')[1];
         }
-        
+
         // Generate a temporary name (will rename if needed)
-        var blob = Utilities.newBlob(Utilities.base64Decode(base64Data), payload.billFile.mimeType, 'TEMP_' + payload.billFile.name);
+        var blob = Utilities.newBlob(
+          Utilities.base64Decode(base64Data),
+          payload.billFile.mimeType,
+          'TEMP_' + payload.billFile.name
+        );
         var file = folder.createFile(blob);
         finalBillLink = file.getUrl();
         fileId = file.getId();
       } catch (e) {
-        return error(ERROR_CODES.UPLOAD_FAILED, 'Failed to upload bill file: ' + e.message);
+        return error(
+          ERROR_CODES.UPLOAD_FAILED,
+          'Failed to upload bill file: ' + e.message
+        );
       }
     }
 
@@ -123,24 +140,33 @@ var ExpenseService = {
     var lock = LockService.getScriptLock();
     try {
       lock.waitLock(15000);
-      
+
       // Double check idempotency under lock
       existingRow = findRow(sheet, 12, transactionId);
       if (existingRow !== -1) {
         if (fileId) {
-          try { DriveApp.getFileById(fileId).setTrashed(true); } catch(delErr){}
+          try {
+            DriveApp.getFileById(fileId).setTrashed(true);
+          } catch (delErr) {}
         }
         var currentData = sheet.getRange(existingRow, 1, 1, 12).getValues()[0];
-        return success('Expense recorded (idempotent)', ExpenseService._mapExpense(currentData));
+        return success(
+          'Expense recorded (idempotent)',
+          ExpenseService._mapExpense(currentData)
+        );
       }
 
       // Generate ID inside lock
       var expenseId = ReceiptService.generateExpenseId(true);
       var timestamp = now();
-      
+
       // Rename file with actual expenseId now that we have it
       if (fileId) {
-         try { DriveApp.getFileById(fileId).setName(expenseId + '_' + payload.billFile.name); } catch(renErr){}
+        try {
+          DriveApp.getFileById(fileId).setName(
+            expenseId + '_' + payload.billFile.name
+          );
+        } catch (renErr) {}
       }
 
       safeAppendRow(
@@ -161,13 +187,18 @@ var ExpenseService = {
         ],
         0
       );
-      
+
       SpreadsheetApp.flush();
     } catch (e) {
       if (fileId) {
-        try { DriveApp.getFileById(fileId).setTrashed(true); } catch (delErr) {}
+        try {
+          DriveApp.getFileById(fileId).setTrashed(true);
+        } catch (delErr) {}
       }
-      return error(ERROR_CODES.INTERNAL_ERROR, 'Failed to save expense: ' + e.message);
+      return error(
+        ERROR_CODES.INTERNAL_ERROR,
+        'Failed to save expense: ' + e.message
+      );
     } finally {
       lock.releaseLock();
     }
@@ -259,15 +290,26 @@ var ExpenseService = {
    * @returns {ContentOutput} JSON response.
    */
   cancel: function (user, payload) {
-    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
-      return error(ERROR_CODES.FORBIDDEN, 'Access denied. You do not have permission to cancel expenses.');
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.admin,
+        CONFIG.roles.superadmin,
+      ])
+    ) {
+      return error(
+        ERROR_CODES.FORBIDDEN,
+        'Access denied. You do not have permission to cancel expenses.'
+      );
     }
 
     if (!payload || !payload.expenseId) {
       return error(ERROR_CODES.MISSING_FIELD, 'Expense ID is required');
     }
     if (!payload.cancellationReason) {
-      return error(ERROR_CODES.MISSING_FIELD, 'Cancellation reason is required');
+      return error(
+        ERROR_CODES.MISSING_FIELD,
+        'Cancellation reason is required'
+      );
     }
 
     var row = ExpenseService._findExpenseRow(payload.expenseId);
@@ -297,7 +339,7 @@ var ExpenseService = {
       action: 'cancelExpense',
       module: 'Expenses',
       recordId: payload.expenseId,
-      newValue: payload.cancellationReason
+      newValue: payload.cancellationReason,
     });
 
     return success('Expense cancelled successfully');
@@ -337,8 +379,16 @@ var ExpenseService = {
    * @returns {ContentOutput} JSON response.
    */
   search: function (user, payload) {
-    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
-      return error(ERROR_CODES.FORBIDDEN, 'Access denied. You do not have permission to search expenses.');
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.admin,
+        CONFIG.roles.superadmin,
+      ])
+    ) {
+      return error(
+        ERROR_CODES.FORBIDDEN,
+        'Access denied. You do not have permission to search expenses.'
+      );
     }
 
     var sheet = getSheet(CONFIG.sheets.expenses);
@@ -376,9 +426,9 @@ var ExpenseService = {
         var searchFields = [
           String(expense.id).toLowerCase(),
           String(expense.vendor || '').toLowerCase(),
-          String(expense.description || '').toLowerCase()
+          String(expense.description || '').toLowerCase(),
         ].join(' ');
-        
+
         if (searchFields.indexOf(query) === -1) {
           match = false;
         }

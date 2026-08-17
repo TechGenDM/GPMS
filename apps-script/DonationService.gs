@@ -42,7 +42,10 @@ var DonationService = {
 
     var transactionId = payload.transactionId;
     if (!transactionId) {
-      return error(ERROR_CODES.MISSING_FIELD, 'Transaction ID is required for idempotency');
+      return error(
+        ERROR_CODES.MISSING_FIELD,
+        'Transaction ID is required for idempotency'
+      );
     }
 
     var lock = LockService.getScriptLock();
@@ -89,10 +92,13 @@ var DonationService = {
         ],
         0 // ID Col index (A)
       );
-      
+
       SpreadsheetApp.flush(); // Ensure row is written before releasing lock
     } catch (e) {
-      return error(ERROR_CODES.INTERNAL_ERROR, 'Failed to process transaction: ' + e.message);
+      return error(
+        ERROR_CODES.INTERNAL_ERROR,
+        'Failed to process transaction: ' + e.message
+      );
     } finally {
       lock.releaseLock();
     }
@@ -197,11 +203,19 @@ var DonationService = {
       return error(ERROR_CODES.MISSING_FIELD, 'Donation ID is required');
     }
     if (!payload.cancellationReason) {
-      return error(ERROR_CODES.MISSING_FIELD, 'Cancellation reason is required');
+      return error(
+        ERROR_CODES.MISSING_FIELD,
+        'Cancellation reason is required'
+      );
     }
 
     // Authorization: Only Admins/SuperAdmins can cancel donations
-    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.admin,
+        CONFIG.roles.superadmin,
+      ])
+    ) {
       return error(
         ERROR_CODES.ROLE_NOT_ALLOWED,
         'Only admins can cancel donations'
@@ -232,7 +246,7 @@ var DonationService = {
       action: 'cancelDonation',
       module: 'Donations',
       recordId: payload.donationId,
-      newValue: payload.cancellationReason || 'No reason provided'
+      newValue: payload.cancellationReason || 'No reason provided',
     });
 
     return success('Donation cancelled successfully');
@@ -310,9 +324,9 @@ var DonationService = {
         var searchFields = [
           String(donation.receiptId).toLowerCase(),
           String(donation.donorName).toLowerCase(),
-          String(donation.phone || '').toLowerCase()
+          String(donation.phone || '').toLowerCase(),
         ].join(' ');
-        
+
         if (searchFields.indexOf(query) === -1) {
           match = false;
         }

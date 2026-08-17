@@ -46,7 +46,8 @@ interface DashboardData {
 }
 
 // ─── YouTube URL Validation ────────────────────────────────
-const YOUTUBE_URL_PATTERN = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/|@[\w.-]+\/live)|youtu\.be\/)/i;
+const YOUTUBE_URL_PATTERN =
+  /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/|@[\w.-]+\/live)|youtu\.be\/)/i;
 
 function isValidYoutubeUrl(url: string): boolean {
   if (!url.trim()) return true; // empty is valid (clearing)
@@ -77,11 +78,15 @@ export default function DashboardPage() {
 
   const userRole = session?.user?.role;
   const canManageUsers = userRole === 'Admin' || userRole === 'SuperAdmin';
-  const canManageLiveDarshan = userRole === 'SuperAdmin' || userRole === 'Admin' || userRole === 'Volunteer';
+  const canManageLiveDarshan =
+    userRole === 'SuperAdmin' ||
+    userRole === 'Admin' ||
+    userRole === 'Volunteer';
 
   // Live Darshan state
   const [liveDarshanModalOpen, setLiveDarshanModalOpen] = useState(false);
-  const [liveDarshanConfig, setLiveDarshanConfig] = useState<LiveDarshanConfig | null>(null);
+  const [liveDarshanConfig, setLiveDarshanConfig] =
+    useState<LiveDarshanConfig | null>(null);
   const [liveDarshanUrl, setLiveDarshanUrl] = useState('');
   const [liveDarshanSaving, setLiveDarshanSaving] = useState(false);
   const [liveDarshanError, setLiveDarshanError] = useState<string | null>(null);
@@ -101,11 +106,14 @@ export default function DashboardPage() {
 
   // Announcement state
   const [announcementModalOpen, setAnnouncementModalOpen] = useState(false);
-  const [announcementConfig, setAnnouncementConfig] = useState<AnnouncementConfig | null>(null);
+  const [announcementConfig, setAnnouncementConfig] =
+    useState<AnnouncementConfig | null>(null);
   const [announcementText, setAnnouncementText] = useState('');
   const [announcementDate, setAnnouncementDate] = useState('');
   const [announcementSaving, setAnnouncementSaving] = useState(false);
-  const [announcementError, setAnnouncementError] = useState<string | null>(null);
+  const [announcementError, setAnnouncementError] = useState<string | null>(
+    null
+  );
 
   // Fetch Announcement config
   const loadAnnouncementConfig = useCallback(async () => {
@@ -138,7 +146,9 @@ export default function DashboardPage() {
 
     // Frontend validation
     if (trimmedUrl && !isValidYoutubeUrl(trimmedUrl)) {
-      setLiveDarshanError('Invalid YouTube URL. Use youtube.com/watch?v=, youtube.com/live/, or youtu.be/ format.');
+      setLiveDarshanError(
+        'Invalid YouTube URL. Use youtube.com/watch?v=, youtube.com/live/, or youtu.be/ format.'
+      );
       return;
     }
 
@@ -158,10 +168,14 @@ export default function DashboardPage() {
         setLiveDarshanModalOpen(false);
         loadLiveDarshanConfig();
       } else {
-        setLiveDarshanError(json.message || 'Couldn\u2019t update Live Darshan. Please try again.');
+        setLiveDarshanError(
+          json.message || 'Couldn\u2019t update Live Darshan. Please try again.'
+        );
       }
     } catch {
-      setLiveDarshanError('Couldn\u2019t update Live Darshan. Please try again.');
+      setLiveDarshanError(
+        'Couldn\u2019t update Live Darshan. Please try again.'
+      );
     } finally {
       setLiveDarshanSaving(false);
     }
@@ -204,10 +218,14 @@ export default function DashboardPage() {
         setAnnouncementModalOpen(false);
         loadAnnouncementConfig();
       } else {
-        setAnnouncementError(json.message || 'Couldn\u2019t update Announcement. Please try again.');
+        setAnnouncementError(
+          json.message || 'Couldn\u2019t update Announcement. Please try again.'
+        );
       }
     } catch {
-      setAnnouncementError('Couldn\u2019t update Announcement. Please try again.');
+      setAnnouncementError(
+        'Couldn\u2019t update Announcement. Please try again.'
+      );
     } finally {
       setAnnouncementSaving(false);
     }
@@ -219,13 +237,10 @@ export default function DashboardPage() {
         if (isRefresh) setRefreshing(true);
         setError(null);
 
-        const res = await fetchApi<DashboardData>(
-          '/dashboard/summary',
-          {
-            method: 'POST',
-            showLoading: !isRefresh,
-          }
-        );
+        const res = await fetchApi<DashboardData>('/dashboard/summary', {
+          method: 'POST',
+          showLoading: !isRefresh,
+        });
 
         if (res.success && res.data) {
           setData(res.data);
@@ -274,12 +289,38 @@ export default function DashboardPage() {
       <header className="flex items-center justify-between p-[18px_20px] bg-cream border-b border-hair sticky top-0 z-10">
         <div className="max-w-3xl mx-auto w-full flex items-center justify-between">
           <div className="flex items-center gap-[9px]">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#B4823A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M2 17L12 22L22 17" stroke="#B4823A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M2 12L12 17L22 12" stroke="#B4823A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 2L2 7L12 12L22 7L12 2Z"
+                stroke="#B4823A"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M2 17L12 22L22 17"
+                stroke="#B4823A"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M2 12L12 17L22 12"
+                stroke="#B4823A"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
-            <span className="font-playfair font-bold text-[18px] text-transparent bg-clip-text bg-gradient-to-br from-gold-soft to-ember tracking-[0.02em]">GPMS</span>
+            <span className="font-playfair font-bold text-[18px] text-transparent bg-clip-text bg-gradient-to-br from-gold-soft to-ember tracking-[0.02em]">
+              GPMS
+            </span>
           </div>
           <div className="flex items-center gap-1">
             {canManageUsers && (
@@ -291,7 +332,9 @@ export default function DashboardPage() {
                   aria-label="Audit Logs"
                 >
                   <Activity className="w-[18px] h-[18px]" />
-                  <span className="hidden sm:inline text-[13px] font-semibold">Audit Logs</span>
+                  <span className="hidden sm:inline text-[13px] font-semibold">
+                    Audit Logs
+                  </span>
                 </button>
                 <button
                   onClick={() => router.push('/users')}
@@ -300,7 +343,9 @@ export default function DashboardPage() {
                   aria-label="Users"
                 >
                   <Users className="w-[18px] h-[18px]" />
-                  <span className="hidden sm:inline text-[13px] font-semibold">Users</span>
+                  <span className="hidden sm:inline text-[13px] font-semibold">
+                    Users
+                  </span>
                 </button>
               </>
             )}
@@ -311,7 +356,9 @@ export default function DashboardPage() {
               aria-label="Records"
             >
               <FileText className="w-[18px] h-[18px]" />
-              <span className="hidden sm:inline text-[13px] font-semibold">Records</span>
+              <span className="hidden sm:inline text-[13px] font-semibold">
+                Records
+              </span>
             </button>
             <button
               onClick={() => loadDashboard(true)}
@@ -320,7 +367,9 @@ export default function DashboardPage() {
               title="Refresh"
               aria-label="Refresh"
             >
-              <RefreshCw className={`w-[18px] h-[18px] ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-[18px] h-[18px] ${refreshing ? 'animate-spin' : ''}`}
+              />
             </button>
             <button
               onClick={() => signOut({ callbackUrl: '/' })}
@@ -344,7 +393,9 @@ export default function DashboardPage() {
               <p className="text-maroon font-bold mb-1">
                 Could not load dashboard
               </p>
-              <p className="text-maroon/80 text-[13px] font-bold mb-4">{error}</p>
+              <p className="text-maroon/80 text-[13px] font-bold mb-4">
+                {error}
+              </p>
               <button
                 onClick={() => loadDashboard()}
                 className="inline-flex items-center gap-2 text-[14px] font-bold text-maroon bg-white border border-maroon/20 hover:bg-maroon/5 px-4 py-2 rounded-[12px] transition-colors shadow-sm"
@@ -368,9 +419,12 @@ export default function DashboardPage() {
         ) : data ? (
           <Card className="bg-ink border-transparent shadow-md text-cream relative">
             <CardContent className="pt-[24px] pb-[20px] text-center flex flex-col justify-center h-full">
-              <p className="text-cream/80 text-[12.5px] font-semibold uppercase tracking-wider mb-2">Current Balance</p>
+              <p className="text-cream/80 text-[12.5px] font-semibold uppercase tracking-wider mb-2">
+                Current Balance
+              </p>
               <div className="flex justify-center text-white font-playfair font-bold text-[36px] tracking-[-0.03em] leading-none">
-                <span className="font-sans mr-[2px]">₹</span>{fmt(data.summary.balance)}
+                <span className="font-sans mr-[2px]">₹</span>
+                {fmt(data.summary.balance)}
               </div>
             </CardContent>
             <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-gold-soft to-ember" />
@@ -407,16 +461,21 @@ export default function DashboardPage() {
                   Collections
                 </div>
                 <div className="font-playfair font-bold text-[32px] text-ink tracking-[-0.03em] leading-none mb-3">
-                  <span className="font-sans mr-[2px]">₹</span>{fmt(data.summary.donations.total)}
+                  <span className="font-sans mr-[2px]">₹</span>
+                  {fmt(data.summary.donations.total)}
                 </div>
                 <div className="text-[13px] text-muted-ink space-y-1">
                   <div className="flex justify-between">
                     <span>Cash</span>
-                    <span className="font-semibold text-ink">₹{fmt(data.summary.donations.cash)}</span>
+                    <span className="font-semibold text-ink">
+                      ₹{fmt(data.summary.donations.cash)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>UPI</span>
-                    <span className="font-semibold text-ink">₹{fmt(data.summary.donations.upi)}</span>
+                    <span className="font-semibold text-ink">
+                      ₹{fmt(data.summary.donations.upi)}
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -430,7 +489,8 @@ export default function DashboardPage() {
                   Expenses
                 </div>
                 <div className="font-playfair font-bold text-[32px] text-ink tracking-[-0.03em] leading-none mb-3">
-                  <span className="font-sans mr-[2px]">₹</span>{fmt(data.summary.expenses.total)}
+                  <span className="font-sans mr-[2px]">₹</span>
+                  {fmt(data.summary.expenses.total)}
                 </div>
               </CardContent>
               <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-gold-soft to-ember" />
@@ -485,15 +545,21 @@ export default function DashboardPage() {
         {/* Live Darshan Card */}
         {canManageLiveDarshan && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button
-              onClick={openLiveDarshanModal}
-              className="w-full text-left"
-            >
+            <button onClick={openLiveDarshanModal} className="w-full text-left">
               <Card className="relative overflow-hidden border-gold-soft/30 hover:border-gold-soft/60 transition-colors h-full">
                 <CardContent className="p-4 flex items-center gap-3 h-full">
                   {/* Broadcast icon */}
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C9832E]/15 to-[#E66255]/15 flex items-center justify-center shrink-0">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9832E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#C9832E"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
                       <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
                       <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" />
@@ -503,11 +569,17 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[14px] font-bold text-ink">Live Darshan</span>
+                      <span className="text-[14px] font-bold text-ink">
+                        Live Darshan
+                      </span>
                       {liveDarshanConfig?.youtubeUrl ? (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-sage/15 text-sage px-2 py-0.5 rounded-full">Configured</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-sage/15 text-sage px-2 py-0.5 rounded-full">
+                          Configured
+                        </span>
                       ) : (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-muted-ink/10 text-muted-ink px-2 py-0.5 rounded-full">Not configured</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-muted-ink/10 text-muted-ink px-2 py-0.5 rounded-full">
+                          Not configured
+                        </span>
                       )}
                     </div>
                     <p className="text-[12px] text-muted-ink mt-0.5 truncate">
@@ -533,11 +605,17 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[14px] font-bold text-ink">Announcement</span>
+                      <span className="text-[14px] font-bold text-ink">
+                        Announcement
+                      </span>
                       {announcementConfig?.announcement ? (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-sage/15 text-sage px-2 py-0.5 rounded-full">Active</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-sage/15 text-sage px-2 py-0.5 rounded-full">
+                          Active
+                        </span>
                       ) : (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-muted-ink/10 text-muted-ink px-2 py-0.5 rounded-full">None</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-muted-ink/10 text-muted-ink px-2 py-0.5 rounded-full">
+                          None
+                        </span>
                       )}
                     </div>
                     <p className="text-[12px] text-muted-ink mt-0.5 truncate">
@@ -682,7 +760,16 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between p-5 pb-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C9832E]/15 to-[#E66255]/15 flex items-center justify-center">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9832E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#C9832E"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
                     <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
                     <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" />
@@ -713,7 +800,11 @@ export default function DashboardPage() {
                 </label>
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="none">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="w-[18px] h-[18px]"
+                      fill="none"
+                    >
                       <rect width="24" height="24" rx="4" fill="#FF0000" />
                       <path d="M10 8.5v7l6-3.5-6-3.5z" fill="white" />
                     </svg>
@@ -741,25 +832,30 @@ export default function DashboardPage() {
               <div className="flex items-start gap-2 bg-[#FFFBF0] border border-gold-soft/15 rounded-xl p-3">
                 <span className="text-[14px] mt-[1px]">💡</span>
                 <p className="text-[12px] text-muted-ink leading-relaxed">
-                  Go to YouTube → Click <strong>Share</strong> → Copy the link and paste it here.
+                  Go to YouTube → Click <strong>Share</strong> → Copy the link
+                  and paste it here.
                 </p>
               </div>
 
               {/* Status */}
               <div className="text-[12px] text-muted-ink space-y-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-ink">Current Status:</span>
+                  <span className="font-semibold text-ink">
+                    Current Status:
+                  </span>
                   {liveDarshanConfig?.youtubeUrl ? (
                     <span className="text-sage font-semibold">Configured</span>
                   ) : (
                     <span className="text-muted-ink">Not configured</span>
                   )}
                 </div>
-                {liveDarshanConfig?.updatedAt && liveDarshanConfig?.updatedBy && (
-                  <p className="text-[11px] text-muted-ink/70">
-                    Last updated: {liveDarshanConfig.updatedAt} by {liveDarshanConfig.updatedBy}
-                  </p>
-                )}
+                {liveDarshanConfig?.updatedAt &&
+                  liveDarshanConfig?.updatedBy && (
+                    <p className="text-[11px] text-muted-ink/70">
+                      Last updated: {liveDarshanConfig.updatedAt} by{' '}
+                      {liveDarshanConfig.updatedBy}
+                    </p>
+                  )}
               </div>
 
               {/* Actions */}
@@ -796,12 +892,16 @@ export default function DashboardPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
-            onClick={() => !announcementSaving && setAnnouncementModalOpen(false)}
+            onClick={() =>
+              !announcementSaving && setAnnouncementModalOpen(false)
+            }
           />
           <div className="relative w-full max-w-md bg-cream rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-hair">
-              <h3 className="text-[16px] font-bold text-ink font-playfair">Public Announcement</h3>
+              <h3 className="text-[16px] font-bold text-ink font-playfair">
+                Public Announcement
+              </h3>
               <button
                 onClick={() => setAnnouncementModalOpen(false)}
                 className="p-1.5 text-muted-ink hover:text-ink hover:bg-hair/50 rounded-lg transition-colors"
@@ -815,7 +915,10 @@ export default function DashboardPage() {
             <div className="p-4 space-y-5">
               {/* Text Input */}
               <div>
-                <label htmlFor="announcementText" className="block text-[13px] font-bold text-ink mb-1.5">
+                <label
+                  htmlFor="announcementText"
+                  className="block text-[13px] font-bold text-ink mb-1.5"
+                >
                   Announcement Text
                 </label>
                 <textarea
@@ -830,7 +933,9 @@ export default function DashboardPage() {
                   maxLength={300}
                 />
                 <div className="text-right mt-1">
-                  <span className={`text-[11px] ${announcementText.length >= 300 ? 'text-maroon font-bold' : 'text-muted-ink'}`}>
+                  <span
+                    className={`text-[11px] ${announcementText.length >= 300 ? 'text-maroon font-bold' : 'text-muted-ink'}`}
+                  >
                     {announcementText.length} / 300
                   </span>
                 </div>
@@ -838,8 +943,12 @@ export default function DashboardPage() {
 
               {/* Date Input */}
               <div>
-                <label htmlFor="announcementDate" className="block text-[13px] font-bold text-ink mb-1.5">
-                  Display Date <span className="text-muted-ink font-normal">(Optional)</span>
+                <label
+                  htmlFor="announcementDate"
+                  className="block text-[13px] font-bold text-ink mb-1.5"
+                >
+                  Display Date{' '}
+                  <span className="text-muted-ink font-normal">(Optional)</span>
                 </label>
                 <input
                   id="announcementDate"
@@ -865,25 +974,30 @@ export default function DashboardPage() {
               <div className="flex items-start gap-2 bg-[#FFFBF0] border border-gold-soft/15 rounded-xl p-3">
                 <span className="text-[14px] mt-[1px]">💡</span>
                 <p className="text-[12px] text-muted-ink leading-relaxed">
-                  This text will appear instantly at the top of the Public Page. To remove the announcement, clear the text and save.
+                  This text will appear instantly at the top of the Public Page.
+                  To remove the announcement, clear the text and save.
                 </p>
               </div>
 
               {/* Status */}
               <div className="text-[12px] text-muted-ink space-y-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-ink">Current Status:</span>
+                  <span className="font-semibold text-ink">
+                    Current Status:
+                  </span>
                   {announcementConfig?.announcement ? (
                     <span className="text-sage font-semibold">Active</span>
                   ) : (
                     <span className="text-muted-ink">None</span>
                   )}
                 </div>
-                {announcementConfig?.updatedAt && announcementConfig?.updatedBy && (
-                  <p className="text-[11px] text-muted-ink/70">
-                    Last updated: {announcementConfig.updatedAt} by {announcementConfig.updatedBy}
-                  </p>
-                )}
+                {announcementConfig?.updatedAt &&
+                  announcementConfig?.updatedBy && (
+                    <p className="text-[11px] text-muted-ink/70">
+                      Last updated: {announcementConfig.updatedAt} by{' '}
+                      {announcementConfig.updatedBy}
+                    </p>
+                  )}
               </div>
 
               {/* Actions */}

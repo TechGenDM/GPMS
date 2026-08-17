@@ -140,8 +140,16 @@ var UserService = {
    * @returns {ContentOutput} JSON response.
    */
   createUser: function (user, payload) {
-    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
-      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to create users');
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.admin,
+        CONFIG.roles.superadmin,
+      ])
+    ) {
+      return error(
+        ERROR_CODES.FORBIDDEN,
+        'Insufficient permissions to create users'
+      );
     }
 
     // Force Volunteer role for Admin-created users to prevent privilege escalation
@@ -193,8 +201,16 @@ var UserService = {
    * @returns {ContentOutput} JSON response.
    */
   updateUser: function (user, payload) {
-    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
-      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to update users');
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.admin,
+        CONFIG.roles.superadmin,
+      ])
+    ) {
+      return error(
+        ERROR_CODES.FORBIDDEN,
+        'Insufficient permissions to update users'
+      );
     }
 
     if (!payload || !payload.userId) {
@@ -215,7 +231,12 @@ var UserService = {
     }
 
     // Prevent SuperAdmin from changing their own role
-    if (user.role === CONFIG.roles.superadmin && payload.userId === user.id && payload.role && payload.role !== targetUserRole) {
+    if (
+      user.role === CONFIG.roles.superadmin &&
+      payload.userId === user.id &&
+      payload.role &&
+      payload.role !== targetUserRole
+    ) {
       return error(ERROR_CODES.FORBIDDEN, 'You cannot change your own role');
     }
 
@@ -247,8 +268,16 @@ var UserService = {
    * @returns {ContentOutput} JSON response.
    */
   disableUser: function (user, payload) {
-    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
-      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to disable users');
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.admin,
+        CONFIG.roles.superadmin,
+      ])
+    ) {
+      return error(
+        ERROR_CODES.FORBIDDEN,
+        'Insufficient permissions to disable users'
+      );
     }
 
     if (!payload || !payload.userId) {
@@ -273,12 +302,18 @@ var UserService = {
       var allData = sheet.getDataRange().getValues();
       var activeSuperAdmins = 0;
       for (var i = 1; i < allData.length; i++) {
-        if (allData[i][4] === CONFIG.roles.superadmin && allData[i][5] === CONFIG.status.active) {
+        if (
+          allData[i][4] === CONFIG.roles.superadmin &&
+          allData[i][5] === CONFIG.status.active
+        ) {
           activeSuperAdmins++;
         }
       }
       if (activeSuperAdmins <= 1) {
-        return error(ERROR_CODES.FORBIDDEN, 'Cannot disable the last active SuperAdmin');
+        return error(
+          ERROR_CODES.FORBIDDEN,
+          'Cannot disable the last active SuperAdmin'
+        );
       }
     }
 
@@ -302,8 +337,16 @@ var UserService = {
    * @returns {ContentOutput} JSON response with array of User objects.
    */
   getAllUsers: function (user) {
-    if (!UserService.authorize(user, [CONFIG.roles.admin, CONFIG.roles.superadmin])) {
-      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to view users');
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.admin,
+        CONFIG.roles.superadmin,
+      ])
+    ) {
+      return error(
+        ERROR_CODES.FORBIDDEN,
+        'Insufficient permissions to view users'
+      );
     }
     var sheet = getSheet(CONFIG.sheets.users);
     var data = sheet.getDataRange().getValues();

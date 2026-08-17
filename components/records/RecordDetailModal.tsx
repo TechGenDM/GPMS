@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { ShareDonationData, shareNative, shareToWhatsApp, getVerificationUrl } from '@/lib/shareUtils';
+import {
+  ShareDonationData,
+  shareNative,
+  shareToWhatsApp,
+  getVerificationUrl,
+} from '@/lib/shareUtils';
 import { generateAndDownloadReceipt } from '@/lib/pdfGenerator';
 import { Button } from '@/components/ui/button';
 import { parseGPMSDate } from '@/lib/utils';
@@ -12,7 +17,7 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 
@@ -117,7 +122,9 @@ export function RecordDetailModal({
         setCancelReason('');
         onCancelSuccess();
       } else {
-        feedback.showError(json.error || json.message || 'Failed to cancel record.');
+        feedback.showError(
+          json.error || json.message || 'Failed to cancel record.'
+        );
         setIsSubmitting(false);
       }
     } catch (err: any) {
@@ -149,14 +156,14 @@ export function RecordDetailModal({
             ) : (
               <CheckCircle className="w-12 h-12 text-sage mx-auto" />
             )}
-            
+
             <p className="text-[13px] font-bold text-muted-ink uppercase tracking-wider mt-2">
               {isDonation ? 'Receipt ID' : 'Expense ID'}
             </p>
             <p className="text-[24px] font-playfair font-bold text-ink">
               {isDonation ? record.receiptId : record.id}
             </p>
-            
+
             <CurrencyDisplay
               amount={record.amount}
               size="lg"
@@ -182,14 +189,19 @@ export function RecordDetailModal({
                 {record.billLink && (
                   <div className="flex justify-between border-b border-hair/50 pb-3 mb-3">
                     <span className="text-muted-ink font-semibold">Bill</span>
-                    <a href={record.billLink} target="_blank" rel="noreferrer" className="text-ink font-bold hover:underline decoration-hair underline-offset-4">
+                    <a
+                      href={record.billLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ink font-bold hover:underline decoration-hair underline-offset-4"
+                    >
                       View Bill
                     </a>
                   </div>
                 )}
               </>
             )}
-            
+
             <DetailRow
               label="Date"
               value={parseGPMSDate(record.date).toLocaleDateString('en-IN', {
@@ -201,7 +213,13 @@ export function RecordDetailModal({
             <DetailRow
               label="Status"
               value={
-                <span className={isCancelled ? 'text-maroon font-bold' : 'text-sage font-bold'}>
+                <span
+                  className={
+                    isCancelled
+                      ? 'text-maroon font-bold'
+                      : 'text-sage font-bold'
+                  }
+                >
                   {record.status}
                 </span>
               }
@@ -217,14 +235,25 @@ export function RecordDetailModal({
           <div className="space-y-4 pt-2">
             {!isCancelled && isDonation && (
               <div className="grid grid-cols-2 gap-3">
-                <Button onClick={handleDownload} variant="outline" className="w-full font-bold h-[48px]">
+                <Button
+                  onClick={handleDownload}
+                  variant="outline"
+                  className="w-full font-bold h-[48px]"
+                >
                   <Download className="w-[18px] h-[18px] mr-2" /> PDF
                 </Button>
                 <div className="flex gap-2">
-                  <Button onClick={handleWhatsApp} className="flex-1 bg-sage hover:bg-sage/90 text-white border-transparent h-[48px]">
+                  <Button
+                    onClick={handleWhatsApp}
+                    className="flex-1 bg-sage hover:bg-sage/90 text-white border-transparent h-[48px]"
+                  >
                     <MessageCircle className="w-[18px] h-[18px]" />
                   </Button>
-                  <Button onClick={handleNativeShare} variant="outline" className="flex-1 h-[48px]">
+                  <Button
+                    onClick={handleNativeShare}
+                    variant="outline"
+                    className="flex-1 h-[48px]"
+                  >
                     <Share2 className="w-[18px] h-[18px]" />
                   </Button>
                 </div>
@@ -247,7 +276,10 @@ export function RecordDetailModal({
                       <AlertCircle className="w-5 h-5 text-maroon mt-0.5 flex-shrink-0" />
                       <div className="text-[14px] text-maroon">
                         <p className="font-bold mb-1">Cancel this record?</p>
-                        <p className="opacity-90 leading-snug">This action cannot be undone. It will be marked as cancelled.</p>
+                        <p className="opacity-90 leading-snug">
+                          This action cannot be undone. It will be marked as
+                          cancelled.
+                        </p>
                       </div>
                     </div>
                     <input
@@ -260,30 +292,30 @@ export function RecordDetailModal({
                     />
                     <div className="flex gap-2">
                       <Button
-                         onClick={handleCancelSubmit}
-                         className="flex-1 bg-maroon hover:bg-maroon/90 text-white font-bold h-[42px]"
-                         disabled={!cancelReason.trim() || isSubmitting}
-                       >
-                         {isSubmitting ? (
-                           <>
-                             <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                             Cancelling...
-                           </>
-                         ) : (
-                           'Confirm'
-                         )}
-                       </Button>
-                       <Button
-                         onClick={() => {
-                           setIsCancelling(false);
-                           setCancelReason('');
-                         }}
-                         variant="ghost"
-                         disabled={isSubmitting}
-                         className="flex-1 text-maroon hover:bg-maroon/10 font-bold h-[42px]"
-                       >
-                         Abort
-                       </Button>
+                        onClick={handleCancelSubmit}
+                        className="flex-1 bg-maroon hover:bg-maroon/90 text-white font-bold h-[42px]"
+                        disabled={!cancelReason.trim() || isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                            Cancelling...
+                          </>
+                        ) : (
+                          'Confirm'
+                        )}
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setIsCancelling(false);
+                          setCancelReason('');
+                        }}
+                        variant="ghost"
+                        disabled={isSubmitting}
+                        className="flex-1 text-maroon hover:bg-maroon/10 font-bold h-[42px]"
+                      >
+                        Abort
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -296,7 +328,13 @@ export function RecordDetailModal({
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
   return (
     <div className="flex justify-between border-b border-hair/50 pb-3 mb-3 last:border-0 last:pb-0 last:mb-0">
       <span className="text-muted-ink font-semibold">{label}</span>

@@ -18,7 +18,10 @@ var SettingsService = {
    */
   get: function (user, payload) {
     if (!UserService.authorize(user, [CONFIG.roles.superadmin])) {
-      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to view settings');
+      return error(
+        ERROR_CODES.FORBIDDEN,
+        'Insufficient permissions to view settings'
+      );
     }
 
     if (!payload || !payload.key) {
@@ -53,14 +56,30 @@ var SettingsService = {
    */
   update: function (user, payload) {
     // Special Case: YOUTUBE_LIVE_URL and PUBLIC_ANNOUNCEMENT can be updated by SuperAdmin, Admin, and Volunteer.
+    // UPI Settings: UPI_PAYMENT_ID, UPI_PAYEE_NAME, and UPI_PAYMENT_ENABLED can be updated by SuperAdmin and Admin.
     // Everything else requires SuperAdmin.
     var allowedRoles = [CONFIG.roles.superadmin];
-    if (payload && (payload.key === 'YOUTUBE_LIVE_URL' || payload.key === 'PUBLIC_ANNOUNCEMENT')) {
+    if (
+      payload &&
+      (payload.key === 'YOUTUBE_LIVE_URL' ||
+        payload.key === 'PUBLIC_ANNOUNCEMENT')
+    ) {
       allowedRoles.push(CONFIG.roles.admin, CONFIG.roles.volunteer);
+    }
+    if (
+      payload &&
+      (payload.key === 'UPI_PAYMENT_ID' ||
+        payload.key === 'UPI_PAYEE_NAME' ||
+        payload.key === 'UPI_PAYMENT_ENABLED')
+    ) {
+      allowedRoles.push(CONFIG.roles.admin);
     }
 
     if (!UserService.authorize(user, allowedRoles)) {
-      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to update this setting');
+      return error(
+        ERROR_CODES.FORBIDDEN,
+        'Insufficient permissions to update this setting'
+      );
     }
 
     if (!payload || !payload.key) {
@@ -74,9 +93,13 @@ var SettingsService = {
     // YouTube URL validation — backend enforcement.
     if (payload.key === 'YOUTUBE_LIVE_URL' && payload.value !== '') {
       var url = String(payload.value).trim();
-      var ytPattern = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/|@[\w.-]+\/live)|youtu\.be\/)/i;
+      var ytPattern =
+        /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/|@[\w.-]+\/live)|youtu\.be\/)/i;
       if (!ytPattern.test(url)) {
-        return error(ERROR_CODES.VALIDATION_ERROR || 'VALIDATION_ERROR', 'Invalid YouTube URL. Accepted formats: youtube.com/watch?v=, youtube.com/live/, youtu.be/');
+        return error(
+          ERROR_CODES.VALIDATION_ERROR || 'VALIDATION_ERROR',
+          'Invalid YouTube URL. Accepted formats: youtube.com/watch?v=, youtube.com/live/, youtu.be/'
+        );
       }
       payload.value = url; // use trimmed value
     }
@@ -86,13 +109,22 @@ var SettingsService = {
       try {
         var parsed = JSON.parse(payload.value);
         if (typeof parsed.text !== 'string' || parsed.text.length > 500) {
-          return error(ERROR_CODES.VALIDATION_ERROR || 'VALIDATION_ERROR', 'Invalid announcement text');
+          return error(
+            ERROR_CODES.VALIDATION_ERROR || 'VALIDATION_ERROR',
+            'Invalid announcement text'
+          );
         }
         if (typeof parsed.date !== 'string' || parsed.date.length > 50) {
-          return error(ERROR_CODES.VALIDATION_ERROR || 'VALIDATION_ERROR', 'Invalid announcement date');
+          return error(
+            ERROR_CODES.VALIDATION_ERROR || 'VALIDATION_ERROR',
+            'Invalid announcement date'
+          );
         }
       } catch (e) {
-        return error(ERROR_CODES.VALIDATION_ERROR || 'VALIDATION_ERROR', 'Invalid announcement payload format');
+        return error(
+          ERROR_CODES.VALIDATION_ERROR || 'VALIDATION_ERROR',
+          'Invalid announcement payload format'
+        );
       }
     }
 
@@ -142,7 +174,10 @@ var SettingsService = {
    */
   getAll: function (user, payload) {
     if (!UserService.authorize(user, [CONFIG.roles.superadmin])) {
-      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to view settings');
+      return error(
+        ERROR_CODES.FORBIDDEN,
+        'Insufficient permissions to view settings'
+      );
     }
     var sheet = getSheet(CONFIG.sheets.settings);
     var data = sheet.getDataRange().getValues();
@@ -169,7 +204,13 @@ var SettingsService = {
    * @returns {ContentOutput} JSON response with { youtubeUrl, updatedAt, updatedBy }.
    */
   getLiveDarshanConfig: function (user, payload) {
-    if (!UserService.authorize(user, [CONFIG.roles.superadmin, CONFIG.roles.admin, CONFIG.roles.volunteer])) {
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.superadmin,
+        CONFIG.roles.admin,
+        CONFIG.roles.volunteer,
+      ])
+    ) {
       return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions');
     }
 
@@ -204,7 +245,13 @@ var SettingsService = {
    * @returns {ContentOutput} JSON response with { announcement, updatedAt, updatedBy }.
    */
   getAnnouncementConfig: function (user, payload) {
-    if (!UserService.authorize(user, [CONFIG.roles.superadmin, CONFIG.roles.admin, CONFIG.roles.volunteer])) {
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.superadmin,
+        CONFIG.roles.admin,
+        CONFIG.roles.volunteer,
+      ])
+    ) {
       return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions');
     }
 
@@ -224,7 +271,7 @@ var SettingsService = {
     if (rowData[1]) {
       try {
         announcement = JSON.parse(rowData[1]);
-      } catch(e) {
+      } catch (e) {
         // safely handle malformed JSON
         announcement = null;
       }
@@ -234,6 +281,88 @@ var SettingsService = {
       announcement: announcement,
       updatedAt: rowData[2] ? String(rowData[2]) : '',
       updatedBy: rowData[3] || '',
+    });
+  },
+
+  /**
+   * Retrieves only the UPI Payment configuration.
+   * Scoped read — does NOT expose the full Settings sheet.
+   *
+   * Accessible by SuperAdmin, Admin, and Volunteer.
+   *
+   * @param {Object} user - The authenticated User object.
+   * @param {Object} [payload] - Not used.
+   * @returns {ContentOutput} JSON response with { upiId, payeeName, enabled, updatedAt, updatedBy }.
+   */
+  getUpiPaymentConfig: function (user, payload) {
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.superadmin,
+        CONFIG.roles.admin,
+        CONFIG.roles.volunteer,
+      ])
+    ) {
+      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions');
+    }
+
+    var sheet = getSheet(CONFIG.sheets.settings);
+
+    // Find rows for the three keys
+    var upiIdRow = findRow(sheet, 1, 'UPI_PAYMENT_ID');
+    var payeeNameRow = findRow(sheet, 1, 'UPI_PAYEE_NAME');
+    var enabledRow = findRow(sheet, 1, 'UPI_PAYMENT_ENABLED');
+
+    // Default values
+    var upiId = '';
+    var payeeName = '';
+    var enabled = false;
+
+    // To find the latest update time/user across the 3 keys
+    var latestDate = null;
+    var updatedBy = '';
+
+    if (upiIdRow !== -1) {
+      var rowData = sheet.getRange(upiIdRow, 1, 1, 4).getValues()[0];
+      upiId = rowData[1] || '';
+      if (rowData[2]) {
+        var d = new Date(rowData[2]);
+        if (!latestDate || d > latestDate) {
+          latestDate = d;
+          updatedBy = rowData[3] || '';
+        }
+      }
+    }
+
+    if (payeeNameRow !== -1) {
+      var rowData = sheet.getRange(payeeNameRow, 1, 1, 4).getValues()[0];
+      payeeName = rowData[1] || '';
+      if (rowData[2]) {
+        var d = new Date(rowData[2]);
+        if (!latestDate || d > latestDate) {
+          latestDate = d;
+          updatedBy = rowData[3] || '';
+        }
+      }
+    }
+
+    if (enabledRow !== -1) {
+      var rowData = sheet.getRange(enabledRow, 1, 1, 4).getValues()[0];
+      enabled = String(rowData[1]).trim().toUpperCase() === 'TRUE';
+      if (rowData[2]) {
+        var d = new Date(rowData[2]);
+        if (!latestDate || d > latestDate) {
+          latestDate = d;
+          updatedBy = rowData[3] || '';
+        }
+      }
+    }
+
+    return success('UPI config retrieved', {
+      upiId: upiId,
+      payeeName: payeeName,
+      enabled: enabled,
+      updatedAt: latestDate ? String(latestDate) : '',
+      updatedBy: updatedBy,
     });
   },
 };

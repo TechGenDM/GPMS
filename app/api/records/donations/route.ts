@@ -16,7 +16,10 @@ export async function POST(req: NextRequest) {
 
     const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!appsScriptUrl) {
-      return NextResponse.json({ success: false, message: 'Server configuration error' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, message: 'Server configuration error' },
+        { status: 500 }
+      );
     }
 
     const response = await fetch(appsScriptUrl, {

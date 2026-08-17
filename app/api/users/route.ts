@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 
-async function proxyToAppsScript(action: string, sessionEmail: string, payload: any) {
+async function proxyToAppsScript(
+  action: string,
+  sessionEmail: string,
+  payload: any
+) {
   const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!appsScriptUrl) {
     console.error('[GPMS API] NEXT_PUBLIC_API_URL is not set.');
@@ -29,7 +33,10 @@ async function proxyToAppsScript(action: string, sessionEmail: string, payload: 
     try {
       data = JSON.parse(rawText);
     } catch {
-      console.error(`[GPMS API] Failed to parse response for ${action}.`, rawText);
+      console.error(
+        `[GPMS API] Failed to parse response for ${action}.`,
+        rawText
+      );
       return { success: false, message: 'Invalid response from backend' };
     }
     return data;
@@ -42,7 +49,10 @@ async function proxyToAppsScript(action: string, sessionEmail: string, payload: 
 export async function GET() {
   const session = await auth();
   if (!session?.user?.email) {
-    return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { success: false, message: 'Unauthorized' },
+      { status: 401 }
+    );
   }
 
   const data = await proxyToAppsScript('getAllUsers', session.user.email, {});
@@ -52,7 +62,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.email) {
-    return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { success: false, message: 'Unauthorized' },
+      { status: 401 }
+    );
   }
 
   const body = await request.json();
@@ -64,7 +77,10 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.email) {
-    return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { success: false, message: 'Unauthorized' },
+      { status: 401 }
+    );
   }
 
   const body = await request.json();
@@ -75,11 +91,16 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.email) {
-    return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { success: false, message: 'Unauthorized' },
+      { status: 401 }
+    );
   }
 
   const body = await request.json();
   console.log('[DELETE] Received body:', body);
-  const data = await proxyToAppsScript('disableUser', session.user.email, { userId: body.userId });
+  const data = await proxyToAppsScript('disableUser', session.user.email, {
+    userId: body.userId,
+  });
   return NextResponse.json(data, { status: data.success ? 200 : 400 });
 }

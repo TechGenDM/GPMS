@@ -1,8 +1,8 @@
 /**
  * GPMS Public Page — Configurable Settings
- * 
- * All public-page-specific content (announcements, social links, 
- * live stream settings) lives here so it can be updated without 
+ *
+ * All public-page-specific content (announcements, social links,
+ * live stream settings) lives here so it can be updated without
  * touching the component code.
  */
 
@@ -16,7 +16,7 @@ export interface Announcement {
 // Only links that are provided (non-empty) will be rendered.
 // Leave a field empty string '' to hide that icon.
 export const socialLinks = {
-  youtube:   'https://www.youtube.com/@TechGenDM',
+  youtube: 'https://www.youtube.com/@TechGenDM',
   instagram: 'https://www.instagram.com/techgendm',
-  facebook:  'https://www.facebook.com/techgendm',
+  facebook: 'https://www.facebook.com/techgendm',
 } as const;

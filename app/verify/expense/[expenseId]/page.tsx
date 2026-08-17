@@ -111,57 +111,78 @@ export default function VerifyExpensePage() {
           ) : data ? (
             <div className="space-y-1">
               <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
-                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Expense ID</span>
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                  Expense ID
+                </span>
                 <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                   {data.expenseId}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
-                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Category</span>
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                  Category
+                </span>
                 <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                   {data.category}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
-                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Description</span>
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                  Description
+                </span>
                 <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                   {data.description}
                 </span>
               </div>
               {data.vendor && (
                 <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
-                  <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Vendor</span>
+                  <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                    Vendor
+                  </span>
                   <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                     {data.vendor}
                   </span>
                 </div>
               )}
               <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
-                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Amount</span>
-                <span className={`col-span-2 font-bold text-right text-[18px] ${data.status === 'Cancelled' ? 'text-maroon line-through' : 'text-sage'}`}>
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                  Amount
+                </span>
+                <span
+                  className={`col-span-2 font-bold text-right text-[18px] ${data.status === 'Cancelled' ? 'text-maroon line-through' : 'text-sage'}`}
+                >
                   ₹{Number(data.amount).toLocaleString('en-IN')}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
-                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Paid By</span>
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                  Paid By
+                </span>
                 <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                   {data.paidByName}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-3">
-                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Date</span>
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                  Date
+                </span>
                 <span className="col-span-2 font-bold text-right text-ink text-[15px]">
-                  {data.date ? parseGPMSDate(data.date).toLocaleDateString('en-IN', {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                  }) : '-'}
+                  {data.date
+                    ? parseGPMSDate(data.date).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '-'}
                 </span>
               </div>
             </div>
           ) : null}
         </CardContent>
       </Card>
-      
+
       <div className="fixed bottom-6 w-full text-center px-4">
         <p className="text-[12px] font-bold text-muted-ink uppercase tracking-widest">
           Verified by GPMS

@@ -14,7 +14,10 @@ export async function POST(req: NextRequest) {
 
     if (session.user.role !== 'Admin' && session.user.role !== 'SuperAdmin') {
       return NextResponse.json(
-        { success: false, message: 'Forbidden. Only admins can search expenses.' },
+        {
+          success: false,
+          message: 'Forbidden. Only admins can search expenses.',
+        },
         { status: 403 }
       );
     }
@@ -23,7 +26,10 @@ export async function POST(req: NextRequest) {
 
     const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!appsScriptUrl) {
-      return NextResponse.json({ success: false, message: 'Server configuration error' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, message: 'Server configuration error' },
+        { status: 500 }
+      );
     }
 
     const response = await fetch(appsScriptUrl, {

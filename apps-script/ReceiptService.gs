@@ -107,7 +107,9 @@ var ReceiptService = {
       lock.waitLock(10000);
       return ReceiptService._generateIdInternal(counterKey, prefix);
     } catch (e) {
-      throw new Error('Could not acquire lock for ID generation. Please try again.');
+      throw new Error(
+        'Could not acquire lock for ID generation. Please try again.'
+      );
     } finally {
       lock.releaseLock();
     }

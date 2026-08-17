@@ -228,8 +228,10 @@ var DashboardService = {
         youtubeLiveUrl = settingsData[i][1] || '';
       if (settingsData[i][0] === 'PUBLIC_ANNOUNCEMENT') {
         try {
-          announcement = settingsData[i][1] ? JSON.parse(settingsData[i][1]) : null;
-        } catch(e) {
+          announcement = settingsData[i][1]
+            ? JSON.parse(settingsData[i][1])
+            : null;
+        } catch (e) {
           announcement = null;
         }
       }
@@ -379,7 +381,8 @@ var DashboardService = {
 
       snapshot.expenses.total += expAmt;
 
-      if (!snapshot.expensesByCategory[cat]) snapshot.expensesByCategory[cat] = 0;
+      if (!snapshot.expensesByCategory[cat])
+        snapshot.expensesByCategory[cat] = 0;
       snapshot.expensesByCategory[cat] += expAmt;
 
       var expDate =

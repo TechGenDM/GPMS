@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, animate, Variants } from 'motion/react';
-import {
-  socialLinks,
-} from '@/lib/public-page-config';
+import { socialLinks } from '@/lib/public-page-config';
 
 // ─── Types ───────────────────────────────────────────────────
 interface PublicDashboardData {
@@ -380,16 +378,8 @@ function SectionDivider({ label }: { label: string }) {
         >
           {label}
         </span>
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          className="opacity-40"
-        >
-          <path
-            d="M12 2l3 7h7l-6 5 2 7-6-5-6 5 2-7-6-5h7z"
-            fill="#D4A353"
-          />
+        <svg width="12" height="12" viewBox="0 0 24 24" className="opacity-40">
+          <path d="M12 2l3 7h7l-6 5 2 7-6-5-6 5 2-7-6-5h7z" fill="#D4A353" />
         </svg>
       </div>
       <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#D4A353]/30" />
@@ -495,7 +485,6 @@ export default function PublicDashboard() {
       transition: { stiffness: 90, damping: 20 },
     },
   };
-
 
   const activeSocials = Object.entries(socialLinks).filter(
     ([, url]) => url.trim() !== ''
@@ -686,7 +675,9 @@ export default function PublicDashboard() {
                       src="/ganesh-darshan.jpg"
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
                     />
                     {/* Graceful fallback gradient if image fails */}
                     <div className="absolute inset-0 bg-gradient-to-br from-[#2D1B4E] via-[#1A0F2E] to-[#0C0918] -z-10" />
@@ -709,12 +700,7 @@ export default function PublicDashboard() {
                         className="w-[20px] h-[20px]"
                         fill="none"
                       >
-                        <rect
-                          width="24"
-                          height="24"
-                          rx="4"
-                          fill="#FF0000"
-                        />
+                        <rect width="24" height="24" rx="4" fill="#FF0000" />
                         <path d="M10 8.5v7l6-3.5-6-3.5z" fill="white" />
                       </svg>
                       <span className="text-[12px] sm:text-[13px] font-medium text-white/80">
@@ -739,9 +725,6 @@ export default function PublicDashboard() {
                     </svg>
                   </div>
                 </a>
-
-
-
               </motion.div>
 
               {/* ─── ANNOUNCEMENT SECTION ────────────────── */}
@@ -1000,13 +983,7 @@ export default function PublicDashboard() {
                             strokeWidth="2"
                             className="w-[15px] h-[15px]"
                           >
-                            <rect
-                              x="2"
-                              y="2"
-                              width="20"
-                              height="20"
-                              rx="5"
-                            />
+                            <rect x="2" y="2" width="20" height="20" rx="5" />
                             <circle cx="12" cy="12" r="5" />
                             <circle cx="17.5" cy="6.5" r="1.5" fill="white" />
                           </svg>

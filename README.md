@@ -45,27 +45,27 @@ In the field, a volunteer collects a donation, taps submit, and instantly shares
 
 ## Features
 
-| | |
-|---|---|
-| 🧾 **Donation Workflow** | Captures donor name, phone, amount, payment mode (Cash/UPI), UPI reference, purpose, and remarks. Generates a `DON-` internal ID and a public `RCT-` receipt ID, then renders an A5 PDF receipt client-side (`jspdf`) with an embedded QR code (`qrcode`) — one tap to share on WhatsApp. |
-| 🧮 **Expense Workflow** | Captures category, description, amount, vendor, and a bill upload (image/PDF, max 5MB). The bill is pushed to a restricted Google Drive folder and linked back to the ledger row under a unique `EXP-` ID. |
-| 🔐 **Role-Based Access** | **SuperAdmin/Admin** — full control, including cancellations, user management, and audit logs. **Volunteer** — can record donations and expenses in the field, can't cancel or manage users. **Viewer** — read-only. |
-| ✅ **Public Verification** | Scanning a receipt's QR code opens `/verify/[receiptId]`, proving the receipt is genuine while masking sensitive fields like the donor's phone number. |
+|                            |                                                                                                                                                                                                                                                                                           |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🧾 **Donation Workflow**   | Captures donor name, phone, amount, payment mode (Cash/UPI), UPI reference, purpose, and remarks. Generates a `DON-` internal ID and a public `RCT-` receipt ID, then renders an A5 PDF receipt client-side (`jspdf`) with an embedded QR code (`qrcode`) — one tap to share on WhatsApp. |
+| 🧮 **Expense Workflow**    | Captures category, description, amount, vendor, and a bill upload (image/PDF, max 5MB). The bill is pushed to a restricted Google Drive folder and linked back to the ledger row under a unique `EXP-` ID.                                                                                |
+| 🔐 **Role-Based Access**   | **SuperAdmin/Admin** — full control, including cancellations, user management, and audit logs. **Volunteer** — can record donations and expenses in the field, can't cancel or manage users. **Viewer** — read-only.                                                                      |
+| ✅ **Public Verification** | Scanning a receipt's QR code opens `/verify/[receiptId]`, proving the receipt is genuine while masking sensitive fields like the donor's phone number.                                                                                                                                    |
 
 <br/>
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 14+ (App Router), React, Tailwind CSS, Lucide React |
-| Auth | NextAuth.js (Auth.js) v5 — Google OAuth, allow-listed Gmail addresses only |
-| API layer | Next.js API Routes, acting as a secured proxy |
-| Backend | Google Apps Script (GAS) Web App |
-| Database | Google Sheets — chosen deliberately for radical transparency; any committee elder can open it and audit every row without touching the app |
-| File storage | Google Drive (vendor bill uploads) |
-| Hosting | Vercel (frontend) · Google Cloud / Apps Script (backend) |
-| PDF & QR | `jspdf`, `qrcode` |
+| Layer        | Technology                                                                                                                                 |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Frontend     | Next.js 14+ (App Router), React, Tailwind CSS, Lucide React                                                                                |
+| Auth         | NextAuth.js (Auth.js) v5 — Google OAuth, allow-listed Gmail addresses only                                                                 |
+| API layer    | Next.js API Routes, acting as a secured proxy                                                                                              |
+| Backend      | Google Apps Script (GAS) Web App                                                                                                           |
+| Database     | Google Sheets — chosen deliberately for radical transparency; any committee elder can open it and audit every row without touching the app |
+| File storage | Google Drive (vendor bill uploads)                                                                                                         |
+| Hosting      | Vercel (frontend) · Google Cloud / Apps Script (backend)                                                                                   |
+| PDF & QR     | `jspdf`, `qrcode`                                                                                                                          |
 
 <br/>
 
@@ -89,15 +89,15 @@ The frontend never talks to Google Sheets directly — every write goes through 
 
 ## Production-Grade Engineering
 
-A 500-record community tool doesn't *need* this level of hardening — it has it anyway, because a committee's trust in the ledger is the entire point of building it digital in the first place.
+A 500-record community tool doesn't _need_ this level of hardening — it has it anyway, because a committee's trust in the ledger is the entire point of building it digital in the first place.
 
-| Real-world problem | Engineering solution |
-|---|---|
-| Bad mobile signal in a crowd → volunteer double-taps "Submit" | Client generates a `crypto.randomUUID()` transaction ID that survives network timeouts; the backend rejects any row with a duplicate ID |
-| Two volunteers submit at the same instant → race condition on sequential IDs | `LockService.getScriptLock()` wraps ID generation and row insertion in one atomic, 15-second-timeout transaction |
-| Bill uploads to Drive, then the Sheets write fails | The (slow) Drive upload happens *outside* the lock for speed; on a failed or duplicate insert, the orphaned Drive file is automatically trashed — no storage leaks |
-| Google's servers stall mid-request | Every proxied API call is wrapped in a 15-second `AbortController` so the UI degrades gracefully instead of hanging |
-| Malformed or absurd amounts corrupt the ledger | Server-side validation hard-caps every amount between ₹1 and ₹9,999,999 |
+| Real-world problem                                                           | Engineering solution                                                                                                                                               |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Bad mobile signal in a crowd → volunteer double-taps "Submit"                | Client generates a `crypto.randomUUID()` transaction ID that survives network timeouts; the backend rejects any row with a duplicate ID                            |
+| Two volunteers submit at the same instant → race condition on sequential IDs | `LockService.getScriptLock()` wraps ID generation and row insertion in one atomic, 15-second-timeout transaction                                                   |
+| Bill uploads to Drive, then the Sheets write fails                           | The (slow) Drive upload happens _outside_ the lock for speed; on a failed or duplicate insert, the orphaned Drive file is automatically trashed — no storage leaks |
+| Google's servers stall mid-request                                           | Every proxied API call is wrapped in a 15-second `AbortController` so the UI degrades gracefully instead of hanging                                                |
+| Malformed or absurd amounts corrupt the ledger                               | Server-side validation hard-caps every amount between ₹1 and ₹9,999,999                                                                                            |
 
 <br/>
 
@@ -137,13 +137,13 @@ Google Sheets serves as the database, with the backend relying on exact 0-indexe
 <summary><strong>Vercel (frontend)</strong></summary>
 <br/>
 
-| Variable | Purpose |
-|---|---|
+| Variable              | Purpose                          |
+| --------------------- | -------------------------------- |
 | `NEXT_PUBLIC_API_URL` | Deployed Apps Script Web App URL |
-| `AUTH_GOOGLE_ID` | Google OAuth client ID |
-| `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
-| `AUTH_SECRET` | NextAuth.js encryption key |
-| `AUTH_URL` | Production Vercel domain |
+| `AUTH_GOOGLE_ID`      | Google OAuth client ID           |
+| `AUTH_GOOGLE_SECRET`  | Google OAuth client secret       |
+| `AUTH_SECRET`         | NextAuth.js encryption key       |
+| `AUTH_URL`            | Production Vercel domain         |
 
 </details>
 
@@ -174,7 +174,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-For the backend, deploy `Config.gs` and the rest of the Apps Script project from the Google Sheet's **Extensions → Apps Script** menu, execute as *Me*, set access to *Anyone*, then copy the resulting Web App URL into `NEXT_PUBLIC_API_URL`.
+For the backend, deploy `Config.gs` and the rest of the Apps Script project from the Google Sheet's **Extensions → Apps Script** menu, execute as _Me_, set access to _Anyone_, then copy the resulting Web App URL into `NEXT_PUBLIC_API_URL`.
 
 <br/>
 
@@ -201,7 +201,7 @@ Ideas under consideration for future seasons — not commitments:
 
 ## Author
 
-**Devasish Mishra** · *"I was built to build."*
+**Devasish Mishra** · _"I was built to build."_
 
 [![GitHub](https://img.shields.io/badge/GitHub-TechGenDM-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/TechGenDM)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Devasish_Mishra-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/devasish-mishra-62546a34a)
@@ -212,7 +212,7 @@ CS & AI student, Scaler School of Technology + BITS Pilani.
 
 <div align="center">
 
-*This project is built for one community's trust — not for the internet's traffic.*
+_This project is built for one community's trust — not for the internet's traffic._
 
 **Ganpati Bappa Morya 🙏**
 

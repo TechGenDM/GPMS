@@ -68,9 +68,7 @@ export function ConfirmModal({
           <button
             type="button"
             className={`w-full sm:w-auto px-6 py-[10px] text-[14px] font-bold text-white rounded-[14px] shadow-sm transition-opacity hover:opacity-90 ${
-              isDestructive
-                ? 'bg-maroon'
-                : 'bg-ink'
+              isDestructive ? 'bg-maroon' : 'bg-ink'
             }`}
             onClick={onConfirm}
           >

@@ -96,7 +96,9 @@ export default function VerifyReceiptPage() {
                   ? 'Receipt Cancelled'
                   : 'Valid GPMS Receipt'}
               </CardTitle>
-              <p className="text-[14px] font-medium text-muted-ink mt-1">Ganesh Puja 2026</p>
+              <p className="text-[14px] font-medium text-muted-ink mt-1">
+                Ganesh Puja 2026
+              </p>
             </>
           ) : (
             <>
@@ -116,44 +118,66 @@ export default function VerifyReceiptPage() {
           ) : data ? (
             <div className="space-y-1">
               <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
-                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Receipt ID</span>
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                  Receipt ID
+                </span>
                 <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                   {data.receiptId}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
-                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Donor Name</span>
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                  Donor Name
+                </span>
                 <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                   {data.donorName}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
-                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Amount</span>
-                <span className={`col-span-2 font-bold text-right text-[18px] ${data.status === 'Cancelled' ? 'text-maroon line-through' : 'text-sage'}`}>
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                  Amount
+                </span>
+                <span
+                  className={`col-span-2 font-bold text-right text-[18px] ${data.status === 'Cancelled' ? 'text-maroon line-through' : 'text-sage'}`}
+                >
                   ₹{Number(data.amount).toLocaleString('en-IN')}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
-                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Purpose</span>
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                  Purpose
+                </span>
                 <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                   {data.purpose}
                 </span>
               </div>
               {data.collectorName && (
                 <div className="grid grid-cols-3 gap-2 py-3 border-b border-hair">
-                  <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Collected By</span>
+                  <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                    Collected By
+                  </span>
                   <span className="col-span-2 font-bold text-right text-ink text-[15px]">
                     {data.collectorName}
                   </span>
                 </div>
               )}
               <div className="grid grid-cols-3 gap-2 py-3">
-                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">Date</span>
+                <span className="text-muted-ink text-[13px] font-bold uppercase tracking-wider">
+                  Date
+                </span>
                 <span className="col-span-2 font-bold text-right text-ink text-[15px]">
-                  {data.createdAt ? parseGPMSDate(data.createdAt).toLocaleDateString('en-IN', {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                  }) : '-'}
+                  {data.createdAt
+                    ? parseGPMSDate(data.createdAt).toLocaleDateString(
+                        'en-IN',
+                        {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }
+                      )
+                    : '-'}
                 </span>
               </div>
             </div>

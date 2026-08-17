@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 
 /**
- * GET /api/settings/live-darshan
- * Reads only the YOUTUBE_LIVE_URL setting via the scoped getLiveDarshanConfig action.
+ * GET /api/settings/upi-payment
+ * Reads the UPI configuration via the scoped getUpiPaymentConfig action.
  */
 export async function GET() {
   try {
@@ -27,7 +27,7 @@ export async function GET() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: 'getLiveDarshanConfig',
+        action: 'getUpiPaymentConfig',
         payload: { userEmail: session.user.email },
       }),
       cache: 'no-store',
@@ -37,7 +37,7 @@ export async function GET() {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error: unknown) {
-    console.error('[GPMS API] Error fetching Live Darshan config:', error);
+    console.error('[GPMS API] Error fetching UPI Payment config:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }
@@ -46,8 +46,8 @@ export async function GET() {
 }
 
 /**
- * POST /api/settings/live-darshan
- * Updates the YOUTUBE_LIVE_URL setting via the existing updateSetting action.
+ * POST /api/settings/upi-payment
+ * Updates UPI configuration keys.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -60,11 +60,24 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { value } = body;
+    const { key, value } = body;
 
-    if (value === undefined || value === null) {
+    if (!key || value === undefined || value === null) {
       return NextResponse.json(
-        { success: false, message: 'YouTube URL value is required' },
+        { success: false, message: 'Key and value are required' },
+        { status: 400 }
+      );
+    }
+
+    // Only allow updating UPI-specific keys through this endpoint
+    const validKeys = [
+      'UPI_PAYMENT_ID',
+      'UPI_PAYEE_NAME',
+      'UPI_PAYMENT_ENABLED',
+    ];
+    if (!validKeys.includes(key)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid key for this endpoint' },
         { status: 400 }
       );
     }
@@ -84,7 +97,7 @@ export async function POST(req: NextRequest) {
         action: 'updateSetting',
         payload: {
           userEmail: session.user.email,
-          key: 'YOUTUBE_LIVE_URL',
+          key: key,
           value: value,
         },
       }),
@@ -96,7 +109,7 @@ export async function POST(req: NextRequest) {
       status: response.ok ? 200 : response.status,
     });
   } catch (error: unknown) {
-    console.error('[GPMS API] Error updating Live Darshan config:', error);
+    console.error('[GPMS API] Error updating UPI Payment config:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }

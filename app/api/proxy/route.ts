@@ -45,7 +45,9 @@ export async function POST(request: Request) {
     try {
       data = JSON.parse(rawText);
     } catch {
-      console.error('[GPMS Proxy] Failed to parse Apps Script response as JSON.');
+      console.error(
+        '[GPMS Proxy] Failed to parse Apps Script response as JSON.'
+      );
       return NextResponse.json(
         { success: false, message: 'Invalid response from backend' },
         { status: 502 }

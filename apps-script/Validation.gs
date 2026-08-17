@@ -36,7 +36,12 @@ function validateDonation(data) {
     };
   }
 
-  if (!data.amount || isNaN(Number(data.amount)) || Number(data.amount) <= 0 || Number(data.amount) > 9999999) {
+  if (
+    !data.amount ||
+    isNaN(Number(data.amount)) ||
+    Number(data.amount) <= 0 ||
+    Number(data.amount) > 9999999
+  ) {
     return {
       valid: false,
       code: ERROR_CODES.INVALID_AMOUNT,
@@ -97,7 +102,12 @@ function validateExpense(data) {
     };
   }
 
-  if (!data.amount || isNaN(Number(data.amount)) || Number(data.amount) <= 0 || Number(data.amount) > 9999999) {
+  if (
+    !data.amount ||
+    isNaN(Number(data.amount)) ||
+    Number(data.amount) <= 0 ||
+    Number(data.amount) > 9999999
+  ) {
     return {
       valid: false,
       code: ERROR_CODES.INVALID_AMOUNT,
@@ -189,7 +199,12 @@ function validateUser(data) {
     return {
       valid: false,
       code: ERROR_CODES.INVALID_ROLE,
-      message: 'Invalid role specified: ' + data.role + ' (Valid: ' + validRoles.join(',') + ')',
+      message:
+        'Invalid role specified: ' +
+        data.role +
+        ' (Valid: ' +
+        validRoles.join(',') +
+        ')',
     };
   }
 

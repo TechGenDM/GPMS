@@ -19,6 +19,7 @@ import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 import { Button } from '@/components/ui/button';
 import { generateAndDownloadReceipt } from '@/lib/pdfGenerator';
 import { shareToWhatsApp, shareNative } from '@/lib/shareUtils';
+import { UpiPaymentModal } from '@/components/donation/UpiPaymentModal';
 
 // ── Constants matching backend expectations ──────────────────────────
 const PURPOSES = [
@@ -90,6 +91,49 @@ export default function NewDonationPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // UPI Configuration State
+  const [upiConfig, setUpiConfig] = useState({
+    upiId: '',
+    payeeName: '',
+    enabled: false,
+    loaded: false,
+  });
+
+  // Modal State
+  const [showUpiModal, setShowUpiModal] = useState(false);
+
+  // Fetch UPI Config on load
+  useEffect(() => {
+    let isMounted = true;
+    const loadUpiConfig = async () => {
+      try {
+        const res = await fetch('/api/settings/upi-payment');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data && isMounted) {
+            setUpiConfig({
+              upiId: data.data.upiId,
+              payeeName: data.data.payeeName,
+              enabled: data.data.enabled,
+              loaded: true,
+            });
+            // Auto-select Cash if UPI is disabled and currently selected
+            if (!data.data.enabled && form.paymentMode === 'UPI') {
+              setForm((prev) => ({ ...prev, paymentMode: 'Cash' }));
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load UPI config', e);
+      }
+    };
+    loadUpiConfig();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [form.paymentMode]);
+
   // Success state
   const [successData, setSuccessData] = useState<{
     id: string;
@@ -115,6 +159,47 @@ export default function NewDonationPage() {
     []
   );
 
+  const submitDonation = useCallback(async () => {
+    setSubmitting(true);
+    setShowUpiModal(false);
+
+    const res = await fetchApi<CreateDonationResponse>(
+      '/donations/create',
+      {
+        method: 'POST',
+        body: {
+          donorName: form.donorName.trim(),
+          phone: form.phone.trim(),
+          amount: Number(form.amount),
+          purpose: form.purpose,
+          paymentMode: form.paymentMode,
+          upiRef: form.paymentMode === 'UPI' ? form.upiRef.trim() : '',
+          remarks: form.remarks.trim(),
+          transactionId: transactionIdRef.current,
+        },
+        showLoading: true,
+        loadingMessage: 'Recording donation...',
+      },
+      feedback
+    );
+
+    setSubmitting(false);
+
+    if (res.success && res.data) {
+      setSuccessData({
+        id: res.data.id,
+        receiptId: res.data.receiptId,
+        donorName: form.donorName.trim(),
+        amount: Number(form.amount),
+        purpose: form.purpose,
+        paymentMode: form.paymentMode,
+        collectorName: res.data.collectorName,
+        date: res.data.createdAt,
+        donorPhone: form.phone.trim(),
+      });
+    }
+  }, [form, feedback]);
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -126,45 +211,16 @@ export default function NewDonationPage() {
         return;
       }
 
-      setSubmitting(true);
-
-      const res = await fetchApi<CreateDonationResponse>(
-        '/donations/create',
-        {
-          method: 'POST',
-          body: {
-            donorName: form.donorName.trim(),
-            phone: form.phone.trim(),
-            amount: Number(form.amount),
-            purpose: form.purpose,
-            paymentMode: form.paymentMode,
-            upiRef: form.paymentMode === 'UPI' ? form.upiRef.trim() : '',
-            remarks: form.remarks.trim(),
-            transactionId: transactionIdRef.current,
-          },
-          showLoading: true,
-          loadingMessage: 'Recording donation...',
-        },
-        feedback
-      );
-
-      setSubmitting(false);
-
-      if (res.success && res.data) {
-        setSuccessData({
-          id: res.data.id,
-          receiptId: res.data.receiptId,
-          donorName: form.donorName.trim(),
-          amount: Number(form.amount),
-          purpose: form.purpose,
-          paymentMode: form.paymentMode,
-          collectorName: res.data.collectorName,
-          date: res.data.createdAt,
-          donorPhone: form.phone.trim(),
-        });
+      // If UPI is selected and config is valid, show QR modal instead of direct submit
+      if (form.paymentMode === 'UPI' && upiConfig.enabled && upiConfig.upiId) {
+        setShowUpiModal(true);
+        return;
       }
+
+      // Otherwise submit directly
+      await submitDonation();
     },
-    [form, feedback]
+    [form, upiConfig, submitDonation]
   );
 
   const handleRecordAnother = useCallback(() => {
@@ -239,7 +295,9 @@ export default function NewDonationPage() {
             <CardContent className="p-8 space-y-8">
               <div className="text-center space-y-3">
                 <CheckCircle className="w-16 h-16 text-sage mx-auto" />
-                <h2 className="text-[24px] font-playfair font-bold text-ink">Success!</h2>
+                <h2 className="text-[24px] font-playfair font-bold text-ink">
+                  Success!
+                </h2>
                 <p className="text-[14px] font-medium text-muted-ink">
                   Donation successfully recorded.
                 </p>
@@ -264,56 +322,56 @@ export default function NewDonationPage() {
                 </div>
               </div>
 
-            <div className="pt-4 grid grid-cols-2 gap-3">
-              <Button
-                onClick={handleDownloadPdf}
-                className="w-full bg-ink hover:bg-ink/90 text-cream h-[48px] font-bold rounded-[12px]"
-              >
-                <Download className="w-[18px] h-[18px] mr-2" />
-                PDF
-              </Button>
-              <Button
-                onClick={handleWhatsAppShare}
-                className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white h-[48px] font-bold rounded-[12px] border-transparent"
-              >
-                <MessageCircle className="w-[18px] h-[18px] mr-2" />
-                WhatsApp
-              </Button>
-            </div>
+              <div className="pt-4 grid grid-cols-2 gap-3">
+                <Button
+                  onClick={handleDownloadPdf}
+                  className="w-full bg-ink hover:bg-ink/90 text-cream h-[48px] font-bold rounded-[12px]"
+                >
+                  <Download className="w-[18px] h-[18px] mr-2" />
+                  PDF
+                </Button>
+                <Button
+                  onClick={handleWhatsAppShare}
+                  className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white h-[48px] font-bold rounded-[12px] border-transparent"
+                >
+                  <MessageCircle className="w-[18px] h-[18px] mr-2" />
+                  WhatsApp
+                </Button>
+              </div>
 
-            <div className="pt-2">
-              <Button
-                variant="outline"
-                onClick={handleNativeShare}
-                className="w-full h-[48px] font-bold rounded-[12px] text-ink border-hair hover:bg-hair/30"
-              >
-                <Share2 className="w-[18px] h-[18px] mr-2" />
-                More Sharing Options
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  onClick={handleNativeShare}
+                  className="w-full h-[48px] font-bold rounded-[12px] text-ink border-hair hover:bg-hair/30"
+                >
+                  <Share2 className="w-[18px] h-[18px] mr-2" />
+                  More Sharing Options
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-        <div className="mt-8 space-y-3 max-w-md mx-auto">
-          <Button
-            onClick={handleRecordAnother}
-            className="w-full h-[54px] text-[16px] bg-sage hover:bg-sage/90 text-white rounded-[14px] font-bold border-transparent"
-          >
-            <Plus className="w-[20px] h-[20px] mr-2" />
-            Record Another Donation
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => router.push('/dashboard')}
-            className="w-full h-[54px] text-[16px] rounded-[14px] font-bold border-hair text-ink hover:bg-hair/30"
-          >
-            Back to Dashboard
-          </Button>
-        </div>
-      </main>
-    </div>
-  );
-}
+          <div className="mt-8 space-y-3 max-w-md mx-auto">
+            <Button
+              onClick={handleRecordAnother}
+              className="w-full h-[54px] text-[16px] bg-sage hover:bg-sage/90 text-white rounded-[14px] font-bold border-transparent"
+            >
+              <Plus className="w-[20px] h-[20px] mr-2" />
+              Record Another Donation
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/dashboard')}
+              className="w-full h-[54px] text-[16px] rounded-[14px] font-bold border-hair text-ink hover:bg-hair/30"
+            >
+              Back to Dashboard
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   // ── Form State ───────────────────────────────────────────────────
   return (
@@ -371,7 +429,9 @@ export default function NewDonationPage() {
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
               Phone Number{' '}
-              <span className="text-muted-ink text-[12px] font-medium">(optional)</span>
+              <span className="text-muted-ink text-[12px] font-medium">
+                (optional)
+              </span>
             </label>
             <input
               id="phone"
@@ -379,7 +439,12 @@ export default function NewDonationPage() {
               autoComplete="off"
               placeholder="e.g. 9876543210"
               value={form.phone}
-              onChange={(e) => updateField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onChange={(e) =>
+                updateField(
+                  'phone',
+                  e.target.value.replace(/\D/g, '').slice(0, 10)
+                )
+              }
               maxLength={10}
               inputMode="numeric"
               pattern="[0-9]*"
@@ -419,7 +484,10 @@ export default function NewDonationPage() {
           {/* Purpose — Pill Chips */}
           <div>
             <label className="block text-[14px] font-bold text-ink mb-2">
-              Purpose <span className="text-muted-ink text-[12px] font-medium">(optional)</span>
+              Purpose{' '}
+              <span className="text-muted-ink text-[12px] font-medium">
+                (optional)
+              </span>
             </label>
             <div className="flex flex-wrap gap-2">
               {PURPOSES.map((pur) => (
@@ -445,20 +513,31 @@ export default function NewDonationPage() {
               Payment Mode <span className="text-maroon">*</span>
             </label>
             <div className="grid grid-cols-2 gap-3">
-              {PAYMENT_MODES.map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => updateField('paymentMode', mode)}
-                  className={`h-[48px] rounded-[12px] text-[15px] font-bold transition-all border ${
-                    form.paymentMode === mode
-                      ? 'bg-ink text-cream border-transparent shadow-sm'
-                      : 'bg-white text-ink border-hair hover:border-ink'
-                  }`}
-                >
-                  {mode === 'Cash' ? '💵' : '📱'} {mode}
-                </button>
-              ))}
+              {PAYMENT_MODES.map((mode) => {
+                const disabled =
+                  mode === 'UPI' && upiConfig.loaded && !upiConfig.enabled;
+
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => updateField('paymentMode', mode)}
+                    className={`h-[48px] rounded-[12px] text-[15px] font-bold transition-all border ${
+                      form.paymentMode === mode
+                        ? 'bg-ink text-cream border-transparent shadow-sm'
+                        : disabled
+                          ? 'bg-hair/30 text-muted-ink border-transparent cursor-not-allowed'
+                          : 'bg-white text-ink border-hair hover:border-ink'
+                    }`}
+                    title={
+                      disabled ? 'UPI payments are currently disabled' : ''
+                    }
+                  >
+                    {mode === 'Cash' ? '💵' : '📱'} {mode}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -470,7 +549,9 @@ export default function NewDonationPage() {
                 className="block text-[14px] font-bold text-ink mb-1.5"
               >
                 UPI Reference{' '}
-                <span className="text-muted-ink text-[12px] font-medium">(optional)</span>
+                <span className="text-muted-ink text-[12px] font-medium">
+                  (optional)
+                </span>
               </label>
               <input
                 id="upiRef"
@@ -490,7 +571,10 @@ export default function NewDonationPage() {
               htmlFor="remarks"
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Remarks <span className="text-muted-ink text-[12px] font-medium">(optional)</span>
+              Remarks{' '}
+              <span className="text-muted-ink text-[12px] font-medium">
+                (optional)
+              </span>
             </label>
             <textarea
               id="remarks"
@@ -515,6 +599,16 @@ export default function NewDonationPage() {
           </div>
         </form>
       </main>
+
+      {/* UPI QR Payment Modal */}
+      <UpiPaymentModal
+        isOpen={showUpiModal}
+        amount={Number(form.amount) || 0}
+        upiId={upiConfig.upiId}
+        payeeName={upiConfig.payeeName}
+        onConfirm={submitDonation}
+        onCancel={() => setShowUpiModal(false)}
+      />
     </div>
   );
 }

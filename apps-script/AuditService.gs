@@ -55,8 +55,16 @@ var AuditService = {
    * @returns {ContentOutput} JSON response.
    */
   getRecentLogs: function (user, payload) {
-    if (!UserService.authorize(user, [CONFIG.roles.superadmin, CONFIG.roles.admin])) {
-      return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions to view audit logs');
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.superadmin,
+        CONFIG.roles.admin,
+      ])
+    ) {
+      return error(
+        ERROR_CODES.FORBIDDEN,
+        'Insufficient permissions to view audit logs'
+      );
     }
 
     var limit = parseInt(payload && payload.limit ? payload.limit : 500, 10);
@@ -97,7 +105,12 @@ var AuditService = {
    * @returns {ContentOutput} JSON response.
    */
   logExport: function (user, payload) {
-    if (!UserService.authorize(user, [CONFIG.roles.superadmin, CONFIG.roles.admin])) {
+    if (
+      !UserService.authorize(user, [
+        CONFIG.roles.superadmin,
+        CONFIG.roles.admin,
+      ])
+    ) {
       return error(ERROR_CODES.FORBIDDEN, 'Insufficient permissions');
     }
 

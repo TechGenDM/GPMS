@@ -13,23 +13,32 @@ export default async function LoginPage(props: Props) {
   const error = searchParams?.error as string | undefined;
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center p-6 text-center overflow-hidden bg-ink"
-         style={{
-           background: `radial-gradient(circle at 30% 24%, var(--color-ink-glow), transparent 55%), radial-gradient(circle at 75% 80%, #241736, transparent 50%), var(--color-ink)`
-         }}>
+    <div
+      className="relative min-h-screen flex flex-col items-center justify-center p-6 text-center overflow-hidden bg-ink"
+      style={{
+        background: `radial-gradient(circle at 30% 24%, var(--color-ink-glow), transparent 55%), radial-gradient(circle at 75% 80%, #241736, transparent 50%), var(--color-ink)`,
+      }}
+    >
       {/* Dot pattern overlay */}
-      <div className="absolute inset-0 opacity-[0.18]"
-           style={{
-             backgroundImage: 'radial-gradient(rgba(240,184,77,.3) 1px, transparent 1px)',
-             backgroundSize: '18px 18px'
-           }} 
+      <div
+        className="absolute inset-0 opacity-[0.18]"
+        style={{
+          backgroundImage:
+            'radial-gradient(rgba(240,184,77,.3) 1px, transparent 1px)',
+          backgroundSize: '18px 18px',
+        }}
       />
 
       <div className="w-full max-w-sm relative z-10 flex flex-col items-center">
         {/* Seal and glow */}
         <div className="relative z-10 mb-6">
-          <div className="absolute -inset-8 rounded-full -z-10"
-               style={{ background: 'radial-gradient(circle, rgba(240,184,77,.28), transparent 70%)' }} />
+          <div
+            className="absolute -inset-8 rounded-full -z-10"
+            style={{
+              background:
+                'radial-gradient(circle, rgba(240,184,77,.28), transparent 70%)',
+            }}
+          />
           <Image
             src={sealLogo}
             alt="GPMS Seal"
@@ -55,7 +64,8 @@ export default async function LoginPage(props: Props) {
               <p>Access Denied</p>
             </div>
             <p className="text-[13px] text-maroon/80 leading-relaxed mb-2 font-bold">
-              This Google account is not authorized to access the GPMS management system.
+              This Google account is not authorized to access the GPMS
+              management system.
             </p>
             <p className="text-[13px] text-maroon/80 leading-relaxed font-bold">
               Please contact a GPMS administrator to have your account added.
@@ -70,7 +80,8 @@ export default async function LoginPage(props: Props) {
               <p>Authentication Error</p>
             </div>
             <p className="text-[13px] text-maroon/80 font-bold">
-              There was a problem signing you in. Please try again or use a different account.
+              There was a problem signing you in. Please try again or use a
+              different account.
             </p>
           </div>
         )}
@@ -91,16 +102,29 @@ export default async function LoginPage(props: Props) {
               className="w-full bg-white border border-[#DDD8CC] rounded-xl py-3 flex items-center justify-center gap-2.5 font-semibold text-sm text-[#3a3540] hover:bg-slate-50 transition-colors active:scale-[0.98]"
             >
               <svg width="18" height="18" viewBox="0 0 18 18">
-                <path fill="#4285F4" d="M17.6 9.2c0-.6-.05-1.2-.15-1.75H9v3.3h4.8a4.1 4.1 0 0 1-1.78 2.7v2.2h2.88C16.5 14 17.6 11.85 17.6 9.2z"/>
-                <path fill="#34A853" d="M9 18c2.4 0 4.42-.8 5.9-2.15l-2.88-2.2c-.8.55-1.83.87-3.02.87-2.32 0-4.28-1.57-4.98-3.68H1.05v2.3A9 9 0 0 0 9 18z"/>
-                <path fill="#FBBC05" d="M4.02 10.84A5.4 5.4 0 0 1 3.74 9c0-.64.11-1.26.28-1.84V4.86H1.05A9 9 0 0 0 0 9c0 1.45.35 2.83 1.05 4.14l3-2.3z"/>
-                <path fill="#EA4335" d="M9 3.58c1.3 0 2.48.45 3.4 1.32l2.55-2.55C13.4.9 11.4 0 9 0A9 9 0 0 0 1.05 4.86l3 2.3C4.72 5.05 6.68 3.58 9 3.58z"/>
+                <path
+                  fill="#4285F4"
+                  d="M17.6 9.2c0-.6-.05-1.2-.15-1.75H9v3.3h4.8a4.1 4.1 0 0 1-1.78 2.7v2.2h2.88C16.5 14 17.6 11.85 17.6 9.2z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M9 18c2.4 0 4.42-.8 5.9-2.15l-2.88-2.2c-.8.55-1.83.87-3.02.87-2.32 0-4.28-1.57-4.98-3.68H1.05v2.3A9 9 0 0 0 9 18z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M4.02 10.84A5.4 5.4 0 0 1 3.74 9c0-.64.11-1.26.28-1.84V4.86H1.05A9 9 0 0 0 0 9c0 1.45.35 2.83 1.05 4.14l3-2.3z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M9 3.58c1.3 0 2.48.45 3.4 1.32l2.55-2.55C13.4.9 11.4 0 9 0A9 9 0 0 0 1.05 4.86l3 2.3C4.72 5.05 6.68 3.58 9 3.58z"
+                />
               </svg>
               Sign in with Google
             </button>
           </form>
           <div className="text-[11px] text-muted-ink mt-4 leading-[1.6]">
-            Authorized volunteers only. By signing in, you agree to the committee's data policies.
+            Authorized volunteers only. By signing in, you agree to the
+            committee's data policies.
           </div>
         </div>
       </div>

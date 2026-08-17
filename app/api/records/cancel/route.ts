@@ -14,17 +14,24 @@ export async function POST(req: NextRequest) {
 
     if (session.user.role !== 'Admin' && session.user.role !== 'SuperAdmin') {
       return NextResponse.json(
-        { success: false, message: 'Forbidden. Only admins can cancel records.' },
+        {
+          success: false,
+          message: 'Forbidden. Only admins can cancel records.',
+        },
         { status: 403 }
       );
     }
 
     const payload = await req.json();
-    const action = payload.type === 'expense' ? 'cancelExpense' : 'cancelDonation';
+    const action =
+      payload.type === 'expense' ? 'cancelExpense' : 'cancelDonation';
 
     const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!appsScriptUrl) {
-      return NextResponse.json({ success: false, message: 'Server configuration error' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, message: 'Server configuration error' },
+        { status: 500 }
+      );
     }
 
     const response = await fetch(appsScriptUrl, {

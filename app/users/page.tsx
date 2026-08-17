@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default async function UsersPage() {
   const session = await auth();
-  
+
   if (!session?.user) {
     redirect('/login');
   }

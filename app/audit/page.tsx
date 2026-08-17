@@ -27,7 +27,7 @@ export default async function AuditPage() {
       <header className="bg-cream border-b border-hair sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link 
+            <Link
               href="/dashboard"
               className="p-2 -ml-2 text-muted-ink hover:text-ink hover:bg-hair/50 rounded-full transition-colors"
             >
