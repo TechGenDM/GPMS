@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShareDonationData,
   shareNative,
@@ -50,6 +50,18 @@ export function RecordDetailModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [previewDocument, setPreviewDocument] = useState<{url: string, title: string} | null>(null);
+
+  // Prevent background scrolling when the modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   if (!isOpen || !record) return null;
 
@@ -138,9 +150,10 @@ export function RecordDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px] p-4 overflow-y-auto">
-      <div className="bg-white rounded-[20px] border border-hair shadow-xl w-full max-w-md my-8 relative">
-        <div className="flex items-center justify-between p-[20px_24px] border-b border-hair">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px] p-4 sm:p-6 sm:pb-[env(safe-area-inset-bottom,16px)]">
+      <div className="bg-white rounded-[20px] border border-hair shadow-xl w-full max-w-md max-h-[90dvh] flex flex-col relative overflow-hidden">
+        {/* Header - Sticky */}
+        <div className="flex-none flex items-center justify-between p-[20px_24px] border-b border-hair bg-white z-10">
           <h2 className="font-playfair font-bold text-[18px] text-ink tracking-[0.02em]">
             {isDonation ? 'Donation Details' : 'Expense Details'}
           </h2>
@@ -152,7 +165,8 @@ export function RecordDetailModal({
           </button>
         </div>
 
-        <div className="p-[24px] space-y-6">
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-[24px] space-y-6">
           {/* Header Area */}
           <div className="text-center space-y-2">
             {isCancelled ? (
@@ -256,9 +270,10 @@ export function RecordDetailModal({
               )}
             </div>
           )}
+        </div>
 
-          {/* Actions */}
-          <div className="space-y-4 pt-2">
+        {/* Sticky Footer Actions */}
+        <div className="flex-none p-[20px_24px] border-t border-hair bg-white z-10 space-y-4">
             {!isCancelled && isDonation && (
               <div className="grid grid-cols-2 gap-3">
                 <Button
@@ -347,7 +362,6 @@ export function RecordDetailModal({
                 )}
               </div>
             )}
-          </div>
         </div>
       </div>
 
