@@ -7,6 +7,7 @@ import { auth } from '@/auth';
  */
 export async function GET() {
   try {
+    // Authenticate using NextAuth session
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json(
