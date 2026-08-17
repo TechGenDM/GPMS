@@ -13,6 +13,7 @@ import {
   Upload,
   X as XIcon,
   ImageIcon,
+  RefreshCw,
 } from 'lucide-react';
 import { parseGPMSDate } from '@/lib/utils';
 import { fetchApi } from '@/lib/api';
@@ -70,6 +71,51 @@ const INITIAL_FORM: DonationFormData = {
   paymentProofFile: null,
 };
 
+// ── Image Processing Utility ──────────────────────────────────────────
+const compressImage = async (file: File): Promise<{ base64: string; mimeType: string; name: string }> => {
+  return new Promise((resolve, reject) => {
+    // createObjectURL respects native EXIF orientation when drawn to canvas
+    // and strips the EXIF metadata in the output.
+    const url = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let width = img.width;
+      let height = img.height;
+      const MAX_DIMENSION = 1920;
+
+      if (width > height) {
+        if (width > MAX_DIMENSION) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        }
+      } else {
+        if (height > MAX_DIMENSION) {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('Canvas context not available'));
+
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      
+      const newName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+      resolve({ base64: dataUrl, mimeType: 'image/jpeg', name: newName });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image for compression'));
+    };
+    img.src = url;
+  });
+};
+
 // ── Validation ───────────────────────────────────────────────────────
 function validateForm(form: DonationFormData): string | null {
   if (!form.donorName.trim()) return 'Donor name is required';
@@ -102,6 +148,7 @@ export default function NewDonationPage() {
   const [form, setForm] = useState<DonationFormData>(INITIAL_FORM);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
 
   // UPI Configuration State
   const [upiConfig, setUpiConfig] = useState({
@@ -235,35 +282,60 @@ export default function NewDonationPage() {
 
   // ── Payment Proof File Handlers ──────────────────────────────────
   const MAX_PROOF_SIZE_BYTES = 3 * 1024 * 1024; // 3 MB — safe Vercel payload limit
-  const ALLOWED_PROOF_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
 
   const handleProofFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
-      if (!ALLOWED_PROOF_TYPES.includes(file.type)) {
-        setValidationError('Invalid file type. Please upload a JPG, PNG, or PDF.');
-        if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+      setValidationError(null);
+
+      if (file.type === 'application/pdf') {
+        if (file.size > MAX_PROOF_SIZE_BYTES) {
+          setValidationError('PDF must be smaller than 3 MB.');
+          if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target?.result as string;
+          setForm((prev) => ({
+            ...prev,
+            paymentProofFile: { base64, mimeType: file.type, name: file.name },
+          }));
+        };
+        reader.readAsDataURL(file);
         return;
       }
 
-      if (file.size > MAX_PROOF_SIZE_BYTES) {
-        setValidationError('Payment proof must be smaller than 3 MB.');
-        if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+      if (file.type.startsWith('image/')) {
+        try {
+          setIsProcessingImage(true);
+          const processedImage = await compressImage(file);
+
+          const base64Size = Math.round((processedImage.base64.length * 3) / 4);
+          if (base64Size > MAX_PROOF_SIZE_BYTES) {
+            setValidationError('Processed image is still larger than 3 MB. Please try a different photo.');
+            if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+            return;
+          }
+
+          setForm((prev) => ({
+            ...prev,
+            paymentProofFile: processedImage,
+          }));
+        } catch (error) {
+          console.error('Image processing failed', error);
+          setValidationError('Failed to process image. Please try again.');
+          if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+        } finally {
+          setIsProcessingImage(false);
+        }
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target?.result as string;
-        setForm((prev) => ({
-          ...prev,
-          paymentProofFile: { base64, mimeType: file.type, name: file.name },
-        }));
-        setValidationError(null);
-      };
-      reader.readAsDataURL(file);
+      setValidationError('Invalid file type. Please upload an Image or PDF.');
+      if (proofFileInputRef.current) proofFileInputRef.current.value = '';
     },
     [proofFileInputRef]
   );
@@ -652,10 +724,20 @@ export default function NewDonationPage() {
                 <button
                   type="button"
                   onClick={() => proofFileInputRef.current?.click()}
-                  className="w-full h-[56px] rounded-[12px] border-2 border-dashed border-hair bg-white text-muted-ink text-[14px] font-semibold flex items-center justify-center gap-2 hover:border-ink hover:text-ink transition-colors"
+                  disabled={isProcessingImage}
+                  className="w-full h-[56px] rounded-[12px] border-2 border-dashed border-hair bg-white text-muted-ink text-[14px] font-semibold flex items-center justify-center gap-2 hover:border-ink hover:text-ink transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Upload className="w-4 h-4" />
-                  Upload payment screenshot
+                  {isProcessingImage ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Processing image...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Upload payment screenshot
+                    </>
+                  )}
                 </button>
               )}
 
@@ -663,13 +745,13 @@ export default function NewDonationPage() {
               <input
                 ref={proofFileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/jpg,application/pdf"
+                accept="image/*,application/pdf"
                 className="hidden"
                 onChange={handleProofFileChange}
               />
 
               <p className="text-[11px] text-muted-ink mt-1.5">
-                JPG, PNG or PDF · Max 3 MB
+                Images or PDF · Max 3 MB
               </p>
             </div>
           )}
@@ -699,7 +781,7 @@ export default function NewDonationPage() {
           <div className="pt-2">
             <Button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || isProcessingImage}
               className="w-full h-[54px] text-[16px] bg-ink hover:bg-ink/90 text-cream rounded-[14px] font-bold shadow-sm disabled:opacity-50 border-transparent"
             >
               <IndianRupee className="w-[18px] h-[18px] mr-2" />
