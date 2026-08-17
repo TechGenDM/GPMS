@@ -27,10 +27,10 @@ export async function POST(request: NextRequest) {
       phone,
       amount,
       paymentMode,
-      upiRef,
       purpose,
       remarks,
       transactionId,
+      paymentProofFile,
     } = body;
 
     const response = await fetch(appsScriptUrl, {
@@ -46,14 +46,15 @@ export async function POST(request: NextRequest) {
           phone: phone || '',
           amount,
           paymentMode,
-          upiRef: upiRef || '',
           purpose: purpose || '',
           remarks: remarks || '',
           transactionId, // Included for backend idempotency
+          paymentProofFile: paymentProofFile || null, // Base64 proof for UPI donations
         },
       }),
       redirect: 'follow',
     });
+
 
     const rawText = await response.text();
     let data;

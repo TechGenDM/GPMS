@@ -10,6 +10,9 @@ import {
   Download,
   Share2,
   MessageCircle,
+  Upload,
+  X as XIcon,
+  ImageIcon,
 } from 'lucide-react';
 import { parseGPMSDate } from '@/lib/utils';
 import { fetchApi } from '@/lib/api';
@@ -34,14 +37,20 @@ const PURPOSES = [
 const PAYMENT_MODES = ['Cash', 'UPI'] as const;
 
 // ── Types ────────────────────────────────────────────────────────────
+interface ProofFile {
+  base64: string;
+  mimeType: string;
+  name: string;
+}
+
 interface DonationFormData {
   donorName: string;
   phone: string;
   amount: string;
   purpose: string;
   paymentMode: string;
-  upiRef: string;
   remarks: string;
+  paymentProofFile: ProofFile | null;
 }
 
 interface CreateDonationResponse {
@@ -57,8 +66,8 @@ const INITIAL_FORM: DonationFormData = {
   amount: '',
   purpose: PURPOSES[0],
   paymentMode: PAYMENT_MODES[0],
-  upiRef: '',
   remarks: '',
+  paymentProofFile: null,
 };
 
 // ── Validation ───────────────────────────────────────────────────────
@@ -72,6 +81,9 @@ function validateForm(form: DonationFormData): string | null {
   if (!form.amount || Number(form.amount) <= 0)
     return 'Amount must be greater than zero';
   if (!form.paymentMode) return 'Please select a payment mode';
+  if (form.paymentMode === 'UPI' && !form.paymentProofFile) {
+    return 'Payment proof is required for UPI donations. Please upload a screenshot of the payment.';
+  }
   return null;
 }
 
@@ -101,6 +113,9 @@ export default function NewDonationPage() {
 
   // Modal State
   const [showUpiModal, setShowUpiModal] = useState(false);
+
+  // Payment proof file input ref
+  const proofFileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch UPI Config on load
   useEffect(() => {
@@ -161,7 +176,6 @@ export default function NewDonationPage() {
 
   const submitDonation = useCallback(async () => {
     setSubmitting(true);
-    setShowUpiModal(false);
 
     const res = await fetchApi<CreateDonationResponse>(
       '/donations/create',
@@ -173,9 +187,11 @@ export default function NewDonationPage() {
           amount: Number(form.amount),
           purpose: form.purpose,
           paymentMode: form.paymentMode,
-          upiRef: form.paymentMode === 'UPI' ? form.upiRef.trim() : '',
           remarks: form.remarks.trim(),
           transactionId: transactionIdRef.current,
+          // Only send proof file for UPI payments
+          paymentProofFile:
+            form.paymentMode === 'UPI' ? form.paymentProofFile : null,
         },
         showLoading: true,
         loadingMessage: 'Recording donation...',
@@ -204,31 +220,67 @@ export default function NewDonationPage() {
     async (e: React.FormEvent) => {
       e.preventDefault();
 
-      // Client-side validation (mirroring backend rules)
+      // Client-side validation (mirrors backend rules, including UPI proof requirement)
       const err = validateForm(form);
       if (err) {
         setValidationError(err);
         return;
       }
 
-      // If UPI is selected and config is valid, show QR modal instead of direct submit
-      if (form.paymentMode === 'UPI' && upiConfig.enabled && upiConfig.upiId) {
-        setShowUpiModal(true);
+      // Submit directly — QR was already shown when user selected UPI mode
+      await submitDonation();
+    },
+    [form, submitDonation]
+  );
+
+  // ── Payment Proof File Handlers ──────────────────────────────────
+  const MAX_PROOF_SIZE_BYTES = 3 * 1024 * 1024; // 3 MB — safe Vercel payload limit
+  const ALLOWED_PROOF_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+
+  const handleProofFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!ALLOWED_PROOF_TYPES.includes(file.type)) {
+        setValidationError('Invalid file type. Please upload a JPG, PNG, or PDF.');
+        if (proofFileInputRef.current) proofFileInputRef.current.value = '';
         return;
       }
 
-      // Otherwise submit directly
-      await submitDonation();
+      if (file.size > MAX_PROOF_SIZE_BYTES) {
+        setValidationError('Payment proof must be smaller than 3 MB.');
+        if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        setForm((prev) => ({
+          ...prev,
+          paymentProofFile: { base64, mimeType: file.type, name: file.name },
+        }));
+        setValidationError(null);
+      };
+      reader.readAsDataURL(file);
     },
-    [form, upiConfig, submitDonation]
+    [proofFileInputRef]
   );
+
+  const removeProofFile = useCallback(() => {
+    setForm((prev) => ({ ...prev, paymentProofFile: null }));
+    if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+  }, [proofFileInputRef]);
+
 
   const handleRecordAnother = useCallback(() => {
     setForm(INITIAL_FORM);
     setSuccessData(null);
     setValidationError(null);
     transactionIdRef.current = crypto.randomUUID();
-  }, []);
+    if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+  }, [proofFileInputRef]);
 
   // ── Success State ────────────────────────────────────────────────
   if (successData) {
@@ -513,55 +565,112 @@ export default function NewDonationPage() {
               Payment Mode <span className="text-maroon">*</span>
             </label>
             <div className="grid grid-cols-2 gap-3">
-              {PAYMENT_MODES.map((mode) => {
-                const disabled =
-                  mode === 'UPI' && upiConfig.loaded && !upiConfig.enabled;
+              {/* Cash button */}
+              <button
+                type="button"
+                onClick={() => {
+                  // Switching to Cash — clear any uploaded proof
+                  setForm((prev) => ({ ...prev, paymentMode: 'Cash', paymentProofFile: null }));
+                  if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+                  setValidationError(null);
+                }}
+                className={`h-[48px] rounded-[12px] text-[15px] font-bold transition-all border ${
+                  form.paymentMode === 'Cash'
+                    ? 'bg-ink text-cream border-transparent shadow-sm'
+                    : 'bg-white text-ink border-hair hover:border-ink'
+                }`}
+              >
+                💵 Cash
+              </button>
 
+              {/* UPI button — opens QR modal immediately with amount validation */}
+              {(() => {
+                const upiDisabled = upiConfig.loaded && !upiConfig.enabled;
                 return (
                   <button
-                    key={mode}
                     type="button"
-                    disabled={disabled}
-                    onClick={() => updateField('paymentMode', mode)}
+                    disabled={upiDisabled}
+                    onClick={() => {
+                      setForm((prev) => ({ ...prev, paymentMode: 'UPI' }));
+                      setValidationError(null);
+                      // Adjustment 1: validate amount before opening QR modal
+                      if (upiConfig.enabled && upiConfig.upiId) {
+                        const parsedAmount = Number(form.amount);
+                        if (!parsedAmount || parsedAmount <= 0) {
+                          setValidationError(
+                            'Please enter a valid amount before viewing the UPI QR code.'
+                          );
+                          return;
+                        }
+                        setShowUpiModal(true);
+                      }
+                    }}
                     className={`h-[48px] rounded-[12px] text-[15px] font-bold transition-all border ${
-                      form.paymentMode === mode
+                      form.paymentMode === 'UPI'
                         ? 'bg-ink text-cream border-transparent shadow-sm'
-                        : disabled
+                        : upiDisabled
                           ? 'bg-hair/30 text-muted-ink border-transparent cursor-not-allowed'
                           : 'bg-white text-ink border-hair hover:border-ink'
                     }`}
-                    title={
-                      disabled ? 'UPI payments are currently disabled' : ''
-                    }
+                    title={upiDisabled ? 'UPI payments are currently disabled' : ''}
                   >
-                    {mode === 'Cash' ? '💵' : '📱'} {mode}
+                    📱 UPI
                   </button>
                 );
-              })}
+              })()}
             </div>
           </div>
 
-          {/* UPI Reference — Conditional */}
+          {/* Payment Proof Upload — shown only for UPI donations */}
           {form.paymentMode === 'UPI' && (
             <div>
-              <label
-                htmlFor="upiRef"
-                className="block text-[14px] font-bold text-ink mb-1.5"
-              >
-                UPI Reference{' '}
-                <span className="text-muted-ink text-[12px] font-medium">
-                  (optional)
+              <label className="block text-[14px] font-bold text-ink mb-1.5">
+                Payment Proof <span className="text-maroon">*</span>
+                <span className="text-muted-ink text-[12px] font-medium ml-1">
+                  (screenshot of successful payment)
                 </span>
               </label>
+
+              {form.paymentProofFile ? (
+                // File selected — show preview row
+                <div className="flex items-center gap-3 p-3 rounded-[12px] border border-hair bg-cream">
+                  <ImageIcon className="w-5 h-5 text-sage flex-shrink-0" />
+                  <span className="flex-1 text-[14px] font-semibold text-ink truncate">
+                    {form.paymentProofFile.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={removeProofFile}
+                    className="p-1 rounded-full text-muted-ink hover:text-maroon hover:bg-maroon/10 transition-colors flex-shrink-0"
+                    aria-label="Remove proof file"
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                // No file — show upload trigger
+                <button
+                  type="button"
+                  onClick={() => proofFileInputRef.current?.click()}
+                  className="w-full h-[56px] rounded-[12px] border-2 border-dashed border-hair bg-white text-muted-ink text-[14px] font-semibold flex items-center justify-center gap-2 hover:border-ink hover:text-ink transition-colors"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload payment screenshot
+                </button>
+              )}
+
+              {/* Hidden file input */}
               <input
-                id="upiRef"
-                type="text"
-                autoComplete="off"
-                placeholder="Transaction ID or UPI ref number"
-                value={form.upiRef}
-                onChange={(e) => updateField('upiRef', e.target.value)}
-                className="w-full h-[48px] px-4 rounded-[12px] border border-hair bg-white text-ink font-semibold text-[15px] placeholder:text-muted-ink focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
+                ref={proofFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/jpg,application/pdf"
+                className="hidden"
+                onChange={handleProofFileChange}
               />
+
+              <p className="text-[11px] text-muted-ink mt-1.5">
+                JPG, PNG or PDF · Max 3 MB
+              </p>
             </div>
           )}
 
@@ -600,13 +709,12 @@ export default function NewDonationPage() {
         </form>
       </main>
 
-      {/* UPI QR Payment Modal */}
+      {/* UPI QR Payment Modal — display only, never submits a donation */}
       <UpiPaymentModal
         isOpen={showUpiModal}
         amount={Number(form.amount) || 0}
         upiId={upiConfig.upiId}
         payeeName={upiConfig.payeeName}
-        onConfirm={submitDonation}
         onCancel={() => setShowUpiModal(false)}
       />
     </div>

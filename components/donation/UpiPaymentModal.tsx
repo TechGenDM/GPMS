@@ -2,15 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { X, CheckCircle2, Loader2, QrCode } from 'lucide-react';
-import { twMerge } from 'tailwind-merge';
+import { X, QrCode, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface UpiPaymentModalProps {
   isOpen: boolean;
   amount: number;
   upiId: string;
   payeeName: string;
-  onConfirm: () => void;
+  /**
+   * Called when the user closes the modal (X button or Done button).
+   * This callback MUST NOT trigger donation submission — it only closes the modal.
+   */
   onCancel: () => void;
 }
 
@@ -19,7 +21,6 @@ export function UpiPaymentModal({
   amount,
   upiId,
   payeeName,
-  onConfirm,
   onCancel,
 }: UpiPaymentModalProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
@@ -80,6 +81,7 @@ export function UpiPaymentModal({
           <button
             onClick={onCancel}
             className="text-muted-ink hover:text-ink transition-colors p-1 rounded-full hover:bg-hair/30"
+            aria-label="Close QR modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -120,18 +122,23 @@ export function UpiPaymentModal({
             </p>
           </div>
 
-          {/* Action Button */}
+          {/*
+           * BUSINESS RULE: This button ONLY closes the modal.
+           * It does NOT create, submit, or modify a donation.
+           * Donation submission happens only after the user uploads
+           * payment proof and clicks "Record Donation" on the main form.
+           */}
           <button
-            onClick={onConfirm}
+            onClick={onCancel}
             className="w-full flex items-center justify-center gap-2 px-6 py-[14px] text-[15px] font-bold text-white bg-sage rounded-[14px] shadow-sm transition-all hover:bg-sage/90 active:scale-[0.98]"
           >
             <CheckCircle2 className="w-5 h-5" />
-            Payment Received
+            Done — I&apos;ve completed the payment
           </button>
 
           <p className="text-[11px] text-muted-ink/70 mt-4 leading-tight">
-            Clicking 'Payment Received' confirms you have verified the
-            transaction on the donor's device.
+            After closing, upload your payment screenshot to complete the
+            donation record.
           </p>
         </div>
       </div>

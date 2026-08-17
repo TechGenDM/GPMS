@@ -5,8 +5,9 @@
  *
  * Donations sheet structure (actual GPMS Database 2026):
  * | A: Donation ID | B: Receipt ID | C: Donor Name | D: Phone | E: Amount |
- * | F: Payment Mode | G: UPI Ref | H: Collector ID | I: Collector Name |
+ * | F: Payment Mode | G: UPI Ref (retired) | H: Collector ID | I: Collector Name |
  * | J: Purpose | K: Remarks | L: Status | M: Created At | N: Updated At |
+ * | O: Transaction ID | P: Payment Proof Link |
  *
  * Column indexes (0-based):
  *  0  Donation ID
@@ -15,7 +16,7 @@
  *  3  Phone
  *  4  Amount
  *  5  Payment Mode
- *  6  UPI Ref
+ *  6  UPI Ref (retired — kept for backward compatibility with existing data)
  *  7  Collector ID
  *  8  Collector Name
  *  9  Purpose
@@ -23,6 +24,8 @@
  * 11  Status
  * 12  Created At
  * 13  Updated At
+ * 14  Transaction ID
+ * 15  Payment Proof Link (Google Drive URL; empty for Cash donations)
  */
 
 var DonationService = {
@@ -48,53 +51,126 @@ var DonationService = {
       );
     }
 
+    var sheet = getSheet(CONFIG.sheets.donations);
+
+    // 1b. Initial dirty read for idempotency (fast path, before slow file upload)
+    var existingRow = findRow(sheet, 15, transactionId); // Column 15 (O) is Transaction ID
+    if (existingRow !== -1) {
+      var currentData = sheet.getRange(existingRow, 1, 1, 16).getValues()[0];
+      return success(
+        'Donation recorded (idempotent)',
+        DonationService._mapDonation(currentData)
+      );
+    }
+
+    // 2. Upload Payment Proof File (Slow Drive operation — outside the lock)
+    var finalProofLink = '';
+    var proofFileId = null;
+
+    if (payload.paymentProofFile && payload.paymentProofFile.base64) {
+      var fileValidation = validateBillFile(payload.paymentProofFile);
+      if (!fileValidation.valid) {
+        return error(fileValidation.code, fileValidation.message);
+      }
+
+      var settingsSheet = getSheet(CONFIG.sheets.settings);
+      var proofFolderRow = findRow(settingsSheet, 1, 'Donation Proofs Folder ID');
+      if (proofFolderRow === -1) {
+        return error(
+          ERROR_CODES.INTERNAL_ERROR,
+          'Donation Proofs Folder ID is not configured in Settings.'
+        );
+      }
+      var proofFolderId = settingsSheet.getRange(proofFolderRow, 2).getValue();
+
+      try {
+        var folder = DriveApp.getFolderById(proofFolderId);
+
+        var base64Data = payload.paymentProofFile.base64;
+        if (base64Data.indexOf('base64,') !== -1) {
+          base64Data = base64Data.split('base64,')[1];
+        }
+
+        var blob = Utilities.newBlob(
+          Utilities.base64Decode(base64Data),
+          payload.paymentProofFile.mimeType,
+          'TEMP_' + payload.paymentProofFile.name
+        );
+        var uploadedFile = folder.createFile(blob);
+        finalProofLink = uploadedFile.getUrl();
+        proofFileId = uploadedFile.getId();
+      } catch (e) {
+        return error(
+          ERROR_CODES.UPLOAD_FAILED,
+          'Failed to upload payment proof: ' + e.message
+        );
+      }
+    }
+
+    // 3. The Critical Transaction (Locked)
     var lock = LockService.getScriptLock();
+    var donationId;
     try {
       lock.waitLock(15000); // 15 second lock wait
 
-      var sheet = getSheet(CONFIG.sheets.donations);
-
-      // Idempotency check: Column 15 (O) is Transaction ID
-      var existingRow = findRow(sheet, 15, transactionId);
+      // Double-check idempotency under lock
+      existingRow = findRow(sheet, 15, transactionId);
       if (existingRow !== -1) {
-        // Idempotent success: return existing record
-        var currentData = sheet.getRange(existingRow, 1, 1, 15).getValues()[0];
+        // Orphan cleanup: trash the proof file — this transaction already exists
+        if (proofFileId) {
+          try { DriveApp.getFileById(proofFileId).setTrashed(true); } catch (delErr) {}
+        }
+        var currentData = sheet.getRange(existingRow, 1, 1, 16).getValues()[0];
         return success(
           'Donation recorded (idempotent)',
           DonationService._mapDonation(currentData)
         );
       }
 
-      // 2. Generate IDs (skip inner locks)
-      var donationId = ReceiptService.generateDonationId(true);
+      // Generate IDs (skip inner locks — we already hold the script lock)
+      donationId = ReceiptService.generateDonationId(true);
       var receiptId = ReceiptService.generateReceiptId(true);
       var date = now();
 
-      // 3. Save to sheet (15 columns: A–O)
+      // Rename proof file now that we have the final donation ID
+      if (proofFileId) {
+        try {
+          DriveApp.getFileById(proofFileId).setName(
+            donationId + '_' + payload.paymentProofFile.name
+          );
+        } catch (renErr) {}
+      }
+
+      // Save to sheet (16 columns: A–P)
       safeAppendRow(
         sheet,
         [
-          donationId, // A: Donation ID
-          receiptId, // B: Receipt ID
-          payload.donorName, // C: Donor Name
-          payload.phone || '', // D: Phone
-          payload.amount, // E: Amount
-          payload.paymentMode, // F: Payment Mode
-          payload.upiRef || '', // G: UPI Ref
-          user.id, // H: Collector ID (authenticated user)
-          user.fullName, // I: Collector Name
-          payload.purpose || 'General', // J: Purpose
-          payload.remarks || '', // K: Remarks
-          CONFIG.status.active, // L: Status
-          date, // M: Created At
-          date, // N: Updated At
-          transactionId, // O: Transaction ID
+          donationId,                    // A: Donation ID
+          receiptId,                     // B: Receipt ID
+          payload.donorName,             // C: Donor Name
+          payload.phone || '',           // D: Phone
+          payload.amount,                // E: Amount
+          payload.paymentMode,           // F: Payment Mode
+          '',                            // G: UPI Ref (retired — kept for schema backward compatibility)
+          user.id,                       // H: Collector ID (authenticated user)
+          user.fullName,                 // I: Collector Name
+          payload.purpose || 'General',  // J: Purpose
+          payload.remarks || '',         // K: Remarks
+          CONFIG.status.active,          // L: Status
+          date,                          // M: Created At
+          date,                          // N: Updated At
+          transactionId,                 // O: Transaction ID
+          finalProofLink,                // P: Payment Proof Link
         ],
         0 // ID Col index (A)
       );
 
       SpreadsheetApp.flush(); // Ensure row is written before releasing lock
     } catch (e) {
+      // Orphan cleanup: trash the uploaded proof file if the transaction failed
+      if (proofFileId) {
+        try { DriveApp.getFileById(proofFileId).setTrashed(true); } catch (delErr) {}
+      }
       return error(
         ERROR_CODES.INTERNAL_ERROR,
         'Failed to process transaction: ' + e.message
@@ -114,6 +190,7 @@ var DonationService = {
         amount: payload.amount,
         donor: payload.donorName,
         mode: payload.paymentMode,
+        hasProof: !!finalProofLink,
       }),
     });
 
@@ -402,20 +479,21 @@ var DonationService = {
    */
   _mapDonation: function (row) {
     return {
-      id: row[0], // A: Donation ID
-      receiptId: row[1], // B: Receipt ID
-      donorName: row[2], // C: Donor Name
-      phone: row[3], // D: Phone
-      amount: row[4], // E: Amount
-      paymentMode: row[5], // F: Payment Mode
-      upiRef: row[6], // G: UPI Ref
-      collectorId: row[7], // H: Collector ID
-      collectorName: row[8], // I: Collector Name
-      purpose: row[9], // J: Purpose
-      remarks: row[10], // K: Remarks
-      status: row[11], // L: Status
-      createdAt: row[12], // M: Created At
-      updatedAt: row[13], // N: Updated At
+      id: row[0],               // A: Donation ID
+      receiptId: row[1],        // B: Receipt ID
+      donorName: row[2],        // C: Donor Name
+      phone: row[3],            // D: Phone
+      amount: row[4],           // E: Amount
+      paymentMode: row[5],      // F: Payment Mode
+      upiRef: row[6],           // G: UPI Ref (retired — preserved for existing data)
+      collectorId: row[7],      // H: Collector ID
+      collectorName: row[8],    // I: Collector Name
+      purpose: row[9],          // J: Purpose
+      remarks: row[10],         // K: Remarks
+      status: row[11],          // L: Status
+      createdAt: row[12],       // M: Created At
+      updatedAt: row[13],       // N: Updated At
+      paymentProofLink: row[15] || '', // P: Payment Proof Link (empty for Cash / old records)
     };
   },
 
