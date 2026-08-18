@@ -439,7 +439,55 @@ var ExpenseService = {
       }
     }
 
-    return success('Expenses retrieved', results);
+    // Sort
+    var sortBy = payload.sortBy || 'createdAt';
+    var sortOrder = payload.sortOrder || 'desc';
+
+    results.sort(function (a, b) {
+      var valA = a[sortBy];
+      var valB = b[sortBy];
+
+      if (sortBy === 'createdAt') {
+        valA = new Date(valA).getTime();
+        valB = new Date(valB).getTime();
+      } else if (sortBy === 'amount') {
+        valA = Number(valA) || 0;
+        valB = Number(valB) || 0;
+      } else {
+        valA = String(valA || '').toLowerCase();
+        valB = String(valB || '').toLowerCase();
+      }
+
+      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    if (payload.exportAll) {
+      return success('Expenses retrieved for export', {
+        data: results,
+        pagination: null
+      });
+    }
+
+    var page = parseInt(payload.page, 10) || 1;
+    var limit = parseInt(payload.limit, 10) || 50;
+    var totalRecords = results.length;
+    var totalPages = Math.ceil(totalRecords / limit) || 1;
+    var startIdx = (page - 1) * limit;
+    var pagedResults = results.slice(startIdx, startIdx + limit);
+
+    return success('Expenses retrieved', {
+      data: pagedResults,
+      pagination: {
+        totalRecords: totalRecords,
+        page: page,
+        limit: limit,
+        totalPages: totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1
+      }
+    });
   },
 
   /**

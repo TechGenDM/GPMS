@@ -205,6 +205,7 @@ var UserService = {
     var cacheEntry = {
       id: user.id,
       fullName: user.fullName,
+      email: user.email,
       role: user.role,
       status: user.status,
     };

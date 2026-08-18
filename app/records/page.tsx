@@ -13,6 +13,9 @@ import {
   Ban,
   ArrowLeft,
   Paperclip,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RecordDetailModal } from '@/components/records/RecordDetailModal';
@@ -38,6 +41,26 @@ export default function RecordsPage() {
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(50);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [totalRecords, setTotalRecords] = useState(0);
+
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, debouncedSearchQuery, startDate, endDate, statusFilter, sortBy, sortOrder]);
+
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
 
   const isAdmin =
@@ -58,12 +81,23 @@ export default function RecordsPage() {
           ? '/records/donations'
           : '/records/expenses';
 
-      const res = await fetchApi<any[]>(endpoint, {
+      const res = await fetchApi<{ data: any[]; pagination: any }>(endpoint, {
         method: 'POST',
+        body: {
+          page,
+          limit: pageSize,
+          sortBy,
+          sortOrder,
+          searchQuery: debouncedSearchQuery,
+          startDate,
+          endDate,
+          status: statusFilter,
+        }
       });
 
       if (res.success && res.data) {
-        setAllData(res.data);
+        setAllData(res.data.data || []);
+        setTotalRecords(res.data.pagination?.totalRecords || 0);
       } else {
         feedback.showError(res.message || 'Failed to fetch records');
       }
@@ -75,52 +109,40 @@ export default function RecordsPage() {
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [activeTab, page, debouncedSearchQuery, startDate, endDate, statusFilter, sortBy, sortOrder]);
 
-  const filteredData = useMemo(() => {
-    return allData.filter((row) => {
-      let match = true;
-
-      if (statusFilter && row.status !== statusFilter) match = false;
-
-      if (startDate) {
-        const sDate = new Date(startDate);
-        sDate.setHours(0, 0, 0, 0);
-        const dDate = new Date(row.createdAt || row.date);
-        if (dDate < sDate) match = false;
-      }
-
-      if (endDate) {
-        const eDate = new Date(endDate);
-        eDate.setHours(23, 59, 59, 999);
-        const dDate = new Date(row.createdAt || row.date);
-        if (dDate > eDate) match = false;
-      }
-
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        let searchString = '';
-        if (activeTab === 'donations') {
-          searchString =
-            `${row.receiptId} ${row.donorName} ${row.phone || ''}`.toLowerCase();
-        } else {
-          searchString =
-            `${row.id} ${row.vendor || ''} ${row.description || ''}`.toLowerCase();
-        }
-        if (!searchString.includes(query)) match = false;
-      }
-
-      return match;
-    });
-  }, [allData, searchQuery, startDate, endDate, statusFilter, activeTab]);
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
 
   const handleExportCSV = async () => {
-    if (filteredData.length === 0) {
-      feedback.showError('No records to export');
-      return;
-    }
-
     try {
+      const endpoint = activeTab === 'donations' ? '/records/donations' : '/records/expenses';
+      
+      const res = await fetchApi<{ data: any[]; pagination: any }>(endpoint, {
+        method: 'POST',
+        body: {
+          sortBy,
+          sortOrder,
+          searchQuery: debouncedSearchQuery,
+          startDate,
+          endDate,
+          status: statusFilter,
+          exportAll: true,
+        }
+      });
+
+      if (!res.success || !res.data || !res.data.data || res.data.data.length === 0) {
+        feedback.showError('No records to export matching current filters');
+        return;
+      }
+
+      const exportData = res.data.data;
       const headers =
         activeTab === 'donations'
           ? [
@@ -147,7 +169,7 @@ export default function RecordsPage() {
 
       const csvRows = [headers.join(',')];
 
-      for (const row of filteredData) {
+      for (const row of exportData) {
         const rawDate = row.createdAt || row.date || '';
         const formattedDate = rawDate
           ? parseGPMSDate(rawDate).toLocaleDateString('en-IN')
@@ -195,8 +217,8 @@ export default function RecordsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: activeTab,
-          count: filteredData.length,
-          filters: { searchQuery, startDate, endDate, statusFilter },
+          count: exportData.length,
+          filters: { searchQuery: debouncedSearchQuery, startDate, endDate, statusFilter },
         }),
       });
 
@@ -229,7 +251,7 @@ export default function RecordsPage() {
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-1.5 h-9"
-                disabled={loading || filteredData.length === 0}
+                disabled={loading || totalRecords === 0}
               >
                 <Download className="w-[16px] h-[16px]" />
                 <span className="hidden sm:inline text-[13px] font-bold">
@@ -318,14 +340,27 @@ export default function RecordsPage() {
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-cream-2 text-muted-ink text-[12px] font-bold uppercase tracking-wider border-b border-hair">
-                  <th className="px-6 py-[16px]">
-                    {activeTab === 'donations' ? 'Receipt ID' : 'Expense ID'}
+                  <th className="px-6 py-[16px] cursor-pointer hover:bg-hair/50 transition-colors" onClick={() => handleSort('createdAt')}>
+                    <div className="flex items-center gap-1">
+                      {activeTab === 'donations' ? 'Receipt ID' : 'Expense ID'}
+                      <ArrowUpDown className="w-3 h-3 opacity-50" />
+                    </div>
                   </th>
                   <th className="px-6 py-[16px]">
                     {activeTab === 'donations' ? 'Donor' : 'Vendor'}
                   </th>
-                  <th className="px-6 py-[16px] text-right">Amount</th>
-                  <th className="px-6 py-[16px]">Date</th>
+                  <th className="px-6 py-[16px] text-right cursor-pointer hover:bg-hair/50 transition-colors" onClick={() => handleSort('amount')}>
+                    <div className="flex items-center justify-end gap-1">
+                      Amount
+                      <ArrowUpDown className="w-3 h-3 opacity-50" />
+                    </div>
+                  </th>
+                  <th className="px-6 py-[16px] cursor-pointer hover:bg-hair/50 transition-colors" onClick={() => handleSort('createdAt')}>
+                    <div className="flex items-center gap-1">
+                      Date
+                      <ArrowUpDown className="w-3 h-3 opacity-50" />
+                    </div>
+                  </th>
                   <th className="px-6 py-[16px]">Status</th>
                 </tr>
               </thead>
@@ -340,7 +375,7 @@ export default function RecordsPage() {
                       <span className="font-semibold">Loading records...</span>
                     </td>
                   </tr>
-                ) : filteredData.length === 0 ? (
+                ) : allData.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
@@ -353,7 +388,7 @@ export default function RecordsPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((row, idx) => {
+                  allData.map((row, idx) => {
                     const id =
                       activeTab === 'donations' ? row.receiptId : row.id;
                     const name =
@@ -411,6 +446,40 @@ export default function RecordsPage() {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination UI */}
+          {totalRecords > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-hair gap-4 bg-white">
+              <div className="text-sm font-medium text-muted-ink">
+                Showing {Math.min((page - 1) * pageSize + 1, totalRecords)}-{Math.min(page * pageSize, totalRecords)} of {totalRecords} records
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1 || loading}
+                  className="h-9 px-3 flex items-center gap-1"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Previous</span>
+                </Button>
+                <div className="text-sm font-bold text-ink px-2">
+                  Page {page} of {Math.ceil(totalRecords / pageSize)}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page >= Math.ceil(totalRecords / pageSize) || loading}
+                  className="h-9 px-3 flex items-center gap-1"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
