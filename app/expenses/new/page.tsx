@@ -38,11 +38,57 @@ const INITIAL_FORM: ExpenseFormData = {
   billFile: null,
 };
 
+// ── Image Processing Utility ──────────────────────────────────────────
+const compressImage = async (file: File): Promise<{ base64: string; mimeType: string; name: string }> => {
+  return new Promise((resolve, reject) => {
+    // createObjectURL respects native EXIF orientation when drawn to canvas
+    // and strips the EXIF metadata in the output.
+    const url = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let width = img.width;
+      let height = img.height;
+      const MAX_DIMENSION = 1920;
+
+      if (width > height) {
+        if (width > MAX_DIMENSION) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        }
+      } else {
+        if (height > MAX_DIMENSION) {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('Canvas context not available'));
+
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      
+      const newName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+      resolve({ base64: dataUrl, mimeType: 'image/jpeg', name: newName });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image for compression'));
+    };
+    img.src = url;
+  });
+};
+
 export default function RecordExpense() {
   const router = useRouter();
   const [form, setForm] = useState<ExpenseFormData>(INITIAL_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
 
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
@@ -114,43 +160,60 @@ export default function RecordExpense() {
     []
   );
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const MAX_PROOF_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      setValidationError('File is too large. Maximum size is 5MB.');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-
-    // Validate type
-    const validTypes = [
-      'application/pdf',
-      'image/jpeg',
-      'image/png',
-      'image/jpg',
-    ];
-    if (!validTypes.includes(file.type)) {
-      setValidationError(
-        'Invalid file type. Only PDF, JPG, and PNG are allowed.'
-      );
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-
     setValidationError(null);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      updateField('billFile', {
-        base64: base64String,
-        mimeType: file.type,
-        name: file.name,
-      });
-    };
-    reader.readAsDataURL(file);
+
+    // If PDF, just validate size and read
+    if (file.type === 'application/pdf') {
+      if (file.size > MAX_PROOF_SIZE_BYTES) {
+        setValidationError('PDF is too large. Maximum size is 5MB.');
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        updateField('billFile', {
+          base64: base64String,
+          mimeType: file.type,
+          name: file.name,
+        });
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // If image, compress
+    if (file.type.startsWith('image/')) {
+      try {
+        setIsProcessingImage(true);
+        const processedImage = await compressImage(file);
+
+        const base64Size = Math.round((processedImage.base64.length * 3) / 4);
+        if (base64Size > MAX_PROOF_SIZE_BYTES) {
+          setValidationError('Processed image is still larger than 5 MB. Please try a different photo.');
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          return;
+        }
+
+        updateField('billFile', processedImage);
+      } catch (error) {
+        console.error('Image processing failed', error);
+        setValidationError('Failed to process image. Please try again.');
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      } finally {
+        setIsProcessingImage(false);
+      }
+      return;
+    }
+
+    setValidationError('Invalid file type. Only PDF, JPG, and PNG are allowed.');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const removeFile = () => {
@@ -659,15 +722,27 @@ export default function RecordExpense() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-hair bg-cream hover:bg-hair/30 rounded-[16px] transition-colors"
+                  disabled={isProcessingImage}
+                  className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-hair bg-cream hover:bg-hair/30 rounded-[16px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Upload className="w-8 h-8 text-muted-ink mb-2" />
-                  <p className="text-[14px] font-bold text-ink">
-                    Tap to select a file
-                  </p>
-                  <p className="text-[12px] font-medium text-muted-ink mt-1">
-                    PDF, JPG, PNG (Max 5MB)
-                  </p>
+                  {isProcessingImage ? (
+                    <>
+                      <RefreshCw className="w-8 h-8 text-muted-ink mb-2 animate-spin" />
+                      <p className="text-[14px] font-bold text-ink">
+                        Processing image...
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 text-muted-ink mb-2" />
+                      <p className="text-[14px] font-bold text-ink">
+                        Tap to select a file
+                      </p>
+                      <p className="text-[12px] font-medium text-muted-ink mt-1">
+                        PDF, JPG, PNG (Max 5MB)
+                      </p>
+                    </>
+                  )}
                 </button>
               </div>
             )}
@@ -677,7 +752,7 @@ export default function RecordExpense() {
           <div className="pt-2">
             <Button
               type="submit"
-              disabled={isSubmitting || isLoadingCategories}
+              disabled={isSubmitting || isLoadingCategories || isProcessingImage}
               className="w-full h-[54px] text-[16px] bg-ink hover:bg-ink/90 text-cream rounded-[14px] font-bold shadow-sm disabled:opacity-50 border-transparent"
             >
               {isSubmitting ? (
