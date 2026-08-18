@@ -48,6 +48,7 @@ export const metadata: Metadata = {
 
 import { FeedbackProvider } from '@/components/ui/Feedback';
 import { SessionProvider } from 'next-auth/react';
+import { Analytics } from '@vercel/analytics/next';
 
 export default function RootLayout({
   children,
@@ -63,6 +64,7 @@ export default function RootLayout({
         <SessionProvider>
           <FeedbackProvider>{children}</FeedbackProvider>
         </SessionProvider>
+        <Analytics />
       </body>
     </html>
   );
