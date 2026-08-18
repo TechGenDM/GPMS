@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion, animate, Variants } from 'motion/react';
+import { motion, animate, Variants, useReducedMotion } from 'motion/react';
+import Image from 'next/image';
 import { socialLinks } from '@/lib/public-page-config';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -49,6 +50,7 @@ function AnimatedCounter({
 
 // ─── Floating Particles ──────────────────────────────────────
 function Particles() {
+  const shouldReduceMotion = useReducedMotion();
   const [particles, setParticles] = useState<
     {
       id: number;
@@ -60,8 +62,9 @@ function Particles() {
     }[]
   >([]);
   useEffect(() => {
+    if (shouldReduceMotion) return;
     setParticles(
-      Array.from({ length: 36 }).map((_, i) => ({
+      Array.from({ length: 14 }).map((_, i) => ({
         id: i,
         left: `${Math.random() * 100}%`,
         size: Math.random() * 3 + 1.5,
@@ -524,9 +527,11 @@ export default function PublicDashboard() {
                   ease: 'easeInOut',
                 }}
               />
-              <img
+              <Image
                 src="/seal.svg"
                 alt=""
+                width={40}
+                height={40}
                 className="w-[36px] h-[36px] sm:w-[40px] sm:h-[40px] object-contain"
               />
             </div>
@@ -670,11 +675,13 @@ export default function PublicDashboard() {
                 >
                   {/* Thumbnail */}
                   <div className="relative aspect-[16/10] sm:aspect-video bg-[#16102A] overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src="/ganesh-darshan.jpg"
                       alt=""
-                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                      fill
+                      priority
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}

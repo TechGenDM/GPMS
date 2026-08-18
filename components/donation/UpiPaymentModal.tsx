@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import QRCode from 'qrcode';
 import { X, QrCode, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface UpiPaymentModalProps {
@@ -34,6 +33,7 @@ export function UpiPaymentModal({
 
       setIsGenerating(true);
       try {
+        const QRCode = (await import('qrcode')).default || await import('qrcode');
         // Standard UPI deep link format
         // upi://pay?pa=UPIID&pn=NAME&am=AMOUNT&cu=INR
         const encodedName = encodeURIComponent(payeeName || 'GPMS Donation');

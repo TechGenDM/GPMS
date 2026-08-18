@@ -1,5 +1,3 @@
-import { jsPDF } from 'jspdf';
-import QRCode from 'qrcode';
 import { parseGPMSDate } from './utils';
 
 interface ReceiptData {
@@ -27,6 +25,9 @@ export interface ExpenseRecordData {
  * Generates and downloads a PDF receipt for a donation.
  */
 export async function generateAndDownloadReceipt(data: ReceiptData) {
+  const { jsPDF } = await import('jspdf');
+  const QRCode = (await import('qrcode')).default || await import('qrcode');
+
   // Create a new A5 portrait PDF (standard for receipts)
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -146,6 +147,9 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
 export async function generateAndDownloadExpenseRecord(
   data: ExpenseRecordData
 ) {
+  const { jsPDF } = await import('jspdf');
+  const QRCode = (await import('qrcode')).default || await import('qrcode');
+
   // Create a new A5 portrait PDF (standard for records)
   const doc = new jsPDF({
     orientation: 'portrait',
