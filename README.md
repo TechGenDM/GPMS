@@ -139,7 +139,7 @@ Google Sheets serves as the database, with the backend relying on exact 0-indexe
 
 | Variable              | Purpose                          |
 | --------------------- | -------------------------------- |
-| `NEXT_PUBLIC_API_URL` | Deployed Apps Script Web App URL |
+| `API_URL` | Deployed Apps Script Web App URL |
 | `AUTH_GOOGLE_ID`      | Google OAuth client ID           |
 | `AUTH_GOOGLE_SECRET`  | Google OAuth client secret       |
 | `AUTH_SECRET`         | NextAuth.js encryption key       |
@@ -174,7 +174,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-For the backend, deploy `Config.gs` and the rest of the Apps Script project from the Google Sheet's **Extensions → Apps Script** menu, execute as _Me_, set access to _Anyone_, then copy the resulting Web App URL into `NEXT_PUBLIC_API_URL`.
+For the backend, deploy `Config.gs` and the rest of the Apps Script project from the Google Sheet's **Extensions → Apps Script** menu, execute as _Me_, set access to _Anyone_, then copy the resulting Web App URL into `API_URL`.
 
 <br/>
 

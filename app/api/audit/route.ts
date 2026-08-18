@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const limit = searchParams.get('limit') || '500';
 
-    const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
+    const appsScriptUrl = process.env.API_URL;
     if (!appsScriptUrl) {
       return NextResponse.json(
         { error: 'Server configuration error' },
