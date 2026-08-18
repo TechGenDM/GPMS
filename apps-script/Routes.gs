@@ -144,6 +144,7 @@ function dispatch(action, payload) {
     // 4. Execute the requested protected route.
     return handler(user, payload);
   } catch (e) {
+    console.error('Unhandled Route Error: ' + (e.stack || e));
     return error(ERROR_CODES.INTERNAL_ERROR, e.message);
   }
 }

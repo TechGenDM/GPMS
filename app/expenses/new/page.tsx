@@ -221,14 +221,6 @@ export default function RecordExpense() {
           date: result.data.date,
           billLink: result.data.billLink,
         });
-      } else if (!result.success) {
-        showError(result.message || 'Failed to record expense');
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        showError(err.message || 'An unexpected error occurred');
-      } else {
-        showError('An unexpected error occurred');
       }
     } finally {
       setIsSubmitting(false);

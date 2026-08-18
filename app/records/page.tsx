@@ -21,6 +21,7 @@ import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 import { parseGPMSDate } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { fetchApi } from '@/lib/api';
 
 type Tab = 'donations' | 'expenses';
 
@@ -54,27 +55,18 @@ export default function RecordsPage() {
       setLoading(true);
       const endpoint =
         activeTab === 'donations'
-          ? '/api/records/donations'
-          : '/api/records/expenses';
+          ? '/records/donations'
+          : '/records/expenses';
 
-      const res = await fetch(endpoint, {
+      const res = await fetchApi<any[]>(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
       });
 
-      const json = await res.json();
-      if (json.success) {
-        setAllData(json.data || []);
+      if (res.success && res.data) {
+        setAllData(res.data);
       } else {
-        feedback.showError(
-          json.error || json.message || 'Failed to fetch records'
-        );
+        feedback.showError(res.message || 'Failed to fetch records');
       }
-    } catch (err: any) {
-      feedback.showError(
-        err.message || 'An error occurred while fetching records'
-      );
     } finally {
       setLoading(false);
     }

@@ -57,12 +57,18 @@ export async function fetchApi<T = unknown>(
       }
       return data;
     } else {
+      if (feedback?.clear) {
+        feedback.clear();
+      }
       if (feedback?.showError) {
         feedback.showError(data.message || 'An error occurred');
       }
       return data;
     }
   } catch (error: unknown) {
+    if (feedback?.clear) {
+      feedback.clear();
+    }
     const errorMessage =
       error instanceof Error ? error.message : 'Network error';
     if (feedback?.showError) {

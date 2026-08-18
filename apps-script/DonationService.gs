@@ -118,7 +118,7 @@ var DonationService = {
       if (existingRow !== -1) {
         // Orphan cleanup: trash the proof file — this transaction already exists
         if (proofFileId) {
-          try { DriveApp.getFileById(proofFileId).setTrashed(true); } catch (delErr) {}
+          try { DriveApp.getFileById(proofFileId).setTrashed(true); } catch (delErr) { console.warn('Failed to delete orphaned file:', delErr); }
         }
         var currentData = sheet.getRange(existingRow, 1, 1, 16).getValues()[0];
         return success(
@@ -169,7 +169,7 @@ var DonationService = {
     } catch (e) {
       // Orphan cleanup: trash the uploaded proof file if the transaction failed
       if (proofFileId) {
-        try { DriveApp.getFileById(proofFileId).setTrashed(true); } catch (delErr) {}
+        try { DriveApp.getFileById(proofFileId).setTrashed(true); } catch (delErr) { console.warn('Failed to delete orphaned file:', delErr); }
       }
       return error(
         ERROR_CODES.INTERNAL_ERROR,
