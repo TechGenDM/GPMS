@@ -12,6 +12,18 @@
  */
 
 var UserService = {
+  // ==========================================
+  // Cache Configuration
+  // ==========================================
+
+  /** CacheService TTL for user authorization lookups (seconds). */
+  _USER_CACHE_TTL: 300,
+
+  /**
+   * Cache key prefix for user authorization entries.
+   * Namespaced to avoid collisions with other cache consumers.
+   */
+  _USER_CACHE_PREFIX: 'gpms_user_',
   /**
    * Finds a user by email address.
    *
@@ -58,7 +70,9 @@ var UserService = {
 
   /**
    * Authenticates a user based on their Google email.
-   * This is the core login flow. No passwords required.
+   * This is the ONLY function that writes a 'login' audit entry.
+   * Called exclusively by the auth/verify endpoint during Google OAuth sign-in.
+   * No passwords required.
    *
    * @param {Object} payload - Must include { email }.
    * @returns {ContentOutput} JSON response with User object if Active.
@@ -87,21 +101,125 @@ var UserService = {
       );
     }
 
-    // Update last login
-    UserService._updateLastLogin(row);
+    // Throttle LastLogin writes to once per calendar day.
+    // Avoids a sheet write on every session token refresh.
+    var lastLogin = user.lastLogin;
+    var todayStr = Utilities.formatDate(
+      new Date(),
+      CONFIG.timezone,
+      'yyyy-MM-dd'
+    );
+    var needsLastLoginUpdate = true;
 
-    // Update the object before returning
-    user.lastLogin = now();
+    if (lastLogin) {
+      try {
+        var lastDate =
+          lastLogin instanceof Date ? lastLogin : new Date(lastLogin);
+        var lastStr = Utilities.formatDate(
+          lastDate,
+          CONFIG.timezone,
+          'yyyy-MM-dd'
+        );
+        if (lastStr === todayStr) needsLastLoginUpdate = false;
+      } catch (e) {
+        // Parse error — update anyway to be safe
+      }
+    }
 
+    if (needsLastLoginUpdate) {
+      UserService._updateLastLogin(row);
+      user.lastLogin = now();
+    }
+
+    // Real authentication event — write the login audit entry.
+    // Using action 'login' to match existing audit conventions (camelCase).
     AuditService.log({
       userId: user.id,
       userName: user.fullName,
       action: 'login',
       module: 'Auth',
-      newValue: 'User authenticated successfully',
+      newValue: 'User authenticated via Google OAuth',
     });
 
+    // Invalidate any stale cache entry so the next dispatch
+    // call always loads fresh data after a login.
+    UserService._invalidateUserCache(payload.email);
+
     return success('Authentication successful', user);
+  },
+
+  /**
+   * Read-only authorization lookup for protected route dispatch.
+   * Uses CacheService to eliminate redundant sheet reads.
+   * Does NOT write LastLogin, does NOT emit audit log entries.
+   *
+   * Cached fields: id, role, status, fullName — minimum required for
+   * UserService.authorize() and audit attribution. PII fields (phone,
+   * email, createdAt, lastLogin) are intentionally excluded from the cache.
+   *
+   * @param {string} email - Email address of the requesting user.
+   * @returns {Object|null} Minimal user object if found and Active, null otherwise.
+   */
+  getActiveUserByEmail: function (email) {
+    if (!email) return null;
+
+    var cacheKey = UserService._USER_CACHE_PREFIX + email.toLowerCase();
+    var cache = CacheService.getScriptCache();
+
+    // 1. Check cache first
+    var cached = null;
+    try {
+      cached = cache.get(cacheKey);
+    } catch (e) {
+      // CacheService unavailable — fall through to sheet read
+    }
+
+    if (cached) {
+      try {
+        var cachedUser = JSON.parse(cached);
+        // Re-verify active status from the cached record
+        if (cachedUser && cachedUser.status === CONFIG.status.active) {
+          return cachedUser;
+        }
+        // Cached user is no longer active — evict stale entry
+        cache.remove(cacheKey);
+        return null;
+      } catch (e) {
+        // Malformed cache entry — evict and fall through to sheet read
+        try { cache.remove(cacheKey); } catch (re) { /* ignore */ }
+      }
+    }
+
+    // 2. Cache miss — read from sheet
+    var row = UserService._findUserRow(email, 3);
+    if (row === -1) return null;
+
+    var sheet = getSheet(CONFIG.sheets.users);
+    var dataRow = sheet.getRange(row, 1, 1, 8).getValues()[0];
+    var user = UserService._mapUser(dataRow);
+
+    if (user.status !== CONFIG.status.active) return null;
+
+    // 3. Cache only the fields required for authorization.
+    //    Excludes phone, createdAt, lastLogin to limit stored PII.
+    var cacheEntry = {
+      id: user.id,
+      fullName: user.fullName,
+      role: user.role,
+      status: user.status,
+    };
+
+    try {
+      cache.put(
+        cacheKey,
+        JSON.stringify(cacheEntry),
+        UserService._USER_CACHE_TTL
+      );
+    } catch (e) {
+      // Cache write failed — proceed without caching; next call will retry
+    }
+
+    return cacheEntry;
   },
 
   /**
@@ -257,6 +375,11 @@ var UserService = {
       }),
     });
 
+    // Invalidate the target user's cache so their next request
+    // reflects the updated role or name immediately.
+    var targetEmail = sheet.getRange(row, 3).getValue();
+    UserService._invalidateUserCache(targetEmail);
+
     return success('User updated successfully');
   },
 
@@ -327,6 +450,11 @@ var UserService = {
       recordId: payload.userId,
     });
 
+    // Invalidate the disabled user's cache immediately so they
+    // cannot continue making authorized requests within the TTL window.
+    var disabledEmail = sheet.getRange(row, 3).getValue();
+    UserService._invalidateUserCache(disabledEmail);
+
     return success('User disabled successfully');
   },
 
@@ -365,6 +493,24 @@ var UserService = {
   // ==========================================
   // Internal Helpers
   // ==========================================
+
+  /**
+   * Removes a user's authorization cache entry.
+   * Must be called after any role or status change to prevent
+   * stale data from being served within the TTL window.
+   *
+   * @param {string} email - Email of the user to invalidate.
+   * @private
+   */
+  _invalidateUserCache: function (email) {
+    if (!email) return;
+    var cacheKey = UserService._USER_CACHE_PREFIX + email.toLowerCase();
+    try {
+      CacheService.getScriptCache().remove(cacheKey);
+    } catch (e) {
+      // CacheService unavailable — cache will expire naturally via TTL
+    }
+  },
 
   /**
    * Maps a raw sheet row to a standard User object.

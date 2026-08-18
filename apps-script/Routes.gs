@@ -131,20 +131,15 @@ function dispatch(action, payload) {
       );
     }
 
-    // 3. Authenticate the requesting user.
-    var authResponse = JSON.parse(
-      UserService.authenticate({
-        email: payload.userEmail,
-      }).getContent()
-    );
-
-    // Reject invalid or disabled users.
-    if (authResponse.success === false) {
-      return error(authResponse.code, authResponse.message);
+    // 3. Look up the requesting user (read-only, cached — no side-effects).
+    //    getActiveUserByEmail() returns null for unknown or disabled users.
+    var user = UserService.getActiveUserByEmail(payload.userEmail);
+    if (!user) {
+      return error(
+        ERROR_CODES.UNAUTHORIZED,
+        'Authentication required: User not found or inactive'
+      );
     }
-
-    // Authenticated and active GPMS user.
-    var user = authResponse.data;
 
     // 4. Execute the requested protected route.
     return handler(user, payload);
