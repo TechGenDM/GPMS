@@ -16,7 +16,7 @@ export async function GET() {
       );
     }
 
-    const appsScriptUrl = process.env.API_URL;
+    const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!appsScriptUrl) {
       return NextResponse.json(
         { success: false, message: 'Server configuration error' },
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const appsScriptUrl = process.env.API_URL;
+    const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!appsScriptUrl) {
       return NextResponse.json(
         { success: false, message: 'Server configuration error' },

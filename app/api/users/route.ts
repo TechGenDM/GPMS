@@ -6,9 +6,9 @@ async function proxyToAppsScript(
   sessionEmail: string,
   payload: any
 ) {
-  const appsScriptUrl = process.env.API_URL;
+  const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!appsScriptUrl) {
-    console.error('[GPMS API] API_URL is not set.');
+    console.error('[GPMS API] NEXT_PUBLIC_API_URL is not set.');
     return { success: false, message: 'Server configuration error' };
   }
 

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const appsScriptUrl = process.env.API_URL;
+    const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!appsScriptUrl) {
       return NextResponse.json(
         { success: false, message: 'Server configuration error' },

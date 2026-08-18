@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const action =
       payload.type === 'expense' ? 'cancelExpense' : 'cancelDonation';
 
-    const appsScriptUrl = process.env.API_URL;
+    const appsScriptUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!appsScriptUrl) {
       return NextResponse.json(
         { success: false, message: 'Server configuration error' },

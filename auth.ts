@@ -38,9 +38,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (!user.email) return false;
 
       try {
-        const backendUrl = process.env.API_URL; // e.g. /api proxy or full url
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL; // e.g. /api proxy or full url
         // Wait, for server-side NextAuth we need the full absolute URL of the Apps Script web app
-        // Since API_URL is empty in .env.local, we assume there's a proxy in Next.js or we hit it directly
+        // Since NEXT_PUBLIC_API_URL is empty in .env.local, we assume there's a proxy in Next.js or we hit it directly
         // The project plan said Next.js API Routes proxy to Apps Script.
         // For signIn, this runs SERVER-SIDE in Next.js. We can fetch our own Next.js API or just mock it temporarily
         // Let's use the local API route
