@@ -26,7 +26,7 @@ export interface ExpenseRecordData {
  */
 export async function generateAndDownloadReceipt(data: ReceiptData) {
   const { jsPDF } = await import('jspdf');
-  const QRCode = (await import('qrcode')).default || await import('qrcode');
+  const QRCode = (await import('qrcode')).default || (await import('qrcode'));
 
   // Create a new A5 portrait PDF (standard for receipts)
   const doc = new jsPDF({
@@ -148,7 +148,7 @@ export async function generateAndDownloadExpenseRecord(
   data: ExpenseRecordData
 ) {
   const { jsPDF } = await import('jspdf');
-  const QRCode = (await import('qrcode')).default || await import('qrcode');
+  const QRCode = (await import('qrcode')).default || (await import('qrcode'));
 
   // Create a new A5 portrait PDF (standard for records)
   const doc = new jsPDF({

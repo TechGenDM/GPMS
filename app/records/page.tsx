@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { RecordDetailModal } from '@/components/records/RecordDetailModal';
 import { useFeedback } from '@/components/ui/Feedback';
 import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
+import { useLanguage } from '@/components/i18n/LanguageProvider';
 import { parseGPMSDate } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -32,6 +33,7 @@ export default function RecordsPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const feedback = useFeedback();
+  const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<Tab>('donations');
   const [loading, setLoading] = useState(false);
@@ -59,7 +61,15 @@ export default function RecordsPage() {
   // Reset page to 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [activeTab, debouncedSearchQuery, startDate, endDate, statusFilter, sortBy, sortOrder]);
+  }, [
+    activeTab,
+    debouncedSearchQuery,
+    startDate,
+    endDate,
+    statusFilter,
+    sortBy,
+    sortOrder,
+  ]);
 
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
 
@@ -77,9 +87,7 @@ export default function RecordsPage() {
     try {
       setLoading(true);
       const endpoint =
-        activeTab === 'donations'
-          ? '/records/donations'
-          : '/records/expenses';
+        activeTab === 'donations' ? '/records/donations' : '/records/expenses';
 
       const res = await fetchApi<{ data: any[]; pagination: any }>(endpoint, {
         method: 'POST',
@@ -92,7 +100,7 @@ export default function RecordsPage() {
           startDate,
           endDate,
           status: statusFilter,
-        }
+        },
       });
 
       if (res.success && res.data) {
@@ -109,7 +117,16 @@ export default function RecordsPage() {
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, page, debouncedSearchQuery, startDate, endDate, statusFilter, sortBy, sortOrder]);
+  }, [
+    activeTab,
+    page,
+    debouncedSearchQuery,
+    startDate,
+    endDate,
+    statusFilter,
+    sortBy,
+    sortOrder,
+  ]);
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -122,8 +139,9 @@ export default function RecordsPage() {
 
   const handleExportCSV = async () => {
     try {
-      const endpoint = activeTab === 'donations' ? '/records/donations' : '/records/expenses';
-      
+      const endpoint =
+        activeTab === 'donations' ? '/records/donations' : '/records/expenses';
+
       const res = await fetchApi<{ data: any[]; pagination: any }>(endpoint, {
         method: 'POST',
         body: {
@@ -134,11 +152,16 @@ export default function RecordsPage() {
           endDate,
           status: statusFilter,
           exportAll: true,
-        }
+        },
       });
 
-      if (!res.success || !res.data || !res.data.data || res.data.data.length === 0) {
-        feedback.showError('No records to export matching current filters');
+      if (
+        !res.success ||
+        !res.data ||
+        !res.data.data ||
+        res.data.data.length === 0
+      ) {
+        feedback.showError(t('records.noRecordsToExport'));
         return;
       }
 
@@ -218,13 +241,18 @@ export default function RecordsPage() {
         body: JSON.stringify({
           type: activeTab,
           count: exportData.length,
-          filters: { searchQuery: debouncedSearchQuery, startDate, endDate, statusFilter },
+          filters: {
+            searchQuery: debouncedSearchQuery,
+            startDate,
+            endDate,
+            statusFilter,
+          },
         }),
       });
 
-      feedback.showSuccess('Export successful');
+      feedback.showSuccess(t('records.exportSuccessful'));
     } catch (e) {
-      feedback.showError('Export failed');
+      feedback.showError(t('records.exportFailed'));
     }
   };
 
@@ -241,7 +269,7 @@ export default function RecordsPage() {
               <ArrowLeft className="w-[20px] h-[20px]" />
             </button>
             <h1 className="font-playfair font-bold text-[20px] text-ink tracking-[0.02em]">
-              Records
+              {t('records.title')}
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -255,9 +283,11 @@ export default function RecordsPage() {
               >
                 <Download className="w-[16px] h-[16px]" />
                 <span className="hidden sm:inline text-[13px] font-bold">
-                  Export CSV
+                  {t('records.exportCsv')}
                 </span>
-                <span className="sm:hidden text-[13px] font-bold">Export</span>
+                <span className="sm:hidden text-[13px] font-bold">
+                  {t('records.export')}
+                </span>
               </Button>
             )}
           </div>
@@ -274,7 +304,7 @@ export default function RecordsPage() {
                   : 'text-muted-ink hover:text-ink hover:bg-hair/30'
               }`}
             >
-              Donations
+              {t('records.donations')}
             </button>
             <button
               onClick={() => setActiveTab('expenses')}
@@ -284,7 +314,7 @@ export default function RecordsPage() {
                   : 'text-muted-ink hover:text-ink hover:bg-hair/30'
               }`}
             >
-              Expenses
+              {t('records.expenses')}
             </button>
           </div>
         )}
@@ -297,8 +327,8 @@ export default function RecordsPage() {
                 type="text"
                 placeholder={
                   activeTab === 'donations'
-                    ? 'Search Receipt ID, Name, Phone...'
-                    : 'Search Expense ID, Vendor, Desc...'
+                    ? t('records.searchDonations')
+                    : t('records.searchExpenses')
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -325,7 +355,7 @@ export default function RecordsPage() {
                 onClick={fetchData}
                 variant="primary"
                 className="flex-shrink-0 h-[42px] px-3"
-                title="Refresh data"
+                title={t('records.refreshData')}
               >
                 <RefreshCw
                   className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
@@ -340,28 +370,41 @@ export default function RecordsPage() {
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-cream-2 text-muted-ink text-[12px] font-bold uppercase tracking-wider border-b border-hair">
-                  <th className="px-6 py-[16px] cursor-pointer hover:bg-hair/50 transition-colors" onClick={() => handleSort('createdAt')}>
+                  <th
+                    className="px-6 py-[16px] cursor-pointer hover:bg-hair/50 transition-colors"
+                    onClick={() => handleSort('createdAt')}
+                  >
                     <div className="flex items-center gap-1">
-                      {activeTab === 'donations' ? 'Receipt ID' : 'Expense ID'}
+                      {activeTab === 'donations'
+                        ? t('records.receiptId')
+                        : t('records.expenseId')}
                       <ArrowUpDown className="w-3 h-3 opacity-50" />
                     </div>
                   </th>
                   <th className="px-6 py-[16px]">
-                    {activeTab === 'donations' ? 'Donor' : 'Vendor'}
+                    {activeTab === 'donations'
+                      ? t('records.donor')
+                      : t('records.vendor')}
                   </th>
-                  <th className="px-6 py-[16px] text-right cursor-pointer hover:bg-hair/50 transition-colors" onClick={() => handleSort('amount')}>
+                  <th
+                    className="px-6 py-[16px] text-right cursor-pointer hover:bg-hair/50 transition-colors"
+                    onClick={() => handleSort('amount')}
+                  >
                     <div className="flex items-center justify-end gap-1">
-                      Amount
+                      {t('records.amount')}
                       <ArrowUpDown className="w-3 h-3 opacity-50" />
                     </div>
                   </th>
-                  <th className="px-6 py-[16px] cursor-pointer hover:bg-hair/50 transition-colors" onClick={() => handleSort('createdAt')}>
+                  <th
+                    className="px-6 py-[16px] cursor-pointer hover:bg-hair/50 transition-colors"
+                    onClick={() => handleSort('createdAt')}
+                  >
                     <div className="flex items-center gap-1">
-                      Date
+                      {t('records.date')}
                       <ArrowUpDown className="w-3 h-3 opacity-50" />
                     </div>
                   </th>
-                  <th className="px-6 py-[16px]">Status</th>
+                  <th className="px-6 py-[16px]">{t('records.status')}</th>
                 </tr>
               </thead>
               <tbody className="text-[14px]">
@@ -372,7 +415,9 @@ export default function RecordsPage() {
                       className="px-6 py-[48px] text-center text-muted-ink"
                     >
                       <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-muted-ink/50" />
-                      <span className="font-semibold">Loading records...</span>
+                      <span className="font-semibold">
+                        {t('records.loadingRecords')}
+                      </span>
                     </td>
                   </tr>
                 ) : allData.length === 0 ? (
@@ -383,7 +428,7 @@ export default function RecordsPage() {
                     >
                       <AlertCircle className="w-8 h-8 text-muted-ink/30 mx-auto mb-2" />
                       <span className="font-semibold">
-                        No records found matching your filters.
+                        {t('records.noRecordsFound')}
                       </span>
                     </td>
                   </tr>
@@ -406,7 +451,10 @@ export default function RecordsPage() {
                         <td className="px-6 py-[16px] font-mono font-bold text-ink whitespace-nowrap flex items-center gap-2">
                           {id}
                           {(row.paymentProofLink || row.billLink) && (
-                            <span title="Has attachment" className="flex items-center">
+                            <span
+                              title="Has attachment"
+                              className="flex items-center"
+                            >
                               <Paperclip className="w-4 h-4 text-sage flex-shrink-0" />
                             </span>
                           )}
@@ -446,12 +494,15 @@ export default function RecordsPage() {
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination UI */}
           {totalRecords > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-hair gap-4 bg-white">
               <div className="text-sm font-medium text-muted-ink">
-                Showing {Math.min((page - 1) * pageSize + 1, totalRecords)}-{Math.min(page * pageSize, totalRecords)} of {totalRecords} records
+                {t('records.showing')}{' '}
+                {Math.min((page - 1) * pageSize + 1, totalRecords)}-
+                {Math.min(page * pageSize, totalRecords)} {t('records.of')}{' '}
+                {totalRecords} {t('records.recordsLabel')}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -462,19 +513,24 @@ export default function RecordsPage() {
                   className="h-9 px-3 flex items-center gap-1"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Previous</span>
+                  <span className="hidden sm:inline">
+                    {t('records.previous')}
+                  </span>
                 </Button>
                 <div className="text-sm font-bold text-ink px-2">
-                  Page {page} of {Math.ceil(totalRecords / pageSize)}
+                  {t('records.page')} {page} {t('records.of')}{' '}
+                  {Math.ceil(totalRecords / pageSize)}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setPage((p) => p + 1)}
-                  disabled={page >= Math.ceil(totalRecords / pageSize) || loading}
+                  disabled={
+                    page >= Math.ceil(totalRecords / pageSize) || loading
+                  }
                   className="h-9 px-3 flex items-center gap-1"
                 >
-                  <span className="hidden sm:inline">Next</span>
+                  <span className="hidden sm:inline">{t('records.next')}</span>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>

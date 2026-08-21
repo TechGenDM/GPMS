@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X, ExternalLink, Download } from 'lucide-react';
+import { useLanguage } from '@/components/i18n/LanguageProvider';
 
 interface DocumentPreviewModalProps {
   isOpen: boolean;
@@ -12,9 +13,10 @@ export function DocumentPreviewModal({
   isOpen,
   onClose,
   documentUrl,
-  title = 'Document Preview',
+  title,
 }: DocumentPreviewModalProps) {
-  
+  const { t } = useLanguage();
+  const displayTitle = title || t('records.documentPreview');
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -30,7 +32,7 @@ export function DocumentPreviewModal({
   if (!isOpen || !documentUrl) return null;
 
   // Convert Drive /view link to /preview for iframe embedding
-  const previewUrl = documentUrl.includes('drive.google.com') 
+  const previewUrl = documentUrl.includes('drive.google.com')
     ? documentUrl.replace(/\/view.*/, '/preview')
     : documentUrl;
 
@@ -40,7 +42,7 @@ export function DocumentPreviewModal({
         {/* Header */}
         <div className="flex items-center justify-between p-[16px_20px] sm:p-[20px_24px] border-b border-hair bg-cream">
           <h2 className="font-playfair font-bold text-[18px] sm:text-[20px] text-ink tracking-[0.02em] truncate mr-4">
-            {title}
+            {displayTitle}
           </h2>
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
@@ -61,7 +63,9 @@ export function DocumentPreviewModal({
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-hair rounded-[10px] text-[13px] font-bold text-ink hover:bg-cream transition-colors shadow-sm"
           >
             <ExternalLink className="w-4 h-4" />
-            <span className="whitespace-nowrap">Open in Drive</span>
+            <span className="whitespace-nowrap">
+              {t('records.openInDrive')}
+            </span>
           </a>
           <a
             href={documentUrl}
@@ -71,16 +75,16 @@ export function DocumentPreviewModal({
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-hair rounded-[10px] text-[13px] font-bold text-ink hover:bg-cream transition-colors shadow-sm"
           >
             <Download className="w-4 h-4" />
-            <span className="whitespace-nowrap">Download</span>
+            <span className="whitespace-nowrap">{t('records.download')}</span>
           </a>
         </div>
 
         {/* Content Area */}
         <div className="flex-1 bg-cream/50 relative w-full min-h-[50vh] sm:min-h-[65vh]">
-          <iframe 
-            src={previewUrl} 
+          <iframe
+            src={previewUrl}
             className="absolute inset-0 w-full h-full border-0"
-            title={title}
+            title={displayTitle}
             allow="autoplay"
           />
         </div>
