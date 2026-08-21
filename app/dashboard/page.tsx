@@ -275,9 +275,11 @@ export default function DashboardPage() {
       const res = await fetchApi<{ data: Record<string, unknown>[] }>(endpoint, {
         method: 'POST',
         body: {
-          searchQuery: activity.id,
+          searchQuery: '',
           page: 1,
           limit: 50,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
         },
       });
 
