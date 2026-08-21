@@ -22,7 +22,7 @@ export interface ExpenseRecordData {
   billLink?: string;
 }
 
-// ─── Colour palette ───────────────────────────────────────────────────────────
+// ─── Colour palette (RGB tuples) ─────────────────────────────────────────────
 const CREAM: [number, number, number] = [250, 246, 240];
 const DARK_BROWN: [number, number, number] = [74, 55, 40];
 const MAROON: [number, number, number] = [139, 69, 19];
@@ -30,20 +30,45 @@ const GOLD: [number, number, number] = [212, 184, 150];
 const MUTED_BROWN: [number, number, number] = [139, 115, 85];
 
 /**
- * Fetches a URL and returns its contents as a base64 string.
- * Uses chunked processing to safely handle large binary files.
+ * Renders the Devanagari Sanskrit blessing using the browser's native Canvas,
+ * which supports system Devanagari fonts on all platforms.
+ * Returns a PNG data URL suitable for doc.addImage().
+ */
+function renderDevanagariToPng(
+  text: string,
+  widthPx: number,
+  heightPx: number
+): string {
+  const canvas = document.createElement('canvas');
+  canvas.width = widthPx;
+  canvas.height = heightPx;
+  const ctx = canvas.getContext('2d')!;
+
+  // Transparent background (matches cream PDF background)
+  ctx.clearRect(0, 0, widthPx, heightPx);
+
+  // Use system Devanagari font stack — supported on all modern OSes
+  ctx.font = `bold ${heightPx * 0.55}px "Noto Serif Devanagari", "Mangal", "Kokila", serif`;
+  ctx.fillStyle = '#8B4513'; // MAROON
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, widthPx / 2, heightPx / 2);
+
+  return canvas.toDataURL('image/png');
+}
+
+/**
+ * Fetches a URL as base64. Used for loading the Ganesh seal watermark.
  */
 async function fetchAsBase64(url: string): Promise<string> {
   const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`fetchAsBase64: ${url} → HTTP ${response.status}`);
-  }
+  if (!response.ok) throw new Error(`fetch ${url}: HTTP ${response.status}`);
   const buffer = await response.arrayBuffer();
   const bytes = new Uint8Array(buffer);
   let binary = '';
-  const chunkSize = 8192;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  const chunk = 8192;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
   return btoa(binary);
 }
@@ -64,8 +89,7 @@ function drawScallops(
   doc.setLineWidth(0.1);
   const step = totalWidth / count;
   for (let i = 0; i < count; i++) {
-    const cx = startX + i * step + step / 2;
-    doc.circle(cx, y, radius, 'FD');
+    doc.circle(startX + i * step + step / 2, y, radius, 'FD');
   }
 }
 
@@ -73,9 +97,9 @@ function drawScallops(
  * ═════════════════════════════════════════════════════════════════════════════
  *  DONATION — Premium ceremonial Ganesh Puja receipt (A4 portrait)
  *
- *  Fonts: fetched from /public/fonts/ as static CDN assets.
- *  Fallback: if ANY font fails to load, Helvetica is used instead — the PDF
- *  ALWAYS generates successfully regardless of font availability.
+ *  Typography: Helvetica (built-in jsPDF — zero parsing errors guaranteed).
+ *  Devanagari: Rendered via browser Canvas → embedded as PNG image.
+ *  Design: cream background, gold double border, scallops, watermark, QR.
  * ═════════════════════════════════════════════════════════════════════════════
  */
 export async function generateAndDownloadReceipt(data: ReceiptData) {
@@ -84,68 +108,32 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
 
   const origin = window.location.origin;
 
-  // ── Load custom fonts (non-fatal fallback to Helvetica if any fail) ──────
-  let useCustomFonts = false;
-  let garamondRegB64 = '';
-  let garamondItB64 = '';
-  let tiroB64 = '';
-
+  // ── Render Sanskrit blessing via Canvas → PNG ─────────────────────────────
+  // ॥ ॐ श्री गणेशाय नमः ॥
+  const devanagariText =
+    '\u0964\u0964 \u0913\u092E \u0936\u094D\u0930\u0940 \u0917\u0923\u0947\u0936\u093E\u092F \u0928\u092E\u0903 \u0964\u0964';
+  let devanagariPng: string | null = null;
   try {
-    [garamondRegB64, garamondItB64, tiroB64] = await Promise.all([
-      fetchAsBase64(`${origin}/fonts/EBGaramond-Regular.ttf`),
-      fetchAsBase64(`${origin}/fonts/EBGaramond-Italic.ttf`),
-      fetchAsBase64(`${origin}/fonts/TiroDevanagariHindi-Regular.ttf`),
-    ]);
-    useCustomFonts = true;
-    console.log('[GPMS] PDF: Custom fonts loaded successfully');
-  } catch (fontErr) {
-    console.warn(
-      '[GPMS] PDF: Custom fonts failed to load, using Helvetica fallback.',
-      fontErr
-    );
+    devanagariPng = renderDevanagariToPng(devanagariText, 900, 80);
+  } catch {
+    // Silently skip — we will show a latin fallback text instead
   }
 
-  // ── Create document ───────────────────────────────────────────────────────
+  // ── A4 portrait — using only built-in Helvetica (always available) ────────
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const PW = doc.internal.pageSize.getWidth();
-  const PH = doc.internal.pageSize.getHeight();
+  const PW = doc.internal.pageSize.getWidth(); // 210 mm
+  const PH = doc.internal.pageSize.getHeight(); // 297 mm
   const MX = 16;
   const MY = 16;
 
-  // ── Register custom fonts (only if loaded) ────────────────────────────────
-  if (useCustomFonts) {
-    doc.addFileToVFS('EBGaramond-Regular.ttf', garamondRegB64);
-    doc.addFont('EBGaramond-Regular.ttf', 'EBGaramond', 'normal');
-    doc.addFileToVFS('EBGaramond-Italic.ttf', garamondItB64);
-    doc.addFont('EBGaramond-Italic.ttf', 'EBGaramond', 'italic');
-    doc.addFileToVFS('TiroDevanagari-Regular.ttf', tiroB64);
-    doc.addFont('TiroDevanagari-Regular.ttf', 'TiroDevanagari', 'normal');
-  }
-
-  /** Set font with automatic Helvetica fallback */
-  const setFont = (
-    family: 'EBGaramond' | 'TiroDevanagari' | 'helvetica',
-    style: 'normal' | 'italic' | 'bold' = 'normal'
-  ) => {
-    if (!useCustomFonts) {
-      doc.setFont('helvetica', style === 'italic' ? 'italic' : style);
-      return;
-    }
-    if (family === 'TiroDevanagari') {
-      doc.setFont('TiroDevanagari', 'normal');
-    } else {
-      doc.setFont('EBGaramond', style);
-    }
-  };
-
   // ══════════════════════════════════════════════════════════════════════════
-  // LAYER 0 — cream background
+  // LAYER 0 — warm cream background
   // ══════════════════════════════════════════════════════════════════════════
   doc.setFillColor(...CREAM);
   doc.rect(0, 0, PW, PH, 'F');
 
   // ══════════════════════════════════════════════════════════════════════════
-  // LAYER 1 — double gold border
+  // LAYER 1 — outer decorative double gold border
   // ══════════════════════════════════════════════════════════════════════════
   const bx = MX;
   const by = MY;
@@ -159,15 +147,15 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   doc.rect(bx + 3, by + 3, bw - 6, bh - 6);
 
   // ══════════════════════════════════════════════════════════════════════════
-  // LAYER 2 — scalloped dot rows
+  // LAYER 2 — scalloped dot rows (top and bottom)
   // ══════════════════════════════════════════════════════════════════════════
-  const scStartX = bx + 3;
-  const scWidth = bw - 6;
-  drawScallops(doc, scStartX, by + 3 + 4.8, scWidth, 32, 1.3);
-  drawScallops(doc, scStartX, by + bh - 3 - 4.8, scWidth, 32, 1.3);
+  const scX = bx + 3;
+  const scW = bw - 6;
+  drawScallops(doc, scX, by + 3 + 4.8, scW, 32, 1.3);
+  drawScallops(doc, scX, by + bh - 3 - 4.8, scW, 32, 1.3);
 
   // ══════════════════════════════════════════════════════════════════════════
-  // LAYER 3 — Ganesh seal watermark (non-fatal)
+  // LAYER 3 — Ganesh seal watermark (non-fatal, purely decorative)
   // ══════════════════════════════════════════════════════════════════════════
   try {
     const sealB64 = await fetchAsBase64(`${origin}/seal.png`);
@@ -176,52 +164,55 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
     const wmY = 122;
     doc.addImage(sealB64, 'PNG', wmX, wmY, wmSize, wmSize);
     doc.setFillColor(...CREAM);
-    doc.setGState(doc.GState({ opacity: 0.8 }));
+    doc.setGState(doc.GState({ opacity: 0.82 }));
     doc.rect(wmX, wmY, wmSize, wmSize, 'F');
     doc.setGState(doc.GState({ opacity: 1.0 }));
   } catch {
-    // Watermark is purely decorative — skip silently
+    // Watermark is decorative — skip silently
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // CONTENT
+  // CONTENT (top → bottom, Y cursor)
   // ══════════════════════════════════════════════════════════════════════════
-  let y = by + 16;
+  let y = by + 14;
 
-  // ── Sanskrit blessing ──────────────────────────────────────────────────────
-  setFont('TiroDevanagari');
-  doc.setFontSize(13);
-  doc.setTextColor(...MAROON);
-  // ॥ ॐ श्री गणेशाय नमः ॥
-  doc.text(
-    '\u0964\u0964 \u0913\u092E \u0936\u094D\u0930\u0940 \u0917\u0923\u0947\u0936\u093E\u092F \u0928\u092E\u0903 \u0964\u0964',
-    PW / 2,
-    y,
-    { align: 'center' }
-  );
-  y += 12;
+  // ── Sanskrit blessing (Canvas-rendered PNG, or latin fallback) ─────────────
+  if (devanagariPng) {
+    // Embed the Canvas-rendered Devanagari as an image (90mm wide, 8mm tall)
+    const imgW = 90;
+    const imgH = 8;
+    doc.addImage(devanagariPng, 'PNG', (PW - imgW) / 2, y - 5, imgW, imgH);
+    y += 10;
+  } else {
+    // Plain latin fallback if Canvas failed
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...MAROON);
+    doc.text('|| Om Shri Ganeshaya Namah ||', PW / 2, y, { align: 'center' });
+    y += 9;
+  }
 
-  // ── ornament line ──────────────────────────────────────────────────────────
+  // ── gold ornament line ─────────────────────────────────────────────────────
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.4);
   doc.line(PW / 2 - 30, y, PW / 2 + 30, y);
-  y += 12;
+  y += 11;
 
   // ── organisation name ──────────────────────────────────────────────────────
-  setFont('EBGaramond', 'normal');
-  doc.setFontSize(28);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(24);
   doc.setTextColor(...DARK_BROWN);
   doc.text('Ganesh Puja Kharsawan', PW / 2, y, { align: 'center' });
   y += 9;
 
   // ── subtitle ───────────────────────────────────────────────────────────────
-  setFont('EBGaramond', 'italic');
-  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
   doc.setTextColor(...MUTED_BROWN);
-  doc.text('Sarvajanik Ganeshotsav \u00B7 Kharsawan', PW / 2, y, {
+  doc.text('Sarvajanik Ganeshotsav  \u00B7  Kharsawan', PW / 2, y, {
     align: 'center',
   });
-  y += 14;
+  y += 13;
 
   // ── OFFICIAL DONATION RECEIPT badge ───────────────────────────────────────
   const badgeW = 90;
@@ -230,16 +221,16 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   doc.setDrawColor(...DARK_BROWN);
   doc.setLineWidth(0.5);
   doc.rect(badgeX, y, badgeW, badgeH);
-  setFont('EBGaramond', 'normal');
-  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
   doc.setTextColor(...DARK_BROWN);
-  doc.text('OFFICIAL DONATION RECEIPT', PW / 2, y + 5.8, {
+  doc.text('OFFICIAL DONATION RECEIPT', PW / 2, y + 5.7, {
     align: 'center',
     charSpace: 1.2,
   });
   y += badgeH + 16;
 
-  // ── receipt info row ───────────────────────────────────────────────────────
+  // ── Receipt info row ──────────────────────────────────────────────────────
   const receiptDate = parseGPMSDate(data.date).toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
@@ -248,14 +239,15 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   const leftX = bx + 12;
   const rightX = bx + bw - 12;
 
-  setFont('EBGaramond', 'normal');
-  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
   doc.setTextColor(...MUTED_BROWN);
   doc.text('RECEIPT NO.', leftX, y, { charSpace: 0.8 });
   doc.text('DATE', rightX, y, { align: 'right', charSpace: 0.8 });
   y += 7;
 
-  doc.setFontSize(15);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
   doc.setTextColor(...DARK_BROWN);
   doc.text(data.receiptId, leftX, y);
   doc.text(receiptDate, rightX, y, { align: 'right' });
@@ -267,62 +259,60 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   y += 22;
 
   // ── "Received with gratitude from" ────────────────────────────────────────
-  setFont('EBGaramond', 'italic');
-  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
   doc.setTextColor(...MUTED_BROWN);
   doc.text('Received with gratitude from', PW / 2, y, { align: 'center' });
-  y += 13;
+  y += 12;
 
-  // ── donor name ────────────────────────────────────────────────────────────
-  setFont('EBGaramond', 'normal');
-  doc.setFontSize(30);
+  // ── Donor name ────────────────────────────────────────────────────────────
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(26);
   doc.setTextColor(...DARK_BROWN);
   doc.text(data.donorName, PW / 2, y, { align: 'center' });
-  y += 20;
+  y += 18;
 
-  // ── CONTRIBUTION AMOUNT ────────────────────────────────────────────────────
-  setFont('EBGaramond', 'normal');
-  doc.setFontSize(8);
+  // ── CONTRIBUTION AMOUNT label ─────────────────────────────────────────────
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
   doc.setTextColor(...MUTED_BROWN);
   doc.text('CONTRIBUTION AMOUNT', PW / 2, y, {
     align: 'center',
     charSpace: 1.5,
   });
-  y += 13;
+  y += 12;
 
-  // ── amount (large, maroon) ─────────────────────────────────────────────────
+  // ── Amount (large, maroon) ────────────────────────────────────────────────
   const amtFormatted = '\u20B9' + Number(data.amount).toLocaleString('en-IN');
-  setFont('EBGaramond', 'normal');
-  doc.setFontSize(52);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(46);
   doc.setTextColor(...MAROON);
   doc.text(amtFormatted, PW / 2, y, { align: 'center' });
-  y += 11;
+  y += 10;
 
-  // ── amount in words ────────────────────────────────────────────────────────
+  // ── Amount in words ───────────────────────────────────────────────────────
   const words = amountToWords(data.amount);
-  setFont('EBGaramond', 'italic');
-  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
   doc.setTextColor(...DARK_BROWN);
   doc.text(words, PW / 2, y, { align: 'center' });
-  y += 26;
+  y += 24;
 
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.3);
   doc.line(PW / 2 - 38, y, PW / 2 + 38, y);
-  y += 16;
+  y += 15;
 
   // ══════════════════════════════════════════════════════════════════════════
-  // QR CODE — same /verify/{receiptId} URL as original
+  // QR CODE — same /verify/{receiptId} URL as the original implementation
   // ══════════════════════════════════════════════════════════════════════════
   const verifyUrl = `${origin}/verify/${data.receiptId}`;
-
   try {
     const qrDataUri = await QRCode.toDataURL(verifyUrl, {
       width: 200,
       margin: 1,
       color: { dark: '#4A3728', light: '#FAF6F0' },
     });
-
     const qrSize = 48;
     const qrX = (PW - qrSize) / 2;
 
@@ -330,29 +320,28 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
     doc.setLineWidth(0.7);
     doc.roundedRect(qrX - 5, y - 4, qrSize + 10, qrSize + 10, 2, 2);
     doc.addImage(qrDataUri, 'PNG', qrX, y, qrSize, qrSize);
-    y += qrSize + 14;
+    y += qrSize + 13;
 
-    setFont('EBGaramond', 'italic');
-    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
     doc.setTextColor(...MUTED_BROWN);
     doc.text('Scan to verify authenticity online', PW / 2, y, {
       align: 'center',
     });
   } catch (qrErr) {
-    console.error('[GPMS] QR generation failed for donation PDF', qrErr);
+    console.error('[GPMS] QR generation failed:', qrErr);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
   // FOOTER
   // ══════════════════════════════════════════════════════════════════════════
   const footerY = PH - MY - 14;
-
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.3);
   doc.line(bx + 12, footerY - 6, bx + bw - 12, footerY - 6);
 
-  setFont('EBGaramond', 'italic');
-  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
   doc.setTextColor(...MUTED_BROWN);
   doc.text(
     'This digital receipt is issued in the spirit of the traditional bill-book.',
@@ -363,7 +352,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   doc.text(
     'A copy has been sent to your phone. May Bappa bless you.',
     PW / 2,
-    footerY + 5.5,
+    footerY + 5,
     { align: 'center' }
   );
 
