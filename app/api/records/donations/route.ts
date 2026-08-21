@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { generateRequestId, fetchWithRetry } from '@/lib/resilience';
 
 export async function POST(req: NextRequest) {
+  const requestId = generateRequestId();
+
   try {
     const session = await auth();
 
@@ -22,27 +25,63 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const response = await fetch(appsScriptUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'searchDonations',
-        payload: {
-          ...payload,
-          userEmail: session.user.email,
+    let response: Response;
+    try {
+      response = await fetchWithRetry(
+        appsScriptUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'searchDonations',
+            payload: {
+              ...payload,
+              userEmail: session.user.email,
+              requestId,
+            },
+          }),
+          redirect: 'follow',
         },
-      }),
-    });
+        requestId,
+        'searchDonations'
+      );
+    } catch (networkErr: unknown) {
+      const msg =
+        networkErr instanceof Error ? networkErr.message : 'Network failure';
+      console.error(
+        `[GPMS] requestId=${requestId} action=searchDonations network failure: ${msg}`
+      );
+      return NextResponse.json(
+        { success: false, message: 'Backend unavailable — please try again' },
+        { status: 503 }
+      );
+    }
 
-    const data = await response.json();
+    const rawText = await response.text();
+    let data: unknown;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      console.error(
+        `[GPMS] requestId=${requestId} action=searchDonations failed to parse JSON response`
+      );
+      return NextResponse.json(
+        { success: false, message: 'Invalid response from backend' },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json(data, { status: response.status });
-  } catch (error: any) {
-    console.error('Error fetching donations:', error);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Internal server error';
+    console.error(
+      `[GPMS] requestId=${requestId} action=searchDonations unexpected error:`,
+      error
+    );
     return NextResponse.json(
-      { success: false, message: error.message || 'Internal server error' },
+      { success: false, message: msg },
       { status: 500 }
     );
   }
 }
+

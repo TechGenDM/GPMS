@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import {
+  generateRequestId,
+  fetchWithRetry,
+  createMutationTimeout,
+} from '@/lib/resilience';
 
 /**
  * GET /api/settings/announcement
- * Reads only the PUBLIC_ANNOUNCEMENT setting via the scoped getAnnouncementConfig action.
+ * Read-only — uses fetchWithRetry (5 s × 3 attempts).
  */
 export async function GET() {
+  const requestId = generateRequestId();
+
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -23,21 +30,55 @@ export async function GET() {
       );
     }
 
-    const response = await fetch(appsScriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'getAnnouncementConfig',
-        payload: { userEmail: session.user.email },
-      }),
-      cache: 'no-store',
-      redirect: 'follow',
-    });
+    let response: Response;
+    try {
+      response = await fetchWithRetry(
+        appsScriptUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'getAnnouncementConfig',
+            payload: { userEmail: session.user.email, requestId },
+          }),
+          cache: 'no-store',
+          redirect: 'follow',
+        },
+        requestId,
+        'getAnnouncementConfig'
+      );
+    } catch (networkErr: unknown) {
+      const msg =
+        networkErr instanceof Error ? networkErr.message : 'Network failure';
+      console.error(
+        `[GPMS] requestId=${requestId} action=getAnnouncementConfig network failure: ${msg}`
+      );
+      return NextResponse.json(
+        { success: false, message: 'Backend unavailable — please try again' },
+        { status: 503 }
+      );
+    }
 
-    const data = await response.json();
+    const rawText = await response.text();
+    let data: unknown;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      console.error(
+        `[GPMS] requestId=${requestId} action=getAnnouncementConfig failed to parse JSON`
+      );
+      return NextResponse.json(
+        { success: false, message: 'Invalid response from backend' },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json(data);
   } catch (error: unknown) {
-    console.error('[GPMS API] Error fetching Announcement config:', error);
+    console.error(
+      `[GPMS] requestId=${requestId} action=getAnnouncementConfig unexpected error:`,
+      error
+    );
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }
@@ -47,9 +88,11 @@ export async function GET() {
 
 /**
  * POST /api/settings/announcement
- * Updates the PUBLIC_ANNOUNCEMENT setting via the existing updateSetting action.
+ * Mutation — no retry. Single attempt with 25 s timeout.
  */
 export async function POST(req: NextRequest) {
+  const requestId = generateRequestId();
+
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -77,26 +120,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const response = await fetch(appsScriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'updateSetting',
-        payload: {
-          userEmail: session.user.email,
-          key: 'PUBLIC_ANNOUNCEMENT',
-          value: value,
-        },
-      }),
-      redirect: 'follow',
-    });
+    const { controller, timeoutId } = createMutationTimeout();
+    const start = Date.now();
+    try {
+      const response = await fetch(appsScriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updateSetting',
+          payload: {
+            userEmail: session.user.email,
+            key: 'PUBLIC_ANNOUNCEMENT',
+            value: value,
+            requestId,
+          },
+        }),
+        redirect: 'follow',
+        signal: controller.signal,
+      });
 
-    const data = await response.json();
-    return NextResponse.json(data, {
-      status: response.ok ? 200 : response.status,
-    });
+      const durationMs = Date.now() - start;
+      console.log(
+        `[GPMS] requestId=${requestId} action=updateSetting(announcement) status=${response.status} duration=${durationMs}ms ${response.ok ? 'OK' : 'FAILED'}`
+      );
+
+      const data = await response.json();
+      return NextResponse.json(data, {
+        status: response.ok ? 200 : response.status,
+      });
+    } catch (e: unknown) {
+      const durationMs = Date.now() - start;
+      const errName = e instanceof Error ? e.name : 'UnknownError';
+      console.error(
+        `[GPMS] requestId=${requestId} action=updateSetting(announcement) error=${errName} duration=${durationMs}ms FAILED`
+      );
+      return NextResponse.json(
+        { success: false, message: 'Internal server error' },
+        { status: 500 }
+      );
+    } finally {
+      clearTimeout(timeoutId);
+    }
   } catch (error: unknown) {
-    console.error('[GPMS API] Error updating Announcement config:', error);
+    console.error(
+      `[GPMS] requestId=${requestId} action=updateSetting(announcement) unexpected error:`,
+      error
+    );
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }

@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import {
+  generateRequestId,
+  fetchWithRetry,
+  createMutationTimeout,
+} from '@/lib/resilience';
 
 /**
  * GET /api/settings/upi-payment
- * Reads the UPI configuration via the scoped getUpiPaymentConfig action.
+ * Read-only — uses fetchWithRetry (5 s × 3 attempts).
  */
 export async function GET() {
+  const requestId = generateRequestId();
+
   try {
-    // Authenticate using NextAuth session
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -24,21 +30,55 @@ export async function GET() {
       );
     }
 
-    const response = await fetch(appsScriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'getUpiPaymentConfig',
-        payload: { userEmail: session.user.email },
-      }),
-      cache: 'no-store',
-      redirect: 'follow',
-    });
+    let response: Response;
+    try {
+      response = await fetchWithRetry(
+        appsScriptUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'getUpiPaymentConfig',
+            payload: { userEmail: session.user.email, requestId },
+          }),
+          cache: 'no-store',
+          redirect: 'follow',
+        },
+        requestId,
+        'getUpiPaymentConfig'
+      );
+    } catch (networkErr: unknown) {
+      const msg =
+        networkErr instanceof Error ? networkErr.message : 'Network failure';
+      console.error(
+        `[GPMS] requestId=${requestId} action=getUpiPaymentConfig network failure: ${msg}`
+      );
+      return NextResponse.json(
+        { success: false, message: 'Backend unavailable — please try again' },
+        { status: 503 }
+      );
+    }
 
-    const data = await response.json();
+    const rawText = await response.text();
+    let data: unknown;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      console.error(
+        `[GPMS] requestId=${requestId} action=getUpiPaymentConfig failed to parse JSON`
+      );
+      return NextResponse.json(
+        { success: false, message: 'Invalid response from backend' },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json(data);
   } catch (error: unknown) {
-    console.error('[GPMS API] Error fetching UPI Payment config:', error);
+    console.error(
+      `[GPMS] requestId=${requestId} action=getUpiPaymentConfig unexpected error:`,
+      error
+    );
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }
@@ -48,9 +88,11 @@ export async function GET() {
 
 /**
  * POST /api/settings/upi-payment
- * Updates UPI configuration keys.
+ * Mutation — no retry. Single attempt with 25 s timeout.
  */
 export async function POST(req: NextRequest) {
+  const requestId = generateRequestId();
+
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -91,26 +133,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const response = await fetch(appsScriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'updateSetting',
-        payload: {
-          userEmail: session.user.email,
-          key: key,
-          value: value,
-        },
-      }),
-      redirect: 'follow',
-    });
+    const { controller, timeoutId } = createMutationTimeout();
+    const start = Date.now();
+    try {
+      const response = await fetch(appsScriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updateSetting',
+          payload: {
+            userEmail: session.user.email,
+            key: key,
+            value: value,
+            requestId,
+          },
+        }),
+        redirect: 'follow',
+        signal: controller.signal,
+      });
 
-    const data = await response.json();
-    return NextResponse.json(data, {
-      status: response.ok ? 200 : response.status,
-    });
+      const durationMs = Date.now() - start;
+      console.log(
+        `[GPMS] requestId=${requestId} action=updateSetting(upi/${key}) status=${response.status} duration=${durationMs}ms ${response.ok ? 'OK' : 'FAILED'}`
+      );
+
+      const data = await response.json();
+      return NextResponse.json(data, {
+        status: response.ok ? 200 : response.status,
+      });
+    } catch (e: unknown) {
+      const durationMs = Date.now() - start;
+      const errName = e instanceof Error ? e.name : 'UnknownError';
+      console.error(
+        `[GPMS] requestId=${requestId} action=updateSetting(upi/${key}) error=${errName} duration=${durationMs}ms FAILED`
+      );
+      return NextResponse.json(
+        { success: false, message: 'Internal server error' },
+        { status: 500 }
+      );
+    } finally {
+      clearTimeout(timeoutId);
+    }
   } catch (error: unknown) {
-    console.error('[GPMS API] Error updating UPI Payment config:', error);
+    console.error(
+      `[GPMS] requestId=${requestId} action=updateSetting(upi) unexpected error:`,
+      error
+    );
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }
