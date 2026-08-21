@@ -89,8 +89,10 @@ export function RecordDetailModal({
         // Assume expense PDF logic if it exists, otherwise just log or notify it's not implemented yet in V1
         feedback.showError(t('records.expensePdfNotImplemented'));
       }
-    } catch (err) {
-      feedback.showError('Failed to generate PDF');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[GPMS] PDF generation failed:', err);
+      feedback.showError(`PDF Error: ${msg}`);
     }
   };
 
