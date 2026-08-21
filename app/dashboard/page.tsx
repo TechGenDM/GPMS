@@ -23,6 +23,8 @@ import { useFeedback } from '@/components/ui/Feedback';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 import { Button } from '@/components/ui/button';
+import { LanguageSelector } from '@/components/i18n/LanguageSelector';
+import { useLanguage } from '@/components/i18n/LanguageProvider';
 
 interface DashboardSummary {
   donations: { total: number; today: number; cash: number; upi: number };
@@ -71,6 +73,7 @@ interface AnnouncementConfig {
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const { t } = useLanguage();
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -146,9 +149,7 @@ export default function DashboardPage() {
 
     // Frontend validation
     if (trimmedUrl && !isValidYoutubeUrl(trimmedUrl)) {
-      setLiveDarshanError(
-        'Invalid YouTube URL. Use youtube.com/watch?v=, youtube.com/live/, or youtu.be/ format.'
-      );
+      setLiveDarshanError(t('dashboard.liveDarshanInvalidUrl'));
       return;
     }
 
@@ -164,18 +165,16 @@ export default function DashboardPage() {
       const json = await res.json();
 
       if (json.success) {
-        feedback.showSuccess('Live Darshan updated successfully.');
+        feedback.showSuccess(t('dashboard.liveDarshanUpdateSuccess'));
         setLiveDarshanModalOpen(false);
         loadLiveDarshanConfig();
       } else {
         setLiveDarshanError(
-          json.message || 'Couldn\u2019t update Live Darshan. Please try again.'
+          json.message || t('dashboard.liveDarshanUpdateFailed')
         );
       }
     } catch {
-      setLiveDarshanError(
-        'Couldn\u2019t update Live Darshan. Please try again.'
-      );
+      setLiveDarshanError(t('dashboard.liveDarshanUpdateFailed'));
     } finally {
       setLiveDarshanSaving(false);
     }
@@ -193,7 +192,7 @@ export default function DashboardPage() {
     const trimmedDate = announcementDate.trim();
 
     if (trimmedText && trimmedText.length > 300) {
-      setAnnouncementError('Announcement text must be under 300 characters.');
+      setAnnouncementError(t('dashboard.announcementTooLong'));
       return;
     }
 
@@ -214,18 +213,16 @@ export default function DashboardPage() {
       const json = await res.json();
 
       if (json.success) {
-        feedback.showSuccess('Announcement updated successfully.');
+        feedback.showSuccess(t('dashboard.announcementUpdateSuccess'));
         setAnnouncementModalOpen(false);
         loadAnnouncementConfig();
       } else {
         setAnnouncementError(
-          json.message || 'Couldn\u2019t update Announcement. Please try again.'
+          json.message || t('dashboard.announcementUpdateFailed')
         );
       }
     } catch {
-      setAnnouncementError(
-        'Couldn\u2019t update Announcement. Please try again.'
-      );
+      setAnnouncementError(t('dashboard.announcementUpdateFailed'));
     } finally {
       setAnnouncementSaving(false);
     }
@@ -245,10 +242,10 @@ export default function DashboardPage() {
         if (res.success && res.data) {
           setData(res.data);
         } else {
-          setError(res.message || 'Failed to load dashboard data');
+          setError(res.message || t('dashboard.fetchFailed'));
         }
       } catch (err) {
-        setError('Error connecting to server. Please try again.');
+        setError(t('dashboard.serverError'));
       } finally {
         if (isRefresh) setRefreshing(false);
       }
@@ -328,23 +325,23 @@ export default function DashboardPage() {
                 <button
                   onClick={() => router.push('/audit')}
                   className="p-[6px] rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors flex items-center gap-1"
-                  title="Audit Logs"
-                  aria-label="Audit Logs"
+                  title={t('dashboard.auditLogs')}
+                  aria-label={t('dashboard.auditLogs')}
                 >
                   <Activity className="w-[18px] h-[18px]" />
                   <span className="hidden sm:inline text-[13px] font-semibold">
-                    Audit Logs
+                    {t('dashboard.auditLogs')}
                   </span>
                 </button>
                 <button
                   onClick={() => router.push('/users')}
                   className="p-[6px] rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors flex items-center gap-1"
-                  title="Users"
-                  aria-label="Users"
+                  title={t('dashboard.users')}
+                  aria-label={t('dashboard.users')}
                 >
                   <Users className="w-[18px] h-[18px]" />
                   <span className="hidden sm:inline text-[13px] font-semibold">
-                    Users
+                    {t('dashboard.users')}
                   </span>
                 </button>
               </>
@@ -352,20 +349,20 @@ export default function DashboardPage() {
             <button
               onClick={() => router.push('/records')}
               className="p-[6px] rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors flex items-center gap-1"
-              title="Records"
-              aria-label="Records"
+              title={t('dashboard.records')}
+              aria-label={t('dashboard.records')}
             >
               <FileText className="w-[18px] h-[18px]" />
               <span className="hidden sm:inline text-[13px] font-semibold">
-                Records
+                {t('dashboard.records')}
               </span>
             </button>
             <button
               onClick={() => loadDashboard(true)}
               disabled={refreshing}
               className="p-[6px] rounded-lg text-muted-ink hover:text-ink hover:bg-hair/50 transition-colors disabled:opacity-50"
-              title="Refresh"
-              aria-label="Refresh"
+              title={t('dashboard.refresh')}
+              aria-label={t('dashboard.refresh')}
             >
               <RefreshCw
                 className={`w-[18px] h-[18px] ${refreshing ? 'animate-spin' : ''}`}
@@ -374,11 +371,14 @@ export default function DashboardPage() {
             <button
               onClick={() => signOut({ callbackUrl: '/' })}
               className="p-[6px] rounded-lg text-muted-ink hover:text-maroon hover:bg-maroon/5 transition-colors"
-              title="Logout"
-              aria-label="Logout"
+              title={t('dashboard.logout')}
+              aria-label={t('dashboard.logout')}
             >
               <LogOut className="w-[18px] h-[18px]" />
             </button>
+            <div className="ml-1 pl-2 border-l border-hair">
+              <LanguageSelector variant="light" />
+            </div>
           </div>
         </div>
       </header>
@@ -391,7 +391,7 @@ export default function DashboardPage() {
             <CardContent className="p-6 text-center">
               <AlertCircle className="w-8 h-8 text-maroon mx-auto mb-3" />
               <p className="text-maroon font-bold mb-1">
-                Could not load dashboard
+                {t('dashboard.couldNotLoad')}
               </p>
               <p className="text-maroon/80 text-[13px] font-bold mb-4">
                 {error}
@@ -401,7 +401,7 @@ export default function DashboardPage() {
                 className="inline-flex items-center gap-2 text-[14px] font-bold text-maroon bg-white border border-maroon/20 hover:bg-maroon/5 px-4 py-2 rounded-[12px] transition-colors shadow-sm"
               >
                 <RefreshCw className="w-4 h-4" />
-                Retry
+                {t('dashboard.retry')}
               </button>
             </CardContent>
           </Card>
@@ -420,7 +420,7 @@ export default function DashboardPage() {
           <Card className="bg-ink border-transparent shadow-md text-cream relative">
             <CardContent className="pt-[24px] pb-[20px] text-center flex flex-col justify-center h-full">
               <p className="text-cream/80 text-[12.5px] font-semibold uppercase tracking-wider mb-2">
-                Current Balance
+                {t('dashboard.currentBalance')}
               </p>
               <div className="flex justify-center text-white font-playfair font-bold text-[36px] tracking-[-0.03em] leading-none">
                 <span className="font-sans mr-[2px]">₹</span>
@@ -458,7 +458,7 @@ export default function DashboardPage() {
               <CardContent className="p-5 flex-1">
                 <div className="flex items-center text-[12.5px] font-semibold text-muted-ink uppercase tracking-wider mb-2">
                   <ArrowUpRight className="w-4 h-4 mr-1 text-sage" />
-                  Collections
+                  {t('dashboard.collections')}
                 </div>
                 <div className="font-playfair font-bold text-[32px] text-ink tracking-[-0.03em] leading-none mb-3">
                   <span className="font-sans mr-[2px]">₹</span>
@@ -466,13 +466,13 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-[13px] text-muted-ink space-y-1">
                   <div className="flex justify-between">
-                    <span>Cash</span>
+                    <span>{t('dashboard.cash')}</span>
                     <span className="font-semibold text-ink">
                       ₹{fmt(data.summary.donations.cash)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>UPI</span>
+                    <span>{t('dashboard.upi')}</span>
                     <span className="font-semibold text-ink">
                       ₹{fmt(data.summary.donations.upi)}
                     </span>
@@ -486,7 +486,7 @@ export default function DashboardPage() {
               <CardContent className="p-5 flex-1">
                 <div className="flex items-center text-[12.5px] font-semibold text-muted-ink uppercase tracking-wider mb-2">
                   <ArrowDownRight className="w-4 h-4 mr-1 text-maroon" />
-                  Expenses
+                  {t('dashboard.expenses')}
                 </div>
                 <div className="font-playfair font-bold text-[32px] text-ink tracking-[-0.03em] leading-none mb-3">
                   <span className="font-sans mr-[2px]">₹</span>
@@ -521,7 +521,7 @@ export default function DashboardPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-1.5 mb-1 text-[12.5px] font-semibold text-muted-ink uppercase tracking-wider">
                   <Calendar className="w-3.5 h-3.5 text-sage" />
-                  <span>Today's Col</span>
+                  <span>{t('dashboard.todayCol')}</span>
                 </div>
                 <p className="text-[20px] font-playfair font-bold text-ink">
                   +₹{fmt(data.summary.donations.today)}
@@ -532,7 +532,7 @@ export default function DashboardPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-1.5 mb-1 text-[12.5px] font-semibold text-muted-ink uppercase tracking-wider">
                   <Calendar className="w-3.5 h-3.5 text-maroon" />
-                  <span>Today's Exp</span>
+                  <span>{t('dashboard.todayExp')}</span>
                 </div>
                 <p className="text-[20px] font-playfair font-bold text-ink">
                   -₹{fmt(data.summary.expenses.today)}
@@ -570,22 +570,22 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-[14px] font-bold text-ink">
-                        Live Darshan
+                        {t('dashboard.liveDarshan')}
                       </span>
                       {liveDarshanConfig?.youtubeUrl ? (
                         <span className="text-[10px] font-bold uppercase tracking-wider bg-sage/15 text-sage px-2 py-0.5 rounded-full">
-                          Configured
+                          {t('dashboard.configured')}
                         </span>
                       ) : (
                         <span className="text-[10px] font-bold uppercase tracking-wider bg-muted-ink/10 text-muted-ink px-2 py-0.5 rounded-full">
-                          Not configured
+                          {t('dashboard.notConfigured')}
                         </span>
                       )}
                     </div>
                     <p className="text-[12px] text-muted-ink mt-0.5 truncate">
                       {liveDarshanConfig?.youtubeUrl
-                        ? 'YouTube Live is configured'
-                        : 'Tap to configure YouTube Live URL'}
+                        ? t('dashboard.isConfiguredDesc')
+                        : t('dashboard.tapToConfigureDesc')}
                     </p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-ink shrink-0" />
@@ -606,22 +606,22 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-[14px] font-bold text-ink">
-                        Announcement
+                        {t('dashboard.announcement')}
                       </span>
                       {announcementConfig?.announcement ? (
                         <span className="text-[10px] font-bold uppercase tracking-wider bg-sage/15 text-sage px-2 py-0.5 rounded-full">
-                          Active
+                          {t('dashboard.active')}
                         </span>
                       ) : (
                         <span className="text-[10px] font-bold uppercase tracking-wider bg-muted-ink/10 text-muted-ink px-2 py-0.5 rounded-full">
-                          None
+                          {t('dashboard.none')}
                         </span>
                       )}
                     </div>
                     <p className="text-[12px] text-muted-ink mt-0.5 truncate">
                       {announcementConfig?.announcement
                         ? announcementConfig.announcement.text
-                        : 'Tap to set an announcement'}
+                        : t('dashboard.tapToSetAnnouncement')}
                     </p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-ink shrink-0" />
@@ -635,7 +635,7 @@ export default function DashboardPage() {
         {data && categoryEntries.length > 0 && (
           <div className="space-y-4 pt-4">
             <h2 className="font-playfair font-bold text-[22px] text-ink tracking-[0.02em]">
-              Expenses by Category
+              {t('dashboard.expensesByCategory')}
             </h2>
             <Card>
               <CardContent className="p-4 space-y-3">
@@ -667,7 +667,7 @@ export default function DashboardPage() {
         {/* Recent Activity */}
         <div className="space-y-4 pt-4">
           <h2 className="font-playfair font-bold text-[22px] text-ink tracking-[0.02em]">
-            Recent Activity
+            {t('dashboard.recentActivity')}
           </h2>
 
           {!data ? (
@@ -688,7 +688,7 @@ export default function DashboardPage() {
           ) : data.recentActivity.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center text-muted-ink font-semibold">
-                <p>No recent activity found.</p>
+                <p>{t('dashboard.noRecentActivity')}</p>
               </CardContent>
             </Card>
           ) : (
@@ -711,7 +711,7 @@ export default function DashboardPage() {
                           className="font-bold text-[14px] text-ink truncate pr-2"
                           title={activity.title}
                         >
-                          {activity.title || 'Untitled'}
+                          {activity.title || t('dashboard.untitled')}
                         </p>
                         <p className="text-[12px] font-medium text-muted-ink">
                           {activity.date}
@@ -741,14 +741,14 @@ export default function DashboardPage() {
           className="flex-1 h-[56px] bg-gradient-to-r from-gold-soft to-ember text-white rounded-[14px] font-bold text-[16px] shadow-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98]"
         >
           <Plus className="w-5 h-5" />
-          Donation
+          {t('dashboard.donation')}
         </button>
         <button
           onClick={() => router.push('/expenses/new')}
           className="flex-1 h-[56px] bg-white border border-hair text-ink rounded-[14px] font-bold text-[16px] shadow-sm flex items-center justify-center gap-2 transition-all hover:bg-hair/30 active:scale-[0.98]"
         >
           <Minus className="w-5 h-5" />
-          Expense
+          {t('dashboard.expense')}
         </button>
       </div>
 
@@ -777,7 +777,9 @@ export default function DashboardPage() {
                     <circle cx="12" cy="12" r="2" fill="#C9832E" />
                   </svg>
                 </div>
-                <h2 className="text-[18px] font-bold text-ink">Live Darshan</h2>
+                <h2 className="text-[18px] font-bold text-ink">
+                  {t('dashboard.liveDarshan')}
+                </h2>
               </div>
               <button
                 onClick={() => setLiveDarshanModalOpen(false)}
@@ -790,36 +792,24 @@ export default function DashboardPage() {
 
             <div className="p-5 space-y-4">
               <p className="text-[13px] text-muted-ink">
-                Paste your YouTube Live link to show on the public page.
+                {t('dashboard.liveDarshanModalDesc')}
               </p>
 
               {/* URL Input */}
-              <div>
-                <label className="text-[12.5px] font-semibold text-ink uppercase tracking-wider block mb-1.5">
-                  YouTube Live URL
+              <div className="space-y-1.5">
+                <label className="text-[13px] font-bold text-ink">
+                  {t('dashboard.youtubeLiveUrl')}
                 </label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="w-[18px] h-[18px]"
-                      fill="none"
-                    >
-                      <rect width="24" height="24" rx="4" fill="#FF0000" />
-                      <path d="M10 8.5v7l6-3.5-6-3.5z" fill="white" />
-                    </svg>
-                  </div>
-                  <input
-                    type="url"
-                    value={liveDarshanUrl}
-                    onChange={(e) => {
-                      setLiveDarshanUrl(e.target.value);
-                      setLiveDarshanError(null);
-                    }}
-                    placeholder="https://www.youtube.com/live/..."
-                    className="w-full pl-10 pr-4 py-3 bg-cream border border-hair rounded-xl text-[14px] text-ink placeholder:text-muted-ink/50 focus:outline-none focus:border-gold-soft focus:ring-1 focus:ring-gold-soft/30 transition-colors"
-                  />
-                </div>
+                <input
+                  type="url"
+                  value={liveDarshanUrl}
+                  onChange={(e) => {
+                    setLiveDarshanUrl(e.target.value);
+                    setLiveDarshanError(null);
+                  }}
+                  placeholder={t('dashboard.youtubeUrlPlaceholder')}
+                  className="w-full h-11 px-3 bg-cream border border-hair rounded-[12px] text-[14px] text-ink placeholder:text-muted-ink focus:outline-none focus:border-gold-soft focus:ring-1 focus:ring-gold-soft transition-all"
+                />
                 {liveDarshanError && (
                   <p className="text-[12px] text-maroon mt-1.5 flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
@@ -828,60 +818,50 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              {/* Instruction */}
-              <div className="flex items-start gap-2 bg-[#FFFBF0] border border-gold-soft/15 rounded-xl p-3">
-                <span className="text-[14px] mt-[1px]">💡</span>
-                <p className="text-[12px] text-muted-ink leading-relaxed">
-                  Go to YouTube → Click <strong>Share</strong> → Copy the link
-                  and paste it here.
-                </p>
-              </div>
-
               {/* Status */}
               <div className="text-[12px] text-muted-ink space-y-1">
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold text-ink">
-                    Current Status:
+                    {t('dashboard.currentStatus')}
                   </span>
                   {liveDarshanConfig?.youtubeUrl ? (
-                    <span className="text-sage font-semibold">Configured</span>
+                    <span className="text-sage font-semibold">
+                      {t('dashboard.configured')}
+                    </span>
                   ) : (
-                    <span className="text-muted-ink">Not configured</span>
+                    <span className="text-muted-ink">
+                      {t('dashboard.notConfigured')}
+                    </span>
                   )}
                 </div>
                 {liveDarshanConfig?.updatedAt &&
                   liveDarshanConfig?.updatedBy && (
                     <p className="text-[11px] text-muted-ink/70">
-                      Last updated: {liveDarshanConfig.updatedAt} by{' '}
-                      {liveDarshanConfig.updatedBy}
+                      {t('dashboard.lastUpdated')} {liveDarshanConfig.updatedAt}{' '}
+                      {t('dashboard.by')} {liveDarshanConfig.updatedBy}
                     </p>
                   )}
               </div>
+            </div>
 
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setLiveDarshanModalOpen(false)}
-                  className="flex-1 py-3 text-[14px] font-bold text-ink bg-cream border border-hair rounded-xl hover:bg-hair/30 transition-colors"
-                  disabled={liveDarshanSaving}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={saveLiveDarshanUrl}
-                  disabled={liveDarshanSaving}
-                  className="flex-1 py-3 text-[14px] font-bold text-white bg-gradient-to-r from-gold-soft to-ember rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {liveDarshanSaving ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      Saving…
-                    </>
-                  ) : (
-                    'Save Changes'
-                  )}
-                </button>
-              </div>
+            {/* Footer */}
+            <div className="p-5 pt-4 border-t border-hair flex gap-3">
+              <button
+                onClick={() => setLiveDarshanModalOpen(false)}
+                className="flex-1 h-11 bg-cream border border-hair text-ink rounded-[12px] font-bold text-[14px] hover:bg-hair/50 transition-colors"
+                disabled={liveDarshanSaving}
+              >
+                {t('dashboard.cancel')}
+              </button>
+              <button
+                onClick={saveLiveDarshanUrl}
+                disabled={liveDarshanSaving}
+                className="flex-1 h-11 bg-ink text-white rounded-[12px] font-bold text-[14px] hover:bg-ink-2 transition-colors disabled:opacity-50"
+              >
+                {liveDarshanSaving
+                  ? t('dashboard.saving')
+                  : t('dashboard.saveUrl')}
+              </button>
             </div>
           </div>
         </div>
@@ -900,7 +880,7 @@ export default function DashboardPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-hair">
               <h3 className="text-[16px] font-bold text-ink font-playfair">
-                Public Announcement
+                {t('dashboard.announcement')}
               </h3>
               <button
                 onClick={() => setAnnouncementModalOpen(false)}
@@ -912,55 +892,46 @@ export default function DashboardPage() {
             </div>
 
             {/* Content */}
-            <div className="p-4 space-y-5">
-              {/* Text Input */}
-              <div>
-                <label
-                  htmlFor="announcementText"
-                  className="block text-[13px] font-bold text-ink mb-1.5"
-                >
-                  Announcement Text
-                </label>
-                <textarea
-                  id="announcementText"
-                  value={announcementText}
-                  onChange={(e) => {
-                    setAnnouncementText(e.target.value);
-                    setAnnouncementError(null);
-                  }}
-                  placeholder="e.g. Pandit ji will arrive at 8:30 AM on 14th Aug..."
-                  className="w-full px-4 py-3 bg-cream border border-hair rounded-xl text-[14px] text-ink placeholder:text-muted-ink/50 focus:outline-none focus:border-gold-soft focus:ring-1 focus:ring-gold-soft/30 transition-colors min-h-[80px]"
-                  maxLength={300}
-                />
-                <div className="text-right mt-1">
-                  <span
-                    className={`text-[11px] ${announcementText.length >= 300 ? 'text-maroon font-bold' : 'text-muted-ink'}`}
-                  >
-                    {announcementText.length} / 300
-                  </span>
-                </div>
-              </div>
+            <div className="p-5 space-y-4">
+              <p className="text-[13px] text-muted-ink">
+                {t('dashboard.announcementModalDesc')}
+              </p>
 
-              {/* Date Input */}
-              <div>
-                <label
-                  htmlFor="announcementDate"
-                  className="block text-[13px] font-bold text-ink mb-1.5"
-                >
-                  Display Date{' '}
-                  <span className="text-muted-ink font-normal">(Optional)</span>
-                </label>
-                <input
-                  id="announcementDate"
-                  type="text"
-                  value={announcementDate}
-                  onChange={(e) => {
-                    setAnnouncementDate(e.target.value);
-                    setAnnouncementError(null);
-                  }}
-                  placeholder="e.g. 13 Aug 2025"
-                  className="w-full px-4 py-3 bg-cream border border-hair rounded-xl text-[14px] text-ink placeholder:text-muted-ink/50 focus:outline-none focus:border-gold-soft focus:ring-1 focus:ring-gold-soft/30 transition-colors"
-                />
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-ink">
+                    {t('dashboard.announcementTextLabel')}
+                  </label>
+                  <textarea
+                    value={announcementText}
+                    onChange={(e) => {
+                      setAnnouncementText(e.target.value);
+                      setAnnouncementError(null);
+                    }}
+                    placeholder={t('dashboard.announcementTextPlaceholder')}
+                    className="w-full p-3 bg-cream border border-hair rounded-[12px] text-[14px] text-ink placeholder:text-muted-ink focus:outline-none focus:border-gold-soft focus:ring-1 focus:ring-gold-soft transition-all min-h-[100px] resize-y"
+                    maxLength={300}
+                  />
+                  <div className="text-right text-[11px] text-muted-ink">
+                    {announcementText.length}/300
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-ink">
+                    {t('dashboard.dateSubtitleLabel')}
+                  </label>
+                  <input
+                    type="text"
+                    value={announcementDate}
+                    onChange={(e) => {
+                      setAnnouncementDate(e.target.value);
+                      setAnnouncementError(null);
+                    }}
+                    placeholder={t('dashboard.datePlaceholder')}
+                    className="w-full h-11 px-3 bg-cream border border-hair rounded-[12px] text-[14px] text-ink placeholder:text-muted-ink focus:outline-none focus:border-gold-soft focus:ring-1 focus:ring-gold-soft transition-all"
+                  />
+                </div>
               </div>
 
               {announcementError && (
@@ -970,57 +941,52 @@ export default function DashboardPage() {
                 </p>
               )}
 
-              {/* Instruction */}
-              <div className="flex items-start gap-2 bg-[#FFFBF0] border border-gold-soft/15 rounded-xl p-3">
-                <span className="text-[14px] mt-[1px]">💡</span>
-                <p className="text-[12px] text-muted-ink leading-relaxed">
-                  This text will appear instantly at the top of the Public Page.
-                  To remove the announcement, clear the text and save.
-                </p>
-              </div>
-
               {/* Status */}
               <div className="text-[12px] text-muted-ink space-y-1">
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold text-ink">
-                    Current Status:
+                    {t('dashboard.currentStatus')}
                   </span>
                   {announcementConfig?.announcement ? (
-                    <span className="text-sage font-semibold">Active</span>
+                    <span className="text-sage font-semibold">
+                      {t('dashboard.active')}
+                    </span>
                   ) : (
-                    <span className="text-muted-ink">None</span>
+                    <span className="text-muted-ink">
+                      {t('dashboard.none')}
+                    </span>
                   )}
                 </div>
                 {announcementConfig?.updatedAt &&
                   announcementConfig?.updatedBy && (
                     <p className="text-[11px] text-muted-ink/70">
-                      Last updated: {announcementConfig.updatedAt} by{' '}
+                      {t('dashboard.lastUpdated')}{' '}
+                      {announcementConfig.updatedAt} {t('dashboard.by')}{' '}
                       {announcementConfig.updatedBy}
                     </p>
                   )}
               </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
+              {/* Footer */}
+              <div className="p-5 pt-4 border-t border-hair flex gap-3">
                 <button
                   onClick={() => setAnnouncementModalOpen(false)}
-                  className="flex-1 py-3 text-[14px] font-bold text-ink bg-cream border border-hair rounded-xl hover:bg-hair/30 transition-colors"
+                  className="flex-1 h-11 bg-cream border border-hair text-ink rounded-[12px] font-bold text-[14px] hover:bg-hair/50 transition-colors"
                   disabled={announcementSaving}
                 >
-                  Cancel
+                  {t('dashboard.cancel')}
                 </button>
                 <button
                   onClick={saveAnnouncementConfig}
                   disabled={announcementSaving}
-                  className="flex-1 py-3 text-[14px] font-bold text-white bg-gradient-to-r from-gold-soft to-ember rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 h-11 bg-ink text-white rounded-[12px] font-bold text-[14px] hover:bg-ink-2 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {announcementSaving ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      Saving…
+                      {t('dashboard.saving')}
                     </>
                   ) : (
-                    'Save Changes'
+                    t('dashboard.saveAnnouncement')
                   )}
                 </button>
               </div>
