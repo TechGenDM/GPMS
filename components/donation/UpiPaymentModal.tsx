@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { X, QrCode, Loader2, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '@/components/i18n/LanguageProvider';
 
 interface UpiPaymentModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export function UpiPaymentModal({
   payeeName,
   onCancel,
 }: UpiPaymentModalProps) {
+  const { t } = useLanguage();
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(true);
 
@@ -33,7 +35,8 @@ export function UpiPaymentModal({
 
       setIsGenerating(true);
       try {
-        const QRCode = (await import('qrcode')).default || await import('qrcode');
+        const QRCode =
+          (await import('qrcode')).default || (await import('qrcode'));
         // Standard UPI deep link format
         // upi://pay?pa=UPIID&pn=NAME&am=AMOUNT&cu=INR
         const encodedName = encodeURIComponent(payeeName || 'GPMS Donation');
@@ -76,7 +79,7 @@ export function UpiPaymentModal({
         <div className="flex justify-between items-center p-[20px_24px_16px]">
           <h3 className="text-[18px] font-playfair font-bold text-ink tracking-[0.02em] flex items-center gap-2">
             <QrCode className="w-5 h-5 text-sage" />
-            UPI Payment
+            {t('forms.upiPayment')}
           </h3>
           <button
             onClick={onCancel}
@@ -105,7 +108,9 @@ export function UpiPaymentModal({
             ) : (
               <div className="w-[180px] h-[180px] flex flex-col items-center justify-center bg-white rounded-lg text-maroon">
                 <X className="w-8 h-8 mb-2" />
-                <span className="text-[12px]">Failed to generate QR</span>
+                <span className="text-[12px]">
+                  {t('forms.failedToGenerateQr')}
+                </span>
               </div>
             )}
           </div>
@@ -118,7 +123,7 @@ export function UpiPaymentModal({
               {payeeName || 'GPMS Donation'}
             </p>
             <p className="text-[13px] text-muted-ink">
-              Scan using any UPI app to pay
+              {t('forms.scanUsingAnyApp')}
             </p>
           </div>
 
@@ -133,12 +138,11 @@ export function UpiPaymentModal({
             className="w-full flex items-center justify-center gap-2 px-6 py-[14px] text-[15px] font-bold text-white bg-sage rounded-[14px] shadow-sm transition-all hover:bg-sage/90 active:scale-[0.98]"
           >
             <CheckCircle2 className="w-5 h-5" />
-            Done — I&apos;ve completed the payment
+            {t('forms.doneCompletedPayment')}
           </button>
 
           <p className="text-[11px] text-muted-ink/70 mt-4 leading-tight">
-            After closing, upload your payment screenshot to complete the
-            donation record.
+            {t('forms.afterClosingUpload')}
           </p>
         </div>
       </div>

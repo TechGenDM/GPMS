@@ -21,6 +21,7 @@ import { useFeedback } from '@/components/ui/Feedback';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
+import { useLanguage } from '@/components/i18n/LanguageProvider';
 
 interface ExpenseFormData {
   category: string;
@@ -39,7 +40,9 @@ const INITIAL_FORM: ExpenseFormData = {
 };
 
 // ── Image Processing Utility ──────────────────────────────────────────
-const compressImage = async (file: File): Promise<{ base64: string; mimeType: string; name: string }> => {
+const compressImage = async (
+  file: File
+): Promise<{ base64: string; mimeType: string; name: string }> => {
   return new Promise((resolve, reject) => {
     // createObjectURL respects native EXIF orientation when drawn to canvas
     // and strips the EXIF metadata in the output.
@@ -71,8 +74,8 @@ const compressImage = async (file: File): Promise<{ base64: string; mimeType: st
 
       ctx.drawImage(img, 0, 0, width, height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      
-      const newName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+
+      const newName = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
       resolve({ base64: dataUrl, mimeType: 'image/jpeg', name: newName });
     };
     img.onerror = () => {
@@ -114,6 +117,7 @@ export default function RecordExpense() {
   }, []);
 
   const { showLoading, showSuccess, showError, clear } = useFeedback();
+  const { t } = useLanguage();
 
   const fetchCategories = useCallback(() => {
     let ignore = false;
@@ -196,7 +200,9 @@ export default function RecordExpense() {
 
         const base64Size = Math.round((processedImage.base64.length * 3) / 4);
         if (base64Size > MAX_PROOF_SIZE_BYTES) {
-          setValidationError('Processed image is still larger than 5 MB. Please try a different photo.');
+          setValidationError(
+            'Processed image is still larger than 5 MB. Please try a different photo.'
+          );
           if (fileInputRef.current) fileInputRef.current.value = '';
           return;
         }
@@ -212,7 +218,9 @@ export default function RecordExpense() {
       return;
     }
 
-    setValidationError('Invalid file type. Only PDF, JPG, and PNG are allowed.');
+    setValidationError(
+      'Invalid file type. Only PDF, JPG, and PNG are allowed.'
+    );
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -222,14 +230,14 @@ export default function RecordExpense() {
   };
 
   const validateForm = (): string | null => {
-    if (!form.category) return 'Please select an expense category';
-    if (!form.description.trim()) return 'Please enter a description';
+    if (!form.category) return t('forms.reqCategory');
+    if (!form.description.trim()) return t('forms.reqDescription');
     if (
       !form.amount ||
       isNaN(Number(form.amount)) ||
       Number(form.amount) <= 0
     ) {
-      return 'Please enter a valid amount';
+      return t('forms.reqValidAmount');
     }
     return null;
   };
@@ -350,7 +358,7 @@ export default function RecordExpense() {
             <header className="bg-cream border-b border-hair sticky top-0 z-10">
               <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
                 <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
-                  Expense Recorded
+                  {t('forms.expenseRecordedSuccess')}
                 </h1>
               </div>
             </header>
@@ -367,7 +375,7 @@ export default function RecordExpense() {
 
                   <div className="bg-cream-2 rounded-[16px] p-6 text-center space-y-2 border border-hair">
                     <p className="text-[13px] font-bold text-muted-ink uppercase tracking-wider">
-                      Expense ID
+                      {t('forms.expenseId')}
                     </p>
                     <p className="text-[20px] font-playfair font-bold text-ink">
                       {successData.expenseId}
@@ -391,7 +399,7 @@ export default function RecordExpense() {
                       className="w-full bg-ink hover:bg-ink/90 text-cream h-[48px] font-bold rounded-[12px] border-transparent"
                     >
                       <Download className="w-[18px] h-[18px] mr-2" />
-                      PDF Receipt
+                      {t('forms.downloadVoucher')}
                     </Button>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -409,7 +417,7 @@ export default function RecordExpense() {
                         className="w-full h-[48px] font-bold rounded-[12px] text-ink border-hair hover:bg-hair/30"
                       >
                         <Share2 className="w-[18px] h-[18px] mr-2" />
-                        More Options
+                        {t('forms.shareVoucher')}
                       </Button>
                     </div>
                   </div>
@@ -422,14 +430,14 @@ export default function RecordExpense() {
                   className="w-full h-[54px] text-[16px] bg-sage hover:bg-sage/90 text-white rounded-[14px] font-bold border-transparent"
                 >
                   <Plus className="w-[20px] h-[20px] mr-2" />
-                  Record Another Expense
+                  {t('forms.recordAnotherExpense')}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => router.push('/dashboard')}
                   className="w-full h-[54px] text-[16px] rounded-[14px] font-bold border-hair text-ink hover:bg-hair/30"
                 >
-                  Back to Dashboard
+                  {t('forms.returnToDashboard')}
                 </Button>
               </div>
             </main>
@@ -443,7 +451,7 @@ export default function RecordExpense() {
         <header className="bg-cream border-b border-hair sticky top-0 z-10">
           <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
             <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
-              Expense Recorded
+              {t('forms.expenseRecordedSuccess')}
             </h1>
           </div>
         </header>
@@ -460,7 +468,7 @@ export default function RecordExpense() {
 
               <div className="bg-cream-2 rounded-[16px] p-6 text-center space-y-2 border border-hair">
                 <p className="text-[13px] font-bold text-muted-ink uppercase tracking-wider">
-                  Expense ID
+                  {t('forms.expenseId')}
                 </p>
                 <p className="text-[20px] font-playfair font-bold text-ink">
                   {successData.expenseId}
@@ -484,7 +492,7 @@ export default function RecordExpense() {
                   className="w-full bg-ink hover:bg-ink/90 text-cream h-[48px] font-bold rounded-[12px] border-transparent"
                 >
                   <Download className="w-[18px] h-[18px] mr-2" />
-                  PDF Receipt
+                  {t('forms.downloadVoucher')}
                 </Button>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -502,7 +510,7 @@ export default function RecordExpense() {
                     className="w-full h-[48px] font-bold rounded-[12px] text-ink border-hair hover:bg-hair/30"
                   >
                     <Share2 className="w-[18px] h-[18px] mr-2" />
-                    More Options
+                    {t('forms.shareVoucher')}
                   </Button>
                 </div>
               </div>
@@ -546,7 +554,7 @@ export default function RecordExpense() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
-            Record Expense
+            {t('forms.newExpense')}
           </h1>
         </div>
       </header>
@@ -567,7 +575,7 @@ export default function RecordExpense() {
               htmlFor="amount"
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Amount <span className="text-maroon">*</span>
+              {t('forms.amount')} <span className="text-maroon">*</span>
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-ink font-bold text-[18px]">
@@ -589,7 +597,7 @@ export default function RecordExpense() {
           {/* Category */}
           <div>
             <label className="block text-[14px] font-bold text-ink mb-2">
-              Category <span className="text-maroon">*</span>
+              {t('forms.category')} <span className="text-maroon">*</span>
             </label>
 
             {isLoadingCategories ? (
@@ -639,13 +647,13 @@ export default function RecordExpense() {
               htmlFor="description"
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Description <span className="text-maroon">*</span>
+              {t('forms.description')} <span className="text-maroon">*</span>
             </label>
             <input
               id="description"
               type="text"
               autoComplete="off"
-              placeholder="e.g. Bamboo purchase for tent"
+              placeholder={t('forms.descriptionPlaceholder')}
               value={form.description}
               onChange={(e) => updateField('description', e.target.value)}
               className="w-full h-[48px] px-4 rounded-[12px] border border-hair bg-white text-ink font-semibold text-[15px] placeholder:text-muted-ink focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
@@ -658,16 +666,16 @@ export default function RecordExpense() {
               htmlFor="vendor"
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Vendor{' '}
+              {t('forms.vendorName')}{' '}
               <span className="text-muted-ink text-[12px] font-medium">
-                (optional)
+                {t('forms.optional')}
               </span>
             </label>
             <input
               id="vendor"
               type="text"
               autoComplete="off"
-              placeholder="e.g. Sharma Traders"
+              placeholder={t('forms.vendorPlaceholder')}
               value={form.vendor}
               onChange={(e) => updateField('vendor', e.target.value)}
               className="w-full h-[48px] px-4 rounded-[12px] border border-hair bg-white text-ink font-semibold text-[15px] placeholder:text-muted-ink focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
@@ -680,9 +688,9 @@ export default function RecordExpense() {
               htmlFor="billFile"
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Upload Bill{' '}
+              {t('forms.uploadBill')}{' '}
               <span className="text-muted-ink text-[12px] font-medium">
-                (optional, PDF/JPG/PNG up to 5MB)
+                {t('forms.billImageOptional')}
               </span>
             </label>
 
@@ -697,7 +705,7 @@ export default function RecordExpense() {
                       {form.billFile.name}
                     </p>
                     <p className="text-[12px] font-medium text-muted-ink">
-                      Ready to upload
+                      {t('forms.readyToUpload')}
                     </p>
                   </div>
                 </div>
@@ -729,17 +737,17 @@ export default function RecordExpense() {
                     <>
                       <RefreshCw className="w-8 h-8 text-muted-ink mb-2 animate-spin" />
                       <p className="text-[14px] font-bold text-ink">
-                        Processing image...
+                        {t('forms.processingImage')}
                       </p>
                     </>
                   ) : (
                     <>
                       <Upload className="w-8 h-8 text-muted-ink mb-2" />
                       <p className="text-[14px] font-bold text-ink">
-                        Tap to select a file
+                        {t('forms.tapToSelectFile')}
                       </p>
                       <p className="text-[12px] font-medium text-muted-ink mt-1">
-                        PDF, JPG, PNG (Max 5MB)
+                        {t('forms.pdfJpgPngMax')}
                       </p>
                     </>
                   )}
@@ -752,16 +760,18 @@ export default function RecordExpense() {
           <div className="pt-2">
             <Button
               type="submit"
-              disabled={isSubmitting || isLoadingCategories || isProcessingImage}
+              disabled={
+                isSubmitting || isLoadingCategories || isProcessingImage
+              }
               className="w-full h-[54px] text-[16px] bg-ink hover:bg-ink/90 text-cream rounded-[14px] font-bold shadow-sm disabled:opacity-50 border-transparent"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center">
                   <Loader2 className="w-[18px] h-[18px] animate-spin mr-2" />
-                  Recording...
+                  {t('forms.recordingExpense')}
                 </span>
               ) : (
-                'Save Expense'
+                t('forms.recordExpense')
               )}
             </Button>
           </div>

@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { generateAndDownloadReceipt } from '@/lib/pdfGenerator';
 import { shareToWhatsApp, shareNative } from '@/lib/shareUtils';
 import { UpiPaymentModal } from '@/components/donation/UpiPaymentModal';
+import { useLanguage } from '@/components/i18n/LanguageProvider';
 
 // ── Constants matching backend expectations ──────────────────────────
 const PURPOSES = [
@@ -72,7 +73,9 @@ const INITIAL_FORM: DonationFormData = {
 };
 
 // ── Image Processing Utility ──────────────────────────────────────────
-const compressImage = async (file: File): Promise<{ base64: string; mimeType: string; name: string }> => {
+const compressImage = async (
+  file: File
+): Promise<{ base64: string; mimeType: string; name: string }> => {
   return new Promise((resolve, reject) => {
     // createObjectURL respects native EXIF orientation when drawn to canvas
     // and strips the EXIF metadata in the output.
@@ -104,8 +107,8 @@ const compressImage = async (file: File): Promise<{ base64: string; mimeType: st
 
       ctx.drawImage(img, 0, 0, width, height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      
-      const newName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+
+      const newName = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
       resolve({ base64: dataUrl, mimeType: 'image/jpeg', name: newName });
     };
     img.onerror = () => {
@@ -117,18 +120,22 @@ const compressImage = async (file: File): Promise<{ base64: string; mimeType: st
 };
 
 // ── Validation ───────────────────────────────────────────────────────
-function validateForm(form: DonationFormData): string | null {
-  if (!form.donorName.trim()) return 'Donor name is required';
+function validateForm(form: DonationFormData, t: any): string | null {
+  if (!form.donorName.trim()) return t('forms.reqDonorName');
   if (form.phone.trim()) {
     if (!/^[6-9]\d{9}$/.test(form.phone.trim())) {
-      return 'Please enter a valid 10-digit mobile number';
+      return (
+        t('forms.reqValidPhone') ||
+        'Please enter a valid 10-digit mobile number'
+      );
     }
   }
   if (!form.amount || Number(form.amount) <= 0)
-    return 'Amount must be greater than zero';
-  if (!form.paymentMode) return 'Please select a payment mode';
+    return t('forms.reqAmountPositive');
+  if (!form.paymentMode)
+    return t('forms.reqValidAmount') || 'Please select a payment mode';
   if (form.paymentMode === 'UPI' && !form.paymentProofFile) {
-    return 'Payment proof is required for UPI donations. Please upload a screenshot of the payment.';
+    return t('forms.reqUpiProof');
   }
   return null;
 }
@@ -138,6 +145,7 @@ function validateForm(form: DonationFormData): string | null {
 // ══════════════════════════════════════════════════════════════════════
 export default function NewDonationPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const feedback = useFeedback();
   const transactionIdRef = useRef<string>('');
 
@@ -268,7 +276,7 @@ export default function NewDonationPage() {
       e.preventDefault();
 
       // Client-side validation (mirrors backend rules, including UPI proof requirement)
-      const err = validateForm(form);
+      const err = validateForm(form, t);
       if (err) {
         setValidationError(err);
         return;
@@ -277,7 +285,7 @@ export default function NewDonationPage() {
       // Submit directly — QR was already shown when user selected UPI mode
       await submitDonation();
     },
-    [form, submitDonation]
+    [form, submitDonation, t]
   );
 
   // ── Payment Proof File Handlers ──────────────────────────────────
@@ -315,7 +323,9 @@ export default function NewDonationPage() {
 
           const base64Size = Math.round((processedImage.base64.length * 3) / 4);
           if (base64Size > MAX_PROOF_SIZE_BYTES) {
-            setValidationError('Processed image is still larger than 3 MB. Please try a different photo.');
+            setValidationError(
+              'Processed image is still larger than 3 MB. Please try a different photo.'
+            );
             if (proofFileInputRef.current) proofFileInputRef.current.value = '';
             return;
           }
@@ -344,7 +354,6 @@ export default function NewDonationPage() {
     setForm((prev) => ({ ...prev, paymentProofFile: null }));
     if (proofFileInputRef.current) proofFileInputRef.current.value = '';
   }, [proofFileInputRef]);
-
 
   const handleRecordAnother = useCallback(() => {
     setForm(INITIAL_FORM);
@@ -409,7 +418,7 @@ export default function NewDonationPage() {
         <header className="bg-cream border-b border-hair sticky top-0 z-10">
           <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
             <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
-              Donation Recorded
+              {t('forms.donationRecordedSuccess')}
             </h1>
           </div>
         </header>
@@ -423,13 +432,13 @@ export default function NewDonationPage() {
                   Success!
                 </h2>
                 <p className="text-[14px] font-medium text-muted-ink">
-                  Donation successfully recorded.
+                  {t('forms.donationRecordedSuccess')}
                 </p>
               </div>
 
               <div className="bg-cream-2 rounded-[16px] p-6 text-center space-y-2 border border-hair">
                 <p className="text-[13px] font-bold text-muted-ink uppercase tracking-wider">
-                  Receipt ID
+                  {t('forms.receiptId')}
                 </p>
                 <p className="text-[20px] font-playfair font-bold text-ink">
                   {successData.receiptId}
@@ -470,7 +479,7 @@ export default function NewDonationPage() {
                   className="w-full h-[48px] font-bold rounded-[12px] text-ink border-hair hover:bg-hair/30"
                 >
                   <Share2 className="w-[18px] h-[18px] mr-2" />
-                  More Sharing Options
+                  {t('forms.shareReceipt')}
                 </Button>
               </div>
             </CardContent>
@@ -482,14 +491,14 @@ export default function NewDonationPage() {
               className="w-full h-[54px] text-[16px] bg-sage hover:bg-sage/90 text-white rounded-[14px] font-bold border-transparent"
             >
               <Plus className="w-[20px] h-[20px] mr-2" />
-              Record Another Donation
+              {t('forms.recordAnotherDonation')}
             </Button>
             <Button
               variant="outline"
               onClick={() => router.push('/dashboard')}
               className="w-full h-[54px] text-[16px] rounded-[14px] font-bold border-hair text-ink hover:bg-hair/30"
             >
-              Back to Dashboard
+              {t('forms.returnToDashboard')}
             </Button>
           </div>
         </main>
@@ -511,7 +520,7 @@ export default function NewDonationPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
-            Record Donation
+            {t('forms.newDonation')}
           </h1>
         </div>
       </header>
@@ -532,14 +541,14 @@ export default function NewDonationPage() {
               htmlFor="donorName"
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Donor Name <span className="text-maroon">*</span>
+              {t('forms.donorName')} <span className="text-maroon">*</span>
             </label>
             <input
               id="donorName"
               type="text"
               autoFocus
               autoComplete="off"
-              placeholder="Enter donor's name"
+              placeholder={t('forms.donorNamePlaceholder')}
               value={form.donorName}
               onChange={(e) => updateField('donorName', e.target.value)}
               className="w-full h-[48px] px-4 rounded-[12px] border border-hair bg-white text-ink font-semibold text-[15px] placeholder:text-muted-ink focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
@@ -552,16 +561,22 @@ export default function NewDonationPage() {
               htmlFor="phone"
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Phone Number{' '}
+              {t('forms.phoneOptional')
+                .replace(' (Optional)', '')
+                .replace(' (वैकल्पिक)', '')}{' '}
               <span className="text-muted-ink text-[12px] font-medium">
-                (optional)
+                (
+                {t('forms.phoneOptional').includes('Optional')
+                  ? 'optional'
+                  : 'वैकल्पिक'}
+                )
               </span>
             </label>
             <input
               id="phone"
               type="tel"
               autoComplete="off"
-              placeholder="e.g. 9876543210"
+              placeholder={t('forms.phonePlaceholder')}
               value={form.phone}
               onChange={(e) =>
                 updateField(
@@ -582,7 +597,7 @@ export default function NewDonationPage() {
               htmlFor="amount"
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Amount <span className="text-maroon">*</span>
+              {t('forms.amount')} <span className="text-maroon">*</span>
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-ink font-bold text-[18px]">
@@ -608,9 +623,13 @@ export default function NewDonationPage() {
           {/* Purpose — Pill Chips */}
           <div>
             <label className="block text-[14px] font-bold text-ink mb-2">
-              Purpose{' '}
+              {t('forms.purpose')}{' '}
               <span className="text-muted-ink text-[12px] font-medium">
-                (optional)
+                (
+                {t('forms.phoneOptional').includes('Optional')
+                  ? 'optional'
+                  : 'वैकल्पिक'}
+                )
               </span>
             </label>
             <div className="flex flex-wrap gap-2">
@@ -625,7 +644,19 @@ export default function NewDonationPage() {
                       : 'bg-white text-ink border border-hair hover:border-ink hover:text-ink'
                   }`}
                 >
-                  {pur}
+                  {pur === 'General Donation'
+                    ? t('forms.purposes.generalDonation')
+                    : pur === 'Murti'
+                      ? t('forms.purposes.murti')
+                      : pur === 'Decoration'
+                        ? t('forms.purposes.decoration')
+                        : pur === 'Prasad'
+                          ? t('forms.purposes.prasad')
+                          : pur === 'Cultural Program'
+                            ? t('forms.purposes.culturalProgram')
+                            : pur === 'Other'
+                              ? t('forms.purposes.other')
+                              : pur}
                 </button>
               ))}
             </div>
@@ -634,7 +665,7 @@ export default function NewDonationPage() {
           {/* Payment Mode — Toggle Buttons */}
           <div>
             <label className="block text-[14px] font-bold text-ink mb-2">
-              Payment Mode <span className="text-maroon">*</span>
+              {t('forms.paymentMode')} <span className="text-maroon">*</span>
             </label>
             <div className="grid grid-cols-2 gap-3">
               {/* Cash button */}
@@ -642,8 +673,13 @@ export default function NewDonationPage() {
                 type="button"
                 onClick={() => {
                   // Switching to Cash — clear any uploaded proof
-                  setForm((prev) => ({ ...prev, paymentMode: 'Cash', paymentProofFile: null }));
-                  if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+                  setForm((prev) => ({
+                    ...prev,
+                    paymentMode: 'Cash',
+                    paymentProofFile: null,
+                  }));
+                  if (proofFileInputRef.current)
+                    proofFileInputRef.current.value = '';
                   setValidationError(null);
                 }}
                 className={`h-[48px] rounded-[12px] text-[15px] font-bold transition-all border ${
@@ -652,7 +688,7 @@ export default function NewDonationPage() {
                     : 'bg-white text-ink border-hair hover:border-ink'
                 }`}
               >
-                💵 Cash
+                💵 {t('forms.cash')}
               </button>
 
               {/* UPI button — opens QR modal immediately with amount validation */}
@@ -670,7 +706,8 @@ export default function NewDonationPage() {
                         const parsedAmount = Number(form.amount);
                         if (!parsedAmount || parsedAmount <= 0) {
                           setValidationError(
-                            'Please enter a valid amount before viewing the UPI QR code.'
+                            t('forms.reqValidAmount') ||
+                              'Please enter a valid amount before viewing the UPI QR code.'
                           );
                           return;
                         }
@@ -684,9 +721,11 @@ export default function NewDonationPage() {
                           ? 'bg-hair/30 text-muted-ink border-transparent cursor-not-allowed'
                           : 'bg-white text-ink border-hair hover:border-ink'
                     }`}
-                    title={upiDisabled ? 'UPI payments are currently disabled' : ''}
+                    title={
+                      upiDisabled ? 'UPI payments are currently disabled' : ''
+                    }
                   >
-                    📱 UPI
+                    📱 {t('forms.upi')}
                   </button>
                 );
               })()}
@@ -697,9 +736,12 @@ export default function NewDonationPage() {
           {form.paymentMode === 'UPI' && (
             <div>
               <label className="block text-[14px] font-bold text-ink mb-1.5">
-                Payment Proof <span className="text-maroon">*</span>
+                {t('forms.uploadProof')
+                  .replace(' (Optional)', '')
+                  .replace(' (वैकल्पिक)', '')}{' '}
+                <span className="text-maroon">*</span>
                 <span className="text-muted-ink text-[12px] font-medium ml-1">
-                  (screenshot of successful payment)
+                  ({t('forms.reqUpiProof').split('.')[0]})
                 </span>
               </label>
 
@@ -730,12 +772,12 @@ export default function NewDonationPage() {
                   {isProcessingImage ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      Processing image...
+                      {t('forms.processingImage')}
                     </>
                   ) : (
                     <>
                       <Upload className="w-4 h-4" />
-                      Upload payment screenshot
+                      {t('forms.clickToUploadProof')}
                     </>
                   )}
                 </button>
@@ -751,7 +793,7 @@ export default function NewDonationPage() {
               />
 
               <p className="text-[11px] text-muted-ink mt-1.5">
-                Images or PDF · Max 3 MB
+                {t('forms.imagesOrPdfMax3mb')}
               </p>
             </div>
           )}
@@ -762,15 +804,21 @@ export default function NewDonationPage() {
               htmlFor="remarks"
               className="block text-[14px] font-bold text-ink mb-1.5"
             >
-              Remarks{' '}
+              {t('forms.remarksOptional')
+                .replace(' (Optional)', '')
+                .replace(' (वैकल्पिक)', '')}{' '}
               <span className="text-muted-ink text-[12px] font-medium">
-                (optional)
+                (
+                {t('forms.remarksOptional').includes('Optional')
+                  ? 'optional'
+                  : 'वैकल्पिक'}
+                )
               </span>
             </label>
             <textarea
               id="remarks"
               rows={2}
-              placeholder="Any additional notes"
+              placeholder={t('forms.remarksPlaceholder')}
               value={form.remarks}
               onChange={(e) => updateField('remarks', e.target.value)}
               className="w-full px-4 py-3 rounded-[12px] border border-hair bg-white text-ink font-semibold text-[15px] placeholder:text-muted-ink focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow resize-none"
@@ -785,7 +833,9 @@ export default function NewDonationPage() {
               className="w-full h-[54px] text-[16px] bg-ink hover:bg-ink/90 text-cream rounded-[14px] font-bold shadow-sm disabled:opacity-50 border-transparent"
             >
               <IndianRupee className="w-[18px] h-[18px] mr-2" />
-              Record Donation
+              {submitting
+                ? t('forms.recordingDonation')
+                : t('forms.recordDonation')}
             </Button>
           </div>
         </form>
