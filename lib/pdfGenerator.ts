@@ -70,8 +70,8 @@ function donorNameToPng(
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
 
-  // Decreased from 28 to 22 for better proportions
-  let fontSize = 22 * PPM; 
+  // Decreased from 22 to 19 for better proportions
+  let fontSize = 19 * PPM; 
   const family = '"EB Garamond", Georgia, serif';
   do {
     ctx.font = `normal ${fontSize}px ${family}`;
@@ -158,7 +158,7 @@ function drawTopScallopMask(doc: import('jspdf').jsPDF, bx: number, by: number, 
   doc.fill();
 
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.15);
   doc.moveTo(bx, by);
   for (let i = 0; i < count; i++) {
     const lx = bx + i * 2 * r;
@@ -188,7 +188,7 @@ function drawBottomScallopMask(doc: import('jspdf').jsPDF, bx: number, by: numbe
   doc.fill();
 
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.15);
   doc.moveTo(bx, by);
   for (let i = 0; i < count; i++) {
     const lx = bx + i * 2 * r;
@@ -266,8 +266,8 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   const amtFormatted = '\u20B9' + amtNum.toLocaleString('en-IN');
   // Decreased amount from 26 to 21
   const amtPng = textToPng(
-    amtFormatted, CONTENT_W, 22,
-    `normal ${21 * PPM}px "EB Garamond", serif`,
+    amtFormatted, CONTENT_W, 28,
+    `normal ${24 * PPM}px "EB Garamond", serif`,
     MAROON_HEX
   );
 
@@ -291,7 +291,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
 
   // Faint watermark: 6% opacity
   const [sealPng] = await Promise.all([
-    loadSealAtOpacity(`${origin}/seal.png`, 0.06),
+    loadSealAtOpacity(`${origin}/seal.png`, 0.04),
   ]);
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -316,7 +316,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
 
   // 3. Draw Side borders for receipt (the cream box edges)
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.15);
   doc.line(bx, by, bx, by + bh);
   doc.line(bx + bw, by, bx + bw, by + bh);
 
@@ -348,11 +348,11 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
 
   // Sanskrit
   addImageAlign(doc, devanagariPng, CX, y, CONTENT_W, 12, 'center');
-  y += 12 + 3;
+  y += 12 + 1;
 
   // Top Ornament
   drawOrnament(doc, CX, y + 2);
-  y += 7;
+  y += 4;
 
   // Title
   addImageAlign(doc, orgNamePng, CX, y, CONTENT_W, 14, 'center');
@@ -405,7 +405,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
 
   // Donor
   addImageAlign(doc, donorData.png, CX, y, donorData.widthMM, donorData.heightMM, 'center');
-  y += donorData.heightMM + 6;
+  y += donorData.heightMM + 10;
 
   // Contrib Label - Again using manual spaces to guarantee perfect mathematical centering
   const contribText = 'C O N T R I B U T I O N   A M O U N T';
@@ -416,8 +416,8 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   y += 4;
 
   // Amount
-  addImageAlign(doc, amtPng, CX, y, CONTENT_W, 22, 'center');
-  y += 22 + 1;
+  addImageAlign(doc, amtPng, CX, y, CONTENT_W, 28, 'center');
+  y += 28 + 1;
 
   // Words
   addImageAlign(doc, wordsPng, CX, y, CONTENT_W, 7, 'center');
@@ -440,7 +440,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
     
     // Thin gold frame around QR
     doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.3);
+    doc.setLineWidth(0.15);
     doc.roundedRect(qrX - 1.5, y - 1.5, qrMM + 3, qrMM + 3, 1, 1);
     doc.addImage(qrDataUri, 'PNG', qrX, y, qrMM, qrMM);
   } catch (qrErr) {
