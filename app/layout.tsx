@@ -49,20 +49,30 @@ export const metadata: Metadata = {
 import { FeedbackProvider } from '@/components/ui/Feedback';
 import { SessionProvider } from 'next-auth/react';
 import { Analytics } from '@vercel/analytics/next';
+import { cookies } from 'next/headers';
+import { getDictionary, Locale } from '@/lib/i18n';
+import { LanguageProvider } from '@/components/i18n/LanguageProvider';
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const localeCookie = cookieStore.get('NEXT_LOCALE')?.value;
+  const locale = (localeCookie === 'hi' ? 'hi' : 'en') as Locale;
+  const dictionary = getDictionary(locale);
+
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`${playfair.variable} ${dmSans.variable} ${dmMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans text-text-ink bg-cream">
         <SessionProvider>
-          <FeedbackProvider>{children}</FeedbackProvider>
+          <LanguageProvider initialLocale={locale} dictionary={dictionary}>
+            <FeedbackProvider>{children}</FeedbackProvider>
+          </LanguageProvider>
         </SessionProvider>
         <Analytics />
       </body>
