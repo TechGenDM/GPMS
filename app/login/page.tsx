@@ -3,6 +3,8 @@ import Image from 'next/image';
 import { signIn } from '@/auth';
 import { AlertCircle } from 'lucide-react';
 import sealLogo from '@/public/seal.png';
+import { cookies } from 'next/headers';
+import { getDictionary, Locale } from '@/lib/i18n';
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -11,6 +13,11 @@ type Props = {
 export default async function LoginPage(props: Props) {
   const searchParams = await props.searchParams;
   const error = searchParams?.error as string | undefined;
+
+  const cookieStore = await cookies();
+  const localeCookie = cookieStore.get('NEXT_LOCALE')?.value;
+  const locale = (localeCookie === 'hi' ? 'hi' : 'en') as Locale;
+  const dict = getDictionary(locale).login;
 
   return (
     <div
@@ -50,10 +57,10 @@ export default async function LoginPage(props: Props) {
 
         {/* Titles */}
         <h1 className="font-playfair font-bold text-3xl relative z-10 text-transparent bg-clip-text bg-gradient-to-br from-gold-soft to-ember">
-          Ganesh Puja
+          {dict.ganeshPuja}
         </h1>
         <p className="text-xs tracking-[0.1em] uppercase text-[#CBBBD8] mt-2 relative z-10">
-          Management system (GPMS)
+          {dict.managementSystem}
         </p>
 
         {/* Alerts */}
@@ -61,14 +68,13 @@ export default async function LoginPage(props: Props) {
           <div className="w-full mt-6 bg-[#F4E9EB] border border-maroon/20 rounded-xl p-4 text-left shadow-sm backdrop-blur-sm relative z-10">
             <div className="flex items-center gap-2 mb-2 text-maroon font-semibold text-[14px]">
               <AlertCircle className="w-5 h-5" />
-              <p>Access Denied</p>
+              <p>{dict.accessDenied}</p>
             </div>
             <p className="text-[13px] text-maroon/80 leading-relaxed mb-2 font-bold">
-              This Google account is not authorized to access the GPMS
-              management system.
+              {dict.unauthorizedAccount}
             </p>
             <p className="text-[13px] text-maroon/80 leading-relaxed font-bold">
-              Please contact a GPMS administrator to have your account added.
+              {dict.contactAdmin}
             </p>
           </div>
         )}
@@ -77,11 +83,10 @@ export default async function LoginPage(props: Props) {
           <div className="w-full mt-6 bg-[#F4E9EB] border border-maroon/20 rounded-xl p-4 text-left shadow-sm backdrop-blur-sm relative z-10">
             <div className="flex items-center gap-2 mb-2 text-maroon font-semibold text-[14px]">
               <AlertCircle className="w-5 h-5" />
-              <p>Authentication Error</p>
+              <p>{dict.authenticationError}</p>
             </div>
             <p className="text-[13px] text-maroon/80 font-bold">
-              There was a problem signing you in. Please try again or use a
-              different account.
+              {dict.problemSigningIn}
             </p>
           </div>
         )}
@@ -89,7 +94,7 @@ export default async function LoginPage(props: Props) {
         {/* Login Card */}
         <div className="w-full bg-cream rounded-[20px] p-[26px_22px] mt-[30px] border border-[rgba(240,184,77,.4)] relative z-10 shadow-xl">
           <h4 className="font-playfair text-base font-bold text-ink mb-4">
-            Committee member login
+            {dict.committeeMemberLogin}
           </h4>
           <form
             action={async () => {
@@ -119,12 +124,11 @@ export default async function LoginPage(props: Props) {
                   d="M9 3.58c1.3 0 2.48.45 3.4 1.32l2.55-2.55C13.4.9 11.4 0 9 0A9 9 0 0 0 1.05 4.86l3 2.3C4.72 5.05 6.68 3.58 9 3.58z"
                 />
               </svg>
-              Sign in with Google
+              {dict.signInWithGoogle}
             </button>
           </form>
           <div className="text-[11px] text-muted-ink mt-4 leading-[1.6]">
-            Authorized volunteers only. By signing in, you agree to the
-            committee's data policies.
+            {dict.authorizedVolunteersOnly}
           </div>
         </div>
       </div>

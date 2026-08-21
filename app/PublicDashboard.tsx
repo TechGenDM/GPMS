@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { motion, animate, Variants, useReducedMotion } from 'motion/react';
 import Image from 'next/image';
 import { socialLinks } from '@/lib/public-page-config';
+import { LanguageSelector } from '@/components/i18n/LanguageSelector';
+import { useLanguage } from '@/components/i18n/LanguageProvider';
 
 // ─── Types ───────────────────────────────────────────────────
 interface PublicDashboardData {
@@ -392,6 +394,7 @@ function SectionDivider({ label }: { label: string }) {
 
 // ─── Live Stream Badge ───────────────────────────────────────
 function LiveStreamBadge({ hasUrl }: { hasUrl: boolean }) {
+  const { t } = useLanguage();
   if (hasUrl) {
     return (
       <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-20 flex items-center gap-2 bg-[#D4A353]/90 backdrop-blur-sm text-[#0C0918] text-[11px] sm:text-[12px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded-lg shadow-lg">
@@ -409,14 +412,14 @@ function LiveStreamBadge({ hasUrl }: { hasUrl: boolean }) {
           <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" />
           <circle cx="12" cy="12" r="2" fill="currentColor" />
         </svg>
-        LIVE DARSHAN
+        {t('publicDashboard.liveDarshan')}
       </div>
     );
   }
 
   return (
     <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-20 flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white/70 text-[11px] sm:text-[12px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded-lg shadow-lg">
-      LIVE STREAM
+      {t('publicDashboard.liveStream')}
     </div>
   );
 }
@@ -446,6 +449,7 @@ function YouTubePlayButton() {
 // PUBLIC DASHBOARD — MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
 export default function PublicDashboard() {
+  const { t } = useLanguage();
   const [dashData, setDashData] = useState<PublicDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -459,7 +463,7 @@ export default function PublicDashboard() {
 
       if (!res.ok) {
         // Server already retried; surface a clean message
-        setError(json.message || 'Could not load dashboard — please try again');
+        setError(json.message || t('publicDashboard.couldNotLoad'));
         return;
       }
 
@@ -478,17 +482,17 @@ export default function PublicDashboard() {
             '[GPMS Dashboard] Malformed data shape from backend',
             json.data
           );
-          setError('Could not load dashboard — please try again');
+          setError(t('publicDashboard.couldNotLoad'));
         }
       } else {
         // Log the machine-readable code for debugging without exposing it to users
         if (json.code) {
           console.error('[GPMS Dashboard] Backend error code:', json.code);
         }
-        setError(json.message || 'Could not load dashboard');
+        setError(json.message || t('publicDashboard.couldNotLoad'));
       }
     } catch {
-      setError('Network error — please check your connection');
+      setError(t('publicDashboard.networkError'));
     } finally {
       setLoading(false);
     }
@@ -572,30 +576,33 @@ export default function PublicDashboard() {
                 className="text-[7px] sm:text-[8px] text-[#B88636]/80 tracking-[0.12em] uppercase font-medium leading-tight"
                 style={{ fontFamily: 'var(--font-dm-mono)' }}
               >
-                GANESH PUJA MANAGEMENT SYSTEM
+                {t('publicDashboard.systemName')}
               </span>
             </div>
           </div>
 
-          <a
-            href="/login"
-            className="group relative overflow-hidden text-[12px] sm:text-[13px] font-bold text-[#E5B560] flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border border-[#E5B560]/30 bg-[#E5B560]/5 hover:bg-[#E5B560]/10 transition-colors"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#E5B560]/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-            Login
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="square"
-              strokeLinejoin="miter"
+          <div className="flex items-center gap-3 sm:gap-4">
+            <LanguageSelector variant="dark" />
+            <a
+              href="/login"
+              className="group relative overflow-hidden text-[12px] sm:text-[13px] font-bold text-[#E5B560] flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border border-[#E5B560]/30 bg-[#E5B560]/5 hover:bg-[#E5B560]/10 transition-colors"
             >
-              <path d="M15 3h4v18h-4M10 17l5-5-5-5M15 12H3" />
-            </svg>
-          </a>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#E5B560]/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
+              {t('publicDashboard.login')}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="square"
+                strokeLinejoin="miter"
+              >
+                <path d="M15 3h4v18h-4M10 17l5-5-5-5M15 12H3" />
+              </svg>
+            </a>
+          </div>
         </motion.header>
 
         {/* ─── MAIN CONTENT ───────────────────────────────── */}
@@ -620,7 +627,7 @@ export default function PublicDashboard() {
                 onClick={fetchData}
                 className="text-[12px] font-bold text-[#E5B560] border border-[#E5B560]/30 px-4 py-2 rounded-full hover:bg-[#E5B560]/10 transition-colors"
               >
-                Try again
+                {t('publicDashboard.tryAgain')}
               </button>
             </div>
           ) : dashData ? (
@@ -650,7 +657,7 @@ export default function PublicDashboard() {
                       className="text-[9px] sm:text-[10px] font-bold tracking-[0.25em] text-[#B88636] uppercase"
                       style={{ fontFamily: 'var(--font-dm-mono)' }}
                     >
-                      Our committee
+                      {t('publicDashboard.ourCommittee')}
                     </p>
                     <svg
                       width="8"
@@ -684,10 +691,10 @@ export default function PublicDashboard() {
                   className="text-[9px] sm:text-[10px] font-bold tracking-[0.3em] text-[#B88636] uppercase"
                   style={{ fontFamily: 'var(--font-dm-mono)' }}
                 >
-                  Financial transparency
+                  {t('publicDashboard.financialTransparency')}
                 </p>
                 <p className="text-[12px] sm:text-[13px] text-[#A29EAB]/70 mt-2 font-medium">
-                  Building trust through clarity and accountability.
+                  {t('publicDashboard.buildingTrust')}
                 </p>
               </motion.div>
 
@@ -737,7 +744,7 @@ export default function PublicDashboard() {
                         <path d="M10 8.5v7l6-3.5-6-3.5z" fill="white" />
                       </svg>
                       <span className="text-[12px] sm:text-[13px] font-medium text-white/80">
-                        Watch Live on YouTube
+                        {t('publicDashboard.watchLive')}
                       </span>
                     </div>
                     {/* External link icon */}
@@ -788,7 +795,7 @@ export default function PublicDashboard() {
                       className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-[#D4A353] uppercase mb-1"
                       style={{ fontFamily: 'var(--font-dm-mono)' }}
                     >
-                      Update
+                      {t('publicDashboard.update')}
                     </p>
                     <p className="text-[13px] sm:text-[14px] text-white/85 font-medium leading-snug">
                       {dashData.announcement.text}
@@ -821,7 +828,9 @@ export default function PublicDashboard() {
 
               {/* ─── FINANCIAL OVERVIEW ──────────────────── */}
               <motion.div variants={itemVariants}>
-                <SectionDivider label="Financial Overview" />
+                <SectionDivider
+                  label={t('publicDashboard.financialOverview')}
+                />
 
                 <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
                   {/* Total Donations Card */}
@@ -851,7 +860,7 @@ export default function PublicDashboard() {
                       className="text-[8px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] text-emerald-400 uppercase mb-0.5 sm:mb-1"
                       style={{ fontFamily: 'var(--font-dm-mono)' }}
                     >
-                      Total Donations
+                      {t('publicDashboard.totalDonations')}
                     </p>
 
                     <div
@@ -872,7 +881,7 @@ export default function PublicDashboard() {
 
                     <div className="h-[1px] bg-emerald-500/15 my-2 sm:my-2.5" />
                     <p className="text-[9px] sm:text-[11px] text-[#A29EAB]/70 font-medium">
-                      Thank you for your generosity!
+                      {t('publicDashboard.thankYouGenerosity')}
                     </p>
                   </div>
 
@@ -903,7 +912,7 @@ export default function PublicDashboard() {
                       className="text-[8px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] text-[#D4A353] uppercase mb-0.5 sm:mb-1"
                       style={{ fontFamily: 'var(--font-dm-mono)' }}
                     >
-                      Total Expenses
+                      {t('publicDashboard.totalExpenses')}
                     </p>
 
                     <div
@@ -924,7 +933,7 @@ export default function PublicDashboard() {
 
                     <div className="h-[1px] bg-[#D4A353]/15 my-2 sm:my-2.5" />
                     <p className="text-[9px] sm:text-[11px] text-[#A29EAB]/70 font-medium">
-                      Every expense is recorded.
+                      {t('publicDashboard.everyExpenseRecorded')}
                     </p>
                   </div>
                 </div>
@@ -953,11 +962,10 @@ export default function PublicDashboard() {
                 </div>
                 <div className="flex-1 relative z-10">
                   <p className="text-[12px] sm:text-[13px] text-white/95 leading-[1.6] font-semibold">
-                    All funds are managed by the organizing committee.
+                    {t('publicDashboard.allFundsManaged')}
                   </p>
                   <p className="text-[11px] sm:text-[12px] text-[#A29EAB]/80 leading-[1.6] font-medium mt-1">
-                    Donations and expenses are tracked digitally for full
-                    transparency.
+                    {t('publicDashboard.donationsTracked')}
                   </p>
                 </div>
                 {/* Temple illustration */}
@@ -979,7 +987,7 @@ export default function PublicDashboard() {
                     className="text-[8px] sm:text-[9px] font-bold tracking-[0.2em] text-[#A29EAB]/80 uppercase mb-3"
                     style={{ fontFamily: 'var(--font-dm-mono)' }}
                   >
-                    Follow us
+                    {t('publicDashboard.followUs')}
                   </p>
                   <div className="flex items-center gap-2.5">
                     {activeSocials.map(([platform, url]) => (
@@ -1043,13 +1051,13 @@ export default function PublicDashboard() {
                     className="text-[8px] sm:text-[9px] font-bold tracking-[0.15em] text-[#D4A353] uppercase"
                     style={{ fontFamily: 'var(--font-dm-mono)' }}
                   >
-                    Built by TechGenDM
+                    {t('publicDashboard.builtBy')}
                   </p>
                   <p
                     className="text-[6.5px] sm:text-[7px] tracking-[0.1em] text-[#B88636]/70 uppercase font-medium"
                     style={{ fontFamily: 'var(--font-dm-mono)' }}
                   >
-                    Software Developer
+                    {t('publicDashboard.softwareDeveloper')}
                   </p>
                 </div>
                 <div className="w-[40px] h-[40px] sm:w-[44px] sm:h-[44px] rounded-full border border-[#D4A353]/40 flex items-center justify-center bg-[#0C0918] overflow-hidden">
