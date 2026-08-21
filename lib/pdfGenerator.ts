@@ -23,21 +23,18 @@ export interface ExpenseRecordData {
 }
 
 // ─── Colour palette ────────────────────────────────────────────────────────────
-const CREAM: [number, number, number] = [252, 248, 242]; // softer cream
-const DARK_BROWN: [number, number, number] = [70, 50, 35];
-const MAROON: [number, number, number] = [130, 60, 15];
-const GOLD: [number, number, number] = [205, 175, 140];
-const MUTED_BROWN: [number, number, number] = [130, 110, 85];
+const CREAM:      [number, number, number] = [250, 246, 240]; 
+const DARK_BROWN: [number, number, number] = [74,  55,  40];
+const MAROON:     [number, number, number] = [139, 69,  19];
+const GOLD:       [number, number, number] = [212, 184, 150];
+const MUTED_BROWN:[number, number, number] = [139, 115, 85];
 
-const CREAM_HEX = '#FCF8F2';
-const DARK_BROWN_HEX = '#463223';
-const MAROON_HEX = '#823C0F';
-const MUTED_BROWN_HEX = '#826E55';
+const CREAM_HEX       = '#FAF6F0';
+const DARK_BROWN_HEX  = '#4A3728';
+const MAROON_HEX      = '#8B4513';
+const MUTED_BROWN_HEX = '#8B7355';
 
-// Pixels-per-mm for Canvas rendering (higher = sharper text in PDF)
 const PPM = 10;
-
-// ─── Canvas helpers ────────────────────────────────────────────────────────────
 
 function textToPng(
   text: string,
@@ -50,13 +47,13 @@ function textToPng(
   const W = Math.round(widthMM * PPM);
   const H = Math.round(heightMM * PPM);
   const canvas = document.createElement('canvas');
-  canvas.width = W;
+  canvas.width  = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
   ctx.clearRect(0, 0, W, H);
-  ctx.font = fontCss;
-  ctx.fillStyle = colorCss;
-  ctx.textAlign = align;
+  ctx.font         = fontCss;
+  ctx.fillStyle    = colorCss;
+  ctx.textAlign    = align;
   ctx.textBaseline = 'middle';
   const x = align === 'center' ? W / 2 : align === 'right' ? W : 0;
   ctx.fillText(text, x, H / 2);
@@ -69,11 +66,12 @@ function donorNameToPng(
 ): { png: string; widthMM: number; heightMM: number } {
   const maxW = Math.round(maxWidthMM * PPM);
   const canvas = document.createElement('canvas');
-  canvas.width = maxW;
+  canvas.width  = maxW;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
 
-  let fontSize = (32 * PPM) / 10; // larger starting size
+  // Target a large, prominent serif size
+  let fontSize = 42 * PPM / 10; 
   const family = 'Georgia, "Times New Roman", serif';
   do {
     ctx.font = `normal ${fontSize}px ${family}`;
@@ -84,15 +82,15 @@ function donorNameToPng(
   const H = Math.round(fontSize * 1.5);
   canvas.height = H;
   ctx.clearRect(0, 0, maxW, H);
-  ctx.font = `normal ${fontSize}px ${family}`;
-  ctx.fillStyle = DARK_BROWN_HEX;
-  ctx.textAlign = 'center';
+  ctx.font         = `normal ${fontSize}px ${family}`;
+  ctx.fillStyle    = DARK_BROWN_HEX;
+  ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(name, maxW / 2, H / 2);
 
   return {
-    png: canvas.toDataURL('image/png'),
-    widthMM: maxWidthMM,
+    png:      canvas.toDataURL('image/png'),
+    widthMM:  maxWidthMM,
     heightMM: H / PPM,
   };
 }
@@ -111,7 +109,7 @@ async function loadSealAtOpacity(
       const img = new Image();
       img.onload = () => {
         const SZ = 800;
-        const c = document.createElement('canvas');
+        const c  = document.createElement('canvas');
         c.width = c.height = SZ;
         const ctx = c.getContext('2d')!;
         ctx.globalAlpha = opacity;
@@ -119,10 +117,7 @@ async function loadSealAtOpacity(
         URL.revokeObjectURL(blobUrl);
         resolve(c.toDataURL('image/png'));
       };
-      img.onerror = () => {
-        URL.revokeObjectURL(blobUrl);
-        resolve(null);
-      };
+      img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
       img.src = blobUrl;
     });
   } catch {
@@ -144,17 +139,17 @@ function addCentredImage(
 function drawScallopLine(
   doc: import('jspdf').jsPDF,
   x1: number,
-  y: number,
+  y:  number,
   x2: number,
   count: number,
   facing: 'down' | 'up'
 ): void {
-  const r = (x2 - x1) / (count * 2);
-  const k = r * 0.5523;
+  const r   = (x2 - x1) / (count * 2);
+  const k   = r * 0.5523;
   const dir = facing === 'down' ? 1 : -1;
 
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.3); // thinner for elegance
+  doc.setLineWidth(0.2); 
   doc.moveTo(x1, y);
 
   for (let i = 0; i < count; i++) {
@@ -172,138 +167,138 @@ function drawScallopLine(
 // ══════════════════════════════════════════════════════════════════════════════
 export async function generateAndDownloadReceipt(data: ReceiptData) {
   const { jsPDF } = await import('jspdf');
-  const QRCode = (await import('qrcode')).default || (await import('qrcode'));
+  const QRCode    = (await import('qrcode')).default || (await import('qrcode'));
 
   const origin = window.location.origin;
 
-  const CONTENT_W = 166;
-  const SERIF = 'Georgia, "Times New Roman", Times, serif';
+  const CONTENT_W = 170;
+  const SERIF     = 'Georgia, "Times New Roman", Times, serif';
 
   const DEVANAGARI =
     '\u0964\u0964 \u0913\u092E \u0936\u094D\u0930\u0940 \u0917\u0923\u0947\u0936\u093E\u092F \u0928\u092E\u0903 \u0964\u0964';
 
   const devanagariPng = textToPng(
     DEVANAGARI,
-    CONTENT_W,
-    10,
-    `normal ${10 * PPM}px "Noto Serif Devanagari", "Mangal", "Kokila", serif`,
+    CONTENT_W, 8, // slightly smaller height
+    `normal ${8.5 * PPM}px "Noto Serif Devanagari", "Mangal", "Kokila", serif`,
     MAROON_HEX
   );
 
   const orgNamePng = textToPng(
     'Ganesh Puja Kharsawan',
-    CONTENT_W,
-    16,
-    `normal ${15.5 * PPM}px ${SERIF}`,
+    CONTENT_W, 14,
+    `normal ${14 * PPM}px ${SERIF}`,
     DARK_BROWN_HEX
   );
 
   const subtitlePng = textToPng(
     'Sarvajanik Ganeshotsav \u00B7 Kharsawan',
-    CONTENT_W,
-    8,
-    `italic ${6.5 * PPM}px ${SERIF}`,
+    CONTENT_W, 6,
+    `italic ${5.5 * PPM}px ${SERIF}`,
     MUTED_BROWN_HEX
   );
 
   const gratitudePng = textToPng(
     'Received with gratitude from',
-    CONTENT_W,
-    7,
+    CONTENT_W, 7,
     `italic ${5.5 * PPM}px ${SERIF}`,
     MUTED_BROWN_HEX
   );
 
   const donorData = donorNameToPng(data.donorName, CONTENT_W);
 
-  const amtNum = Number(data.amount);
-  const amtFormatted = '\u20B9' + amtNum.toLocaleString('en-IN');
+  const amtNum        = Number(data.amount);
+  const amtFormatted  = '\u20B9' + amtNum.toLocaleString('en-IN');
   const amtPng = textToPng(
     amtFormatted,
-    CONTENT_W,
-    20,
-    `normal ${17 * PPM}px ${SERIF}`,
+    CONTENT_W, 18,
+    `normal ${16 * PPM}px ${SERIF}`,
     MAROON_HEX
   );
 
-  const words = amountToWords(data.amount);
+  const words    = amountToWords(data.amount);
   const wordsPng = textToPng(
     words,
-    CONTENT_W,
-    7,
+    CONTENT_W, 6,
     `italic ${5.5 * PPM}px ${SERIF}`,
     DARK_BROWN_HEX
   );
 
-  // Faint watermark
+  // Very faint watermark: 5% opacity
   const [sealPng] = await Promise.all([
-    loadSealAtOpacity(`${origin}/seal.png`, 0.04), // reduced to 4%
+    loadSealAtOpacity(`${origin}/seal.png`, 0.05),
   ]);
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const PW = doc.internal.pageSize.getWidth();
-  const PH = doc.internal.pageSize.getHeight();
-  const MX = 16;
-  const MY = 16;
+  const PW  = doc.internal.pageSize.getWidth();
+  const PH  = doc.internal.pageSize.getHeight();
+  const MX  = 16;
+  const MY  = 20; // 20mm top margin
   const PAD = 10;
 
-  const bx = MX;
-  const by = MY;
-  const bw = PW - MX * 2;
-  const bh = PH - MY * 2 - 25; // Main border ends 25mm above bottom margin to leave room for footer
-  const CX = PW / 2;
-  const leftX = bx + PAD;
+  const bx  = MX;
+  const by  = MY;
+  const bw  = PW - MX * 2; // 178mm width
+  const bh  = 225;         // Fixed receipt height (225mm), leaves ~52mm at bottom for footer
+  const CX  = PW / 2;
+  const leftX  = bx + PAD;
   const rightX = bx + bw - PAD;
 
-  // Cream background
+  // Cream background for the whole page
   doc.setFillColor(...CREAM);
   doc.rect(0, 0, PW, PH, 'F');
 
-  // Scalloped edges simulating paper cuts at top and bottom of A4
-  const scCount = 42;
-  drawScallopLine(doc, 4, 4, PW - 4, scCount, 'down');
-  drawScallopLine(doc, 4, PH - 4, PW - 4, scCount, 'up');
+  // Draw the scallopped edge for the receipt paper
+  const scCount = 50; // many small scallops
+  // Top scalloped edge (just outside the border)
+  drawScallopLine(doc, bx, by - 4, bx + bw, scCount, 'down');
+  // Bottom scalloped edge
+  drawScallopLine(doc, bx, by + bh + 4, bx + bw, scCount, 'up');
 
-  // Outer thin border
+  // Outer thin border for main receipt
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.4);
+  doc.setLineWidth(0.3);
   doc.rect(bx, by, bw, bh);
 
   // Inner border offset 2.5mm
   doc.setLineWidth(0.15);
   doc.rect(bx + 2.5, by + 2.5, bw - 5, bh - 5);
 
-  // Watermark
+  // Watermark - exactly centered in the main receipt paper
   if (sealPng) {
-    const wmMM = 80;
+    const wmMM = 90;
     const wmX = CX - wmMM / 2;
-    const wmY = by + 100; // Position behind donor/amount
+    const wmY = by + (bh / 2) - (wmMM / 2); // perfectly centered vertically in the receipt box
     doc.addImage(sealPng, 'PNG', wmX, wmY, wmMM, wmMM);
   }
 
-  // CONTENT
-  let y = by + 12;
+  // CONTENT LAYOUT - tighter spacing to guarantee fit inside bh (225mm)
+  let y = by + 12; // Start inside border
 
-  const devH = 10;
+  // Sanskrit
+  const devH = 8;
   addCentredImage(doc, devanagariPng, CX, y, CONTENT_W, devH);
-  y += devH + 6;
+  y += devH + 4;
 
+  // Divider
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.3);
-  doc.line(CX - 15, y, CX + 15, y);
-  y += 5;
+  doc.setLineWidth(0.2);
+  doc.line(CX - 12, y, CX + 12, y);
+  y += 4;
 
-  const orgH = 16;
+  // Org Name
+  const orgH = 14;
   addCentredImage(doc, orgNamePng, CX, y, CONTENT_W, orgH);
-  y += orgH + 3;
+  y += orgH + 2;
 
-  const subH = 8;
+  // Subtitle
+  const subH = 6;
   addCentredImage(doc, subtitlePng, CX, y, CONTENT_W, subH);
-  y += subH + 12; // breathing space
+  y += subH + 8; 
 
   // OFFICIAL DONATION RECEIPT badge
-  const badgeW = 96;
-  const badgeH = 7.5;
+  const badgeW = 90;
+  const badgeH = 9; // slightly larger height
   const badgeX = CX - badgeW / 2;
   doc.setDrawColor(...MUTED_BROWN);
   doc.setLineWidth(0.2);
@@ -311,10 +306,10 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(...MUTED_BROWN);
-  doc.setCharSpace(1.8);
-  doc.text('OFFICIAL DONATION RECEIPT', CX, y + 4.8, { align: 'center' });
+  doc.setCharSpace(2.0);
+  doc.text('OFFICIAL DONATION RECEIPT', CX, y + 5.5, { align: 'center' });
   doc.setCharSpace(0);
-  y += badgeH + 18; // generous breathing space
+  y += badgeH + 12; 
 
   // Receipt info row
   const receiptDate = parseGPMSDate(data.date).toLocaleDateString('en-IN', {
@@ -327,92 +322,80 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   doc.setFontSize(6.5);
   doc.setTextColor(...MUTED_BROWN);
   doc.setCharSpace(1.0);
-  doc.text('RECEIPT NO.', leftX, y);
-  doc.text('DATE', rightX, y, { align: 'right' });
-  doc.setCharSpace(0);
-  y += 6;
+  doc.text('RECEIPT NO.', leftX,  y);
+  doc.text('DATE',         rightX, y, { align: 'right' });
+  doc.setCharSpace(0); // Reset immediately!
+  y += 5;
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(...DARK_BROWN);
-  doc.text(data.receiptId, leftX, y);
-  doc.text(receiptDate, rightX, y, { align: 'right' });
-  y += 5;
+  doc.setCharSpace(0);
+  doc.text(data.receiptId, leftX,  y);
+  doc.text(receiptDate,    rightX, y, { align: 'right' });
+  y += 4;
 
   // Thin divider
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.15);
   doc.line(leftX, y, rightX, y);
-  y += 24; // breathing space before donor section
+  y += 18; // breathing space before donor section
 
   // Donor section
   addCentredImage(doc, gratitudePng, CX, y, CONTENT_W, 7);
-  y += 7 + 8;
+  y += 7 + 6;
 
-  addCentredImage(
-    doc,
-    donorData.png,
-    CX,
-    y,
-    donorData.widthMM,
-    donorData.heightMM
-  );
-  y += donorData.heightMM + 18;
+  addCentredImage(doc, donorData.png, CX, y, donorData.widthMM, donorData.heightMM);
+  y += donorData.heightMM + 12;
 
   // Amount section
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(...MUTED_BROWN);
-  doc.setCharSpace(1.8);
+  doc.setCharSpace(1.5);
   doc.text('CONTRIBUTION AMOUNT', CX, y, { align: 'center' });
-  doc.setCharSpace(0);
-  y += 10;
+  doc.setCharSpace(0); // CRITICAL RESET
+  y += 8;
 
-  const amtH = 20;
+  const amtH = 18;
   addCentredImage(doc, amtPng, CX, y, CONTENT_W, amtH);
-  y += amtH + 6;
+  y += amtH + 4;
 
-  addCentredImage(doc, wordsPng, CX, y, CONTENT_W, 7);
-  y += 7 + 22; // breathing space before QR
+  addCentredImage(doc, wordsPng, CX, y, CONTENT_W, 6);
+  y += 6 + 18; // space before QR
 
   // QR Code
   const verifyUrl = `${origin}/verify/${data.receiptId}`;
-  const qrMM = 32; // slightly smaller
+  const qrMM = 40; // 40mm centered
   try {
     const qrDataUri = await QRCode.toDataURL(verifyUrl, {
-      width: 320,
+      width: 400,
       margin: 1,
-      color: { dark: '#463223', light: '#FCF8F2' },
+      color: { dark: '#4A3728', light: '#FAF6F0' },
     });
 
     const qrX = CX - qrMM / 2;
 
     doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(qrX - 3, y - 3, qrMM + 6, qrMM + 6, 1, 1);
+    doc.setLineWidth(0.3);
+    doc.rect(qrX - 2, y - 2, qrMM + 4, qrMM + 4);
 
     doc.addImage(qrDataUri, 'PNG', qrX, y, qrMM, qrMM);
   } catch (qrErr) {
     console.error('[GPMS] QR generation error:', qrErr);
   }
 
-  // Footer is placed OUTSIDE the main receipt boundary
-  const footerY = by + bh + 12;
+  // Footer is placed OUTSIDE the main receipt boundary, securely below the bottom scallops
+  // Main receipt ends at by + bh = 20 + 225 = 245
+  // Bottom scallop is at 249
+  // Footer placed safely at 265
+  const footerY = by + bh + 16;
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(8);
   doc.setTextColor(...MUTED_BROWN);
-  doc.text(
-    'This digital receipt is issued in the spirit of the traditional bill-book. A copy',
-    CX,
-    footerY,
-    { align: 'center' }
-  );
-  doc.text(
-    'has been sent to your phone. May Bappa bless you.',
-    CX,
-    footerY + 4,
-    { align: 'center' }
-  );
+  doc.setCharSpace(0);
+  doc.text('This digital receipt is issued in the spirit of the traditional bill-book. A copy', CX, footerY, { align: 'center' });
+  doc.text('has been sent to your phone. May Bappa bless you.', CX, footerY + 5, { align: 'center' });
 
   doc.save(`${data.receiptId}.pdf`);
 }
@@ -453,8 +436,8 @@ export async function generateAndDownloadExpenseRecord(
   doc.setTextColor(20, 20, 20);
 
   let y = 45;
-  const leftCol = 20;
-  const rightCol = 70;
+  const leftCol   = 20;
+  const rightCol  = 70;
   const lineHeight = 10;
 
   const fields = [
@@ -467,7 +450,7 @@ export async function generateAndDownloadExpenseRecord(
         year: 'numeric',
       }),
     },
-    { label: 'Category:', value: data.category },
+    { label: 'Category:',    value: data.category },
     { label: 'Description:', value: data.description },
     {
       label: 'Amount:',
