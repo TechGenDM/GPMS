@@ -56,6 +56,7 @@ export const hi: Dictionary = {
     retry: 'पुनः प्रयास करें',
     serverError: 'सर्वर से कनेक्ट करने में त्रुटि। कृपया पुनः प्रयास करें।',
     fetchFailed: 'डैशबोर्ड डेटा लोड करने में विफल',
+    recordNotFound: 'रिकॉर्ड विवरण नहीं मिला।',
     currentBalance: 'वर्तमान शेष',
     collections: 'संग्रह',
     cash: 'नकद',

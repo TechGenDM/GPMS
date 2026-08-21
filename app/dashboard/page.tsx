@@ -25,6 +25,7 @@ import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 import { Button } from '@/components/ui/button';
 import { LanguageSelector } from '@/components/i18n/LanguageSelector';
 import { useLanguage } from '@/components/i18n/LanguageProvider';
+import { RecordDetailModal } from '@/components/records/RecordDetailModal';
 
 interface DashboardSummary {
   donations: { total: number; today: number; cash: number; upi: number };
@@ -81,10 +82,16 @@ export default function DashboardPage() {
 
   const userRole = session?.user?.role;
   const canManageUsers = userRole === 'Admin' || userRole === 'SuperAdmin';
+  const isAdmin = canManageUsers;
   const canManageLiveDarshan =
     userRole === 'SuperAdmin' ||
     userRole === 'Admin' ||
     userRole === 'Volunteer';
+
+  // Record Detail Modal state
+  const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
+  const [modalType, setModalType] = useState<'donation' | 'expense'>('donation');
+  const [isFetchingRecord, setIsFetchingRecord] = useState(false);
 
   // Live Darshan state
   const [liveDarshanModalOpen, setLiveDarshanModalOpen] = useState(false);
@@ -256,6 +263,41 @@ export default function DashboardPage() {
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  const handleActivityClick = async (activity: Activity) => {
+    setIsFetchingRecord(true);
+    try {
+      const endpoint =
+        activity.type === 'Donation'
+          ? '/records/donations'
+          : '/records/expenses';
+
+      const res = await fetchApi<{ data: Record<string, unknown>[] }>(endpoint, {
+        method: 'POST',
+        body: {
+          searchQuery: activity.id,
+        },
+      });
+
+      if (res.success && res.data && res.data.data && res.data.data.length > 0) {
+        const exactRecord = res.data.data.find(
+          (r) => r.id === activity.id || r.receiptId === activity.id
+        );
+        if (exactRecord) {
+          setModalType(activity.type === 'Donation' ? 'donation' : 'expense');
+          setSelectedRecord(exactRecord);
+        } else {
+          feedback.showError(t('dashboard.recordNotFound'));
+        }
+      } else {
+        feedback.showError(t('dashboard.recordNotFound'));
+      }
+    } catch {
+      feedback.showError(t('dashboard.fetchFailed'));
+    } finally {
+      setIsFetchingRecord(false);
+    }
+  };
 
   const fmt = (n: number) => new Intl.NumberFormat('en-IN').format(n);
 
@@ -694,40 +736,47 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-3">
               {data.recentActivity.map((activity, idx) => (
-                <Card key={`${activity.id}-${idx}`}>
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center overflow-hidden">
-                      <div
-                        className={`p-2 rounded-full mr-3 shrink-0 ${activity.type === 'Donation' ? 'bg-[#EAF3EA] text-sage' : 'bg-[#F4E9EB] text-maroon'}`}
-                      >
-                        {activity.type === 'Donation' ? (
-                          <ArrowUpRight className="w-[18px] h-[18px]" />
-                        ) : (
-                          <ArrowDownRight className="w-[18px] h-[18px]" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p
-                          className="font-bold text-[14px] text-ink truncate pr-2"
-                          title={activity.title}
+                <button
+                  key={`${activity.id}-${idx}`}
+                  onClick={() => handleActivityClick(activity)}
+                  disabled={isFetchingRecord}
+                  className="w-full text-left group transition-transform active:scale-[0.99] disabled:opacity-70 disabled:active:scale-100"
+                >
+                  <Card className="hover:border-gold-soft/40 transition-colors">
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="flex items-center overflow-hidden">
+                        <div
+                          className={`p-2 rounded-full mr-3 shrink-0 ${activity.type === 'Donation' ? 'bg-[#EAF3EA] text-sage' : 'bg-[#F4E9EB] text-maroon'}`}
                         >
-                          {activity.title || t('dashboard.untitled')}
-                        </p>
-                        <p className="text-[12px] font-medium text-muted-ink">
-                          {activity.date}
+                          {activity.type === 'Donation' ? (
+                            <ArrowUpRight className="w-[18px] h-[18px]" />
+                          ) : (
+                            <ArrowDownRight className="w-[18px] h-[18px]" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p
+                            className="font-bold text-[14px] text-ink truncate pr-2 group-hover:text-gold-soft transition-colors"
+                            title={activity.title}
+                          >
+                            {activity.title || t('dashboard.untitled')}
+                          </p>
+                          <p className="text-[12px] font-medium text-muted-ink">
+                            {activity.date}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p
+                          className={`font-bold text-[15px] ${activity.type === 'Donation' ? 'text-sage' : 'text-ink'}`}
+                        >
+                          {activity.type === 'Donation' ? '+' : '-'}₹
+                          {fmt(activity.amount)}
                         </p>
                       </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p
-                        className={`font-bold text-[15px] ${activity.type === 'Donation' ? 'text-sage' : 'text-ink'}`}
-                      >
-                        {activity.type === 'Donation' ? '+' : '-'}₹
-                        {fmt(activity.amount)}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </button>
               ))}
             </div>
           )}
@@ -751,6 +800,20 @@ export default function DashboardPage() {
           {t('dashboard.expense')}
         </button>
       </div>
+
+      {/* Record Detail Modal */}
+      <RecordDetailModal
+        isOpen={!!selectedRecord}
+        onClose={() => setSelectedRecord(null)}
+        record={selectedRecord}
+        type={modalType}
+        canCancel={isAdmin}
+        onCancelSuccess={() => {
+          setSelectedRecord(null);
+          loadDashboard(true);
+        }}
+        feedback={feedback}
+      />
 
       {/* Live Darshan Modal */}
       {liveDarshanModalOpen && (

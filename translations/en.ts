@@ -49,6 +49,7 @@ export type Dictionary = {
     retry: string;
     serverError: string;
     fetchFailed: string;
+    recordNotFound: string;
     currentBalance: string;
     collections: string;
     cash: string;
@@ -360,6 +361,7 @@ export const en: Dictionary = {
     retry: 'Retry',
     serverError: 'Error connecting to server. Please try again.',
     fetchFailed: 'Failed to load dashboard data',
+    recordNotFound: 'Record details could not be found.',
     currentBalance: 'Current Balance',
     collections: 'Collections',
     cash: 'Cash',
