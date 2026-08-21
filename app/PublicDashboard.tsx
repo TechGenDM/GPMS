@@ -456,9 +456,35 @@ export default function PublicDashboard() {
       setError(null);
       const res = await fetch('/api/dashboard/public');
       const json = await res.json();
+
+      if (!res.ok) {
+        // Server already retried; surface a clean message
+        setError(json.message || 'Could not load dashboard — please try again');
+        return;
+      }
+
       if (json.success && json.data) {
-        setDashData(json.data);
+        const d = json.data as Partial<PublicDashboardData>;
+        // Validate that the required numeric fields are present
+        if (
+          typeof d.totalCollection === 'number' &&
+          typeof d.totalExpense === 'number' &&
+          typeof d.balance === 'number'
+        ) {
+          setDashData(json.data as PublicDashboardData);
+        } else {
+          // success:true but data is structurally incomplete — treat as error
+          console.error(
+            '[GPMS Dashboard] Malformed data shape from backend',
+            json.data
+          );
+          setError('Could not load dashboard — please try again');
+        }
       } else {
+        // Log the machine-readable code for debugging without exposing it to users
+        if (json.code) {
+          console.error('[GPMS Dashboard] Backend error code:', json.code);
+        }
         setError(json.message || 'Could not load dashboard');
       }
     } catch {
