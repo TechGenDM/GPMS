@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
     let data: unknown;
     try {
       data = JSON.parse(rawText);
+      console.log(`[GPMS] /api/records/donations Search Query Payload:`, payload);
+      console.log(`[GPMS] /api/records/donations Response Data Length:`, (data as any)?.data?.length || 0);
     } catch {
       console.error(
         `[GPMS] requestId=${requestId} action=searchDonations failed to parse JSON response`

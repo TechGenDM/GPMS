@@ -276,13 +276,37 @@ export default function DashboardPage() {
         method: 'POST',
         body: {
           searchQuery: activity.id,
+          page: 1,
+          limit: 50,
         },
       });
 
-      if (res.success && res.data && res.data.data && res.data.data.length > 0) {
-        const exactRecord = res.data.data.find(
-          (r) => r.id === activity.id || r.receiptId === activity.id
+      let recordsArray: any[] = [];
+      if (res.success && res.data) {
+        if (Array.isArray((res.data as any).data)) {
+          recordsArray = (res.data as any).data;
+        } else if (Array.isArray(res.data)) {
+          recordsArray = res.data as any[];
+        }
+      }
+
+      if (recordsArray.length > 0) {
+        let exactRecord = recordsArray.find(
+          (r) => String(r.id) === String(activity.id) || String(r.receiptId) === String(activity.id)
         );
+
+        if (!exactRecord) {
+          exactRecord = recordsArray.find((r) => {
+            const matchTitle = r.donorName === activity.title || r.vendor === activity.title || r.category === activity.title;
+            const matchAmount = Number(r.amount) === Number(activity.amount);
+            return matchTitle && matchAmount;
+          });
+        }
+
+        if (!exactRecord && recordsArray.length === 1) {
+          exactRecord = recordsArray[0];
+        }
+
         if (exactRecord) {
           setModalType(activity.type === 'Donation' ? 'donation' : 'expense');
           setSelectedRecord(exactRecord);
