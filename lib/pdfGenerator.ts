@@ -30,8 +30,28 @@ const GOLD: [number, number, number] = [212, 184, 150];
 const MUTED_BROWN: [number, number, number] = [139, 115, 85];
 
 /**
- * Draws a row of small filled circles to simulate a scalloped border.
- * Uses jsPDF's circle() — compatible with jsPDF v4.
+ * Fetches a binary file from a public URL and returns it as a base64 string.
+ * Used to load TTF fonts and images served from /public at runtime.
+ */
+async function fetchAsBase64(url: string): Promise<string> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  }
+  const buffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  // Use chunked approach to avoid call stack overflow on large buffers
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+/**
+ * Draws a row of small filled circles to simulate a scalloped / beaded border.
+ * Uses jsPDF circle() — compatible with jsPDF v4.
  */
 function drawScallops(
   doc: import('jspdf').jsPDF,
@@ -43,7 +63,7 @@ function drawScallops(
 ): void {
   doc.setFillColor(...GOLD);
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.2);
+  doc.setLineWidth(0.1);
   const step = totalWidth / count;
   for (let i = 0; i < count; i++) {
     const cx = startX + i * step + step / 2;
@@ -54,33 +74,38 @@ function drawScallops(
 /**
  * ═════════════════════════════════════════════════════════════════════════════
  *  DONATION — Premium ceremonial Ganesh Puja receipt (A4 portrait)
+ *
+ *  Fonts are fetched from /public/fonts/ at runtime — no large JS chunks.
+ *  QR code encodes the same verification URL as the original implementation.
  * ═════════════════════════════════════════════════════════════════════════════
  */
 export async function generateAndDownloadReceipt(data: ReceiptData) {
   const { jsPDF } = await import('jspdf');
   const QRCode = (await import('qrcode')).default || (await import('qrcode'));
 
-  // ── lazy-load font modules (only when user clicks Download PDF) ──
-  const { ebGaramondRegularBase64 } = await import('./fonts/ebGaramondRegular');
-  const { ebGaramondItalicBase64 } = await import('./fonts/ebGaramondItalic');
-  const { tiroDevanagariHindiBase64 } =
-    await import('./fonts/tiroDevanagariHindi');
+  // ── Fetch fonts as base64 from /public/fonts/ (served as static assets) ──
+  const origin = window.location.origin;
+  const [garamondRegB64, garamondItB64, tiroB64] = await Promise.all([
+    fetchAsBase64(`${origin}/fonts/EBGaramond-Regular.ttf`),
+    fetchAsBase64(`${origin}/fonts/EBGaramond-Italic.ttf`),
+    fetchAsBase64(`${origin}/fonts/TiroDevanagariHindi-Regular.ttf`),
+  ]);
 
   // ── A4 portrait ──
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const PW = doc.internal.pageSize.getWidth(); // 210 mm
   const PH = doc.internal.pageSize.getHeight(); // 297 mm
-  const MX = 16; // horizontal margin
-  const MY = 16; // vertical margin
+  const MX = 16;
+  const MY = 16;
 
-  // ── register custom fonts ──
-  doc.addFileToVFS('EBGaramond-Regular.ttf', ebGaramondRegularBase64);
+  // ── Register custom fonts ──
+  doc.addFileToVFS('EBGaramond-Regular.ttf', garamondRegB64);
   doc.addFont('EBGaramond-Regular.ttf', 'EBGaramond', 'normal');
 
-  doc.addFileToVFS('EBGaramond-Italic.ttf', ebGaramondItalicBase64);
+  doc.addFileToVFS('EBGaramond-Italic.ttf', garamondItB64);
   doc.addFont('EBGaramond-Italic.ttf', 'EBGaramond', 'italic');
 
-  doc.addFileToVFS('TiroDevanagari-Regular.ttf', tiroDevanagariHindiBase64);
+  doc.addFileToVFS('TiroDevanagari-Regular.ttf', tiroB64);
   doc.addFont('TiroDevanagari-Regular.ttf', 'TiroDevanagari', 'normal');
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -99,84 +124,72 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
 
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(1.0);
-  doc.rect(bx, by, bw, bh); // outer border
+  doc.rect(bx, by, bw, bh);
 
   doc.setLineWidth(0.35);
-  doc.rect(bx + 3, by + 3, bw - 6, bh - 6); // inner border
+  doc.rect(bx + 3, by + 3, bw - 6, bh - 6);
 
   // ══════════════════════════════════════════════════════════════════════════
-  // LAYER 2 — scalloped dot rows at top and bottom (decorative)
+  // LAYER 2 — scalloped dot rows (decorative)
   // ══════════════════════════════════════════════════════════════════════════
-  const scallopsCount = 32;
-  const scRadius = 1.4;
-  const scY_top = by + 3 + 4.5; // just inside inner border top
-  const scY_bot = by + bh - 3 - 4.5; // just inside inner border bottom
   const scStartX = bx + 3;
   const scWidth = bw - 6;
+  const scY_top = by + 3 + 4.8;
+  const scY_bot = by + bh - 3 - 4.8;
 
-  drawScallops(doc, scStartX, scY_top, scWidth, scallopsCount, scRadius);
-  drawScallops(doc, scStartX, scY_bot, scWidth, scallopsCount, scRadius);
+  drawScallops(doc, scStartX, scY_top, scWidth, 32, 1.3);
+  drawScallops(doc, scStartX, scY_bot, scWidth, 32, 1.3);
 
   // ══════════════════════════════════════════════════════════════════════════
-  // LAYER 3 — Ganesh seal watermark (decorative, low-opacity simulation)
+  // LAYER 3 — Ganesh seal watermark (decorative, silently skipped on failure)
   // ══════════════════════════════════════════════════════════════════════════
   try {
-    const sealResponse = await fetch('/seal.png');
-    const sealBuffer = await sealResponse.arrayBuffer();
-    const sealBase64 = btoa(
-      new Uint8Array(sealBuffer).reduce(
-        (str, byte) => str + String.fromCharCode(byte),
-        ''
-      )
-    );
-
+    const sealB64 = await fetchAsBase64(`${origin}/seal.png`);
     const wmSize = 78;
     const wmX = (PW - wmSize) / 2;
-    const wmY = 118;
-
-    // Draw image then overlay near-opaque cream rect to simulate low opacity
-    doc.addImage(sealBase64, 'PNG', wmX, wmY, wmSize, wmSize);
+    const wmY = 122;
+    doc.addImage(sealB64, 'PNG', wmX, wmY, wmSize, wmSize);
+    // Overlay a near-opaque cream rect to simulate low opacity watermark
     doc.setFillColor(...CREAM);
     doc.setGState(doc.GState({ opacity: 0.8 }));
     doc.rect(wmX, wmY, wmSize, wmSize, 'F');
     doc.setGState(doc.GState({ opacity: 1.0 }));
   } catch {
-    // Watermark is purely decorative — silently skip if fetch fails
+    // Watermark is purely decorative — silently skip
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // CONTENT — top to bottom
+  // CONTENT (top → bottom)
   // ══════════════════════════════════════════════════════════════════════════
-  let y = by + 16; // cursor starts below top scallops
+  let y = by + 16;
 
-  // ── Sanskrit blessing ──────────────────────────────────────────────────────
-  // Uses TiroDevanagari for correct Devanagari glyph rendering
+  // ── Sanskrit blessing — Tiro Devanagari Hindi ─────────────────────────────
+  // ॥ ॐ श्री गणेशाय नमः ॥
   doc.setFont('TiroDevanagari', 'normal');
   doc.setFontSize(13);
   doc.setTextColor(...MAROON);
-  // ॥ ॐ श्री गणेशाय नमः ॥
   doc.text(
-    '\u0964\u0964 \u0913\u092E\u0020\u0936\u094D\u0930\u0940 \u0917\u0923\u0947\u0936\u093E\u092F \u0928\u092E\u0903 \u0964\u0964',
+    '\u0964\u0964 \u0913\u092E \u0936\u094D\u0930\u0940 \u0917\u0923\u0947\u0936\u093E\u092F \u0928\u092E\u0903 \u0964\u0964',
     PW / 2,
     y,
     { align: 'center' }
   );
   y += 12;
 
-  // ── thin gold ornament line ────────────────────────────────────────────────
+  // ── gold ornament line ────────────────────────────────────────────────────
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.4);
   doc.line(PW / 2 - 30, y, PW / 2 + 30, y);
   y += 12;
 
-  // ── organisation name ──────────────────────────────────────────────────────
+  // ── organisation name ─────────────────────────────────────────────────────
   doc.setFont('EBGaramond', 'normal');
   doc.setFontSize(28);
   doc.setTextColor(...DARK_BROWN);
   doc.text('Ganesh Puja Kharsawan', PW / 2, y, { align: 'center' });
   y += 9;
 
-  // ── subtitle ───────────────────────────────────────────────────────────────
+  // ── subtitle ──────────────────────────────────────────────────────────────
   doc.setFont('EBGaramond', 'italic');
   doc.setFontSize(11);
   doc.setTextColor(...MUTED_BROWN);
@@ -185,8 +198,8 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   });
   y += 14;
 
-  // ── "OFFICIAL DONATION RECEIPT" badge ─────────────────────────────────────
-  const badgeW = 88;
+  // ── OFFICIAL DONATION RECEIPT badge ──────────────────────────────────────
+  const badgeW = 90;
   const badgeH = 9;
   const badgeX = (PW - badgeW) / 2;
   doc.setDrawColor(...DARK_BROWN);
@@ -201,7 +214,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   });
   y += badgeH + 16;
 
-  // ── receipt info row ───────────────────────────────────────────────────────
+  // ── receipt info row ──────────────────────────────────────────────────────
   const receiptDate = parseGPMSDate(data.date).toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
@@ -223,7 +236,6 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   doc.text(receiptDate, rightX, y, { align: 'right' });
   y += 6;
 
-  // thin gold divider
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.3);
   doc.line(leftX, y, rightX, y);
@@ -243,7 +255,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   doc.text(data.donorName, PW / 2, y, { align: 'center' });
   y += 20;
 
-  // ── "CONTRIBUTION AMOUNT" label ───────────────────────────────────────────
+  // ── CONTRIBUTION AMOUNT label ─────────────────────────────────────────────
   doc.setFont('EBGaramond', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...MUTED_BROWN);
@@ -269,23 +281,22 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   doc.text(words, PW / 2, y, { align: 'center' });
   y += 26;
 
-  // thin centre ornament divider
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.3);
   doc.line(PW / 2 - 38, y, PW / 2 + 38, y);
   y += 16;
 
   // ══════════════════════════════════════════════════════════════════════════
-  // QR CODE — same verification URL as before; only visual placement changed
+  // QR CODE — same /verify/{receiptId} URL as original implementation
   // ══════════════════════════════════════════════════════════════════════════
-  const verifyUrl = `${window.location.origin}/verify/${data.receiptId}`;
+  const verifyUrl = `${origin}/verify/${data.receiptId}`;
 
   try {
     const qrDataUri = await QRCode.toDataURL(verifyUrl, {
       width: 200,
       margin: 1,
       color: {
-        dark: '#4A3728', // dark brown dots — matches receipt palette
+        dark: '#4A3728', // dark brown — matches receipt palette
         light: '#FAF6F0', // cream background
       },
     });
@@ -293,7 +304,6 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
     const qrSize = 48;
     const qrX = (PW - qrSize) / 2;
 
-    // decorative gold border around QR
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.7);
     doc.roundedRect(qrX - 5, y - 4, qrSize + 10, qrSize + 10, 2, 2);
@@ -301,7 +311,6 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
     doc.addImage(qrDataUri, 'PNG', qrX, y, qrSize, qrSize);
     y += qrSize + 14;
 
-    // scan label
     doc.setFont('EBGaramond', 'italic');
     doc.setFontSize(8.5);
     doc.setTextColor(...MUTED_BROWN);
@@ -309,7 +318,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
       align: 'center',
     });
   } catch (err) {
-    console.error('[GPMS] Failed to generate QR code for donation PDF', err);
+    console.error('[GPMS] Failed to generate QR for donation PDF', err);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -334,12 +343,9 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
     'A copy has been sent to your phone. May Bappa bless you.',
     PW / 2,
     footerY + 5.5,
-    {
-      align: 'center',
-    }
+    { align: 'center' }
   );
 
-  // ── save ──
   doc.save(`${data.receiptId}.pdf`);
 }
 
