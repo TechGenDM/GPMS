@@ -223,7 +223,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   const origin = window.location.origin;
   const CONTENT_W = 160;
 
-  const DEVANAGARI = '\u0964\u0964 \u0913\u092E \u0936\u094D\u0930\u0940 \u0917\u0923\u0947\u0936\u093E\u092F \u0928\u092E\u0903 \u0964\u0964';
+  const DEVANAGARI = '\u0964\u0964 \u0950 \u0936\u094D\u0930\u0940 \u0917\u0923\u0947\u0936\u093E\u092F \u0928\u092E\u0903 \u0964\u0964';
 
   const devanagariPng = textToPng(
     DEVANAGARI, CONTENT_W, 12,
@@ -376,7 +376,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   doc.setTextColor(...DARK_BROWN);
   doc.setCharSpace(0); // Explicitly 0
   doc.text(badgeText, CX, y + 4.5, { align: 'center' });
-  y += badgeH + 10;
+  y += badgeH + 8;
 
   // Info Labels
   const infoLabelText = 'R E C E I P T   N O.';
@@ -397,7 +397,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.2);
   doc.line(leftX, y, rightX, y);
-  y += 10;
+  y += 8;
 
   // Gratitude
   addImageAlign(doc, gratitudePng, CX, y, CONTENT_W, 7, 'center');
@@ -405,7 +405,7 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
 
   // Donor
   addImageAlign(doc, donorData.png, CX, y, donorData.widthMM, donorData.heightMM, 'center');
-  y += donorData.heightMM + 8;
+  y += donorData.heightMM + 6;
 
   // Contrib Label - Again using manual spaces to guarantee perfect mathematical centering
   const contribText = 'C O N T R I B U T I O N   A M O U N T';
@@ -421,11 +421,11 @@ export async function generateAndDownloadReceipt(data: ReceiptData) {
 
   // Words
   addImageAlign(doc, wordsPng, CX, y, CONTENT_W, 7, 'center');
-  y += 7 + 7;
+  y += 7 + 5;
 
   // Bot Ornament
   drawOrnament(doc, CX, y + 2);
-  y += 8;
+  y += 5;
 
   // QR
   const qrMM = 32;
