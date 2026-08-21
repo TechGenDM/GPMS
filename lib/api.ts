@@ -44,7 +44,9 @@ export async function fetchApi<T = unknown>(
     });
 
     if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+      // Include status code so callers and logs can distinguish transient (5xx)
+      // from auth (401/403) and validation (400) failures.
+      throw new Error(`HTTP ${res.status}`);
     }
 
     const data: ApiResponse<T> = await res.json();
