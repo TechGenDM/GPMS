@@ -23,93 +23,80 @@ export interface ExpenseRecordData {
 }
 
 // ─── Colour palette ────────────────────────────────────────────────────────────
-const CREAM:      [number, number, number] = [250, 246, 240];
-const DARK_BROWN: [number, number, number] = [74,  55,  40];
-const MAROON:     [number, number, number] = [139, 69,  19];
-const GOLD:       [number, number, number] = [212, 184, 150];
-const MUTED_BROWN:[number, number, number] = [139, 115, 85];
+const CREAM: [number, number, number] = [252, 248, 242]; // softer cream
+const DARK_BROWN: [number, number, number] = [70, 50, 35];
+const MAROON: [number, number, number] = [130, 60, 15];
+const GOLD: [number, number, number] = [205, 175, 140];
+const MUTED_BROWN: [number, number, number] = [130, 110, 85];
 
-const CREAM_HEX       = '#FAF6F0';
-const DARK_BROWN_HEX  = '#4A3728';
-const MAROON_HEX      = '#8B4513';
-const MUTED_BROWN_HEX = '#8B7355';
+const CREAM_HEX = '#FCF8F2';
+const DARK_BROWN_HEX = '#463223';
+const MAROON_HEX = '#823C0F';
+const MUTED_BROWN_HEX = '#826E55';
 
 // Pixels-per-mm for Canvas rendering (higher = sharper text in PDF)
 const PPM = 10;
 
 // ─── Canvas helpers ────────────────────────────────────────────────────────────
 
-/**
- * Renders text onto a Canvas and returns a PNG data URL.
- * Dimensions are in mm; internally multiplied by PPM for pixel resolution.
- */
 function textToPng(
   text: string,
   widthMM: number,
   heightMM: number,
-  fontCss: string,          // CSS font string, e.g. "bold 120px Georgia, serif"
+  fontCss: string,
   colorCss: string,
   align: CanvasTextAlign = 'center'
 ): string {
   const W = Math.round(widthMM * PPM);
   const H = Math.round(heightMM * PPM);
   const canvas = document.createElement('canvas');
-  canvas.width  = W;
+  canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
   ctx.clearRect(0, 0, W, H);
-  ctx.font         = fontCss;
-  ctx.fillStyle    = colorCss;
-  ctx.textAlign    = align;
+  ctx.font = fontCss;
+  ctx.fillStyle = colorCss;
+  ctx.textAlign = align;
   ctx.textBaseline = 'middle';
   const x = align === 'center' ? W / 2 : align === 'right' ? W : 0;
   ctx.fillText(text, x, H / 2);
   return canvas.toDataURL('image/png');
 }
 
-/**
- * Auto-sizes the donor name to fit within maxWidthMM.
- * Returns { png, widthMM, heightMM }.
- */
 function donorNameToPng(
   name: string,
   maxWidthMM: number
 ): { png: string; widthMM: number; heightMM: number } {
   const maxW = Math.round(maxWidthMM * PPM);
   const canvas = document.createElement('canvas');
-  canvas.width  = maxW;
-  canvas.height = 1; // temp
+  canvas.width = maxW;
+  canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
 
-  // Start at a generous size and shrink to fit
-  let fontSize = 26 * PPM / 10; // start ~26mm equivalent
+  let fontSize = (32 * PPM) / 10; // larger starting size
   const family = 'Georgia, "Times New Roman", serif';
   do {
-    ctx.font = `bold ${fontSize}px ${family}`;
-    if (ctx.measureText(name).width <= maxW * 0.92) break;
-    fontSize -= 5;
-  } while (fontSize > 14);
+    ctx.font = `normal ${fontSize}px ${family}`;
+    if (ctx.measureText(name).width <= maxW * 0.95) break;
+    fontSize -= 3;
+  } while (fontSize > 16);
 
-  const H = Math.round(fontSize * 1.6);
+  const H = Math.round(fontSize * 1.5);
   canvas.height = H;
   ctx.clearRect(0, 0, maxW, H);
-  ctx.font         = `bold ${fontSize}px ${family}`;
-  ctx.fillStyle    = DARK_BROWN_HEX;
-  ctx.textAlign    = 'center';
+  ctx.font = `normal ${fontSize}px ${family}`;
+  ctx.fillStyle = DARK_BROWN_HEX;
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(name, maxW / 2, H / 2);
 
   return {
-    png:      canvas.toDataURL('image/png'),
-    widthMM:  maxWidthMM,
+    png: canvas.toDataURL('image/png'),
+    widthMM: maxWidthMM,
     heightMM: H / PPM,
   };
 }
 
-/**
- * Fetches seal.png and re-renders it at the requested opacity (0–1) using Canvas.
- * Returns a PNG data URL with opacity baked in, or null on failure.
- */
 async function loadSealAtOpacity(
   url: string,
   opacity: number
@@ -124,7 +111,7 @@ async function loadSealAtOpacity(
       const img = new Image();
       img.onload = () => {
         const SZ = 800;
-        const c  = document.createElement('canvas');
+        const c = document.createElement('canvas');
         c.width = c.height = SZ;
         const ctx = c.getContext('2d')!;
         ctx.globalAlpha = opacity;
@@ -132,7 +119,10 @@ async function loadSealAtOpacity(
         URL.revokeObjectURL(blobUrl);
         resolve(c.toDataURL('image/png'));
       };
-      img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
+      img.onerror = () => {
+        URL.revokeObjectURL(blobUrl);
+        resolve(null);
+      };
       img.src = blobUrl;
     });
   } catch {
@@ -140,11 +130,6 @@ async function loadSealAtOpacity(
   }
 }
 
-// ─── PDF drawing helpers ───────────────────────────────────────────────────────
-
-/**
- * Adds a PNG image centred horizontally at the given Y (top of image).
- */
 function addCentredImage(
   doc: import('jspdf').jsPDF,
   png: string,
@@ -156,34 +141,27 @@ function addCentredImage(
   doc.addImage(png, 'PNG', xCentre - widthMM / 2, yTop, widthMM, heightMM);
 }
 
-/**
- * Draws a scalloped wave line using cubic-bezier semicircles.
- * facing='down' → arcs bow downward (for top border).
- * facing='up'   → arcs bow upward   (for bottom border).
- */
 function drawScallopLine(
   doc: import('jspdf').jsPDF,
   x1: number,
-  y:  number,
+  y: number,
   x2: number,
   count: number,
   facing: 'down' | 'up'
 ): void {
-  const r   = (x2 - x1) / (count * 2);
-  const k   = r * 0.5523; // Bézier control-point factor for circle approx
+  const r = (x2 - x1) / (count * 2);
+  const k = r * 0.5523;
   const dir = facing === 'down' ? 1 : -1;
 
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.45);
+  doc.setLineWidth(0.3); // thinner for elegance
   doc.moveTo(x1, y);
 
   for (let i = 0; i < count; i++) {
     const lx = x1 + i * 2 * r;
     const cx = lx + r;
     const rx = lx + 2 * r;
-    // First half: (lx, y) → (cx, y + dir*r)
     doc.curveTo(lx, y + dir * k, cx - k, y + dir * r, cx, y + dir * r);
-    // Second half: (cx, y+dir*r) → (rx, y)
     doc.curveTo(cx + k, y + dir * r, rx, y + dir * k, rx, y);
   }
   doc.stroke();
@@ -194,263 +172,247 @@ function drawScallopLine(
 // ══════════════════════════════════════════════════════════════════════════════
 export async function generateAndDownloadReceipt(data: ReceiptData) {
   const { jsPDF } = await import('jspdf');
-  const QRCode    = (await import('qrcode')).default || (await import('qrcode'));
+  const QRCode = (await import('qrcode')).default || (await import('qrcode'));
 
   const origin = window.location.origin;
 
-  // ── Pre-render all Canvas images in parallel ────────────────────────────────
-  const CONTENT_W = 162; // mm (content width inside border padding)
-  const SERIF     = 'Georgia, "Times New Roman", Times, serif';
+  const CONTENT_W = 166;
+  const SERIF = 'Georgia, "Times New Roman", Times, serif';
 
-  // Devanagari — system fonts handle Devanagari natively in Canvas
-  // ॥ ॐ श्री गणेशाय नमः ॥
   const DEVANAGARI =
     '\u0964\u0964 \u0913\u092E \u0936\u094D\u0930\u0940 \u0917\u0923\u0947\u0936\u093E\u092F \u0928\u092E\u0903 \u0964\u0964';
 
   const devanagariPng = textToPng(
     DEVANAGARI,
-    CONTENT_W, 10,
-    `bold ${11 * PPM}px "Noto Serif Devanagari", "Mangal", "Kokila", serif`,
+    CONTENT_W,
+    10,
+    `normal ${10 * PPM}px "Noto Serif Devanagari", "Mangal", "Kokila", serif`,
     MAROON_HEX
   );
 
   const orgNamePng = textToPng(
     'Ganesh Puja Kharsawan',
-    CONTENT_W, 17,
-    `bold ${14 * PPM}px ${SERIF}`,
+    CONTENT_W,
+    16,
+    `normal ${15.5 * PPM}px ${SERIF}`,
     DARK_BROWN_HEX
   );
 
   const subtitlePng = textToPng(
     'Sarvajanik Ganeshotsav \u00B7 Kharsawan',
-    CONTENT_W, 8,
-    `italic ${6 * PPM}px ${SERIF}`,
+    CONTENT_W,
+    8,
+    `italic ${6.5 * PPM}px ${SERIF}`,
     MUTED_BROWN_HEX
   );
 
   const gratitudePng = textToPng(
     'Received with gratitude from',
-    CONTENT_W, 7,
+    CONTENT_W,
+    7,
     `italic ${5.5 * PPM}px ${SERIF}`,
     MUTED_BROWN_HEX
   );
 
   const donorData = donorNameToPng(data.donorName, CONTENT_W);
 
-  // Amount: large serif, maroon, using Canvas so ₹ renders via system font
-  const amtNum        = Number(data.amount);
-  const amtFormatted  = '\u20B9' + amtNum.toLocaleString('en-IN');
+  const amtNum = Number(data.amount);
+  const amtFormatted = '\u20B9' + amtNum.toLocaleString('en-IN');
   const amtPng = textToPng(
     amtFormatted,
-    CONTENT_W, 22,
-    `bold ${18 * PPM}px ${SERIF}`,
+    CONTENT_W,
+    20,
+    `normal ${17 * PPM}px ${SERIF}`,
     MAROON_HEX
   );
 
-  const words    = amountToWords(data.amount);
+  const words = amountToWords(data.amount);
   const wordsPng = textToPng(
     words,
-    CONTENT_W, 7,
+    CONTENT_W,
+    7,
     `italic ${5.5 * PPM}px ${SERIF}`,
     DARK_BROWN_HEX
   );
 
-  // Watermark — seal at ~7% opacity, pre-processed on Canvas
+  // Faint watermark
   const [sealPng] = await Promise.all([
-    loadSealAtOpacity(`${origin}/seal.png`, 0.07),
+    loadSealAtOpacity(`${origin}/seal.png`, 0.04), // reduced to 4%
   ]);
 
-  // ── Create A4 document ──────────────────────────────────────────────────────
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const PW  = doc.internal.pageSize.getWidth();  // 210 mm
-  const PH  = doc.internal.pageSize.getHeight(); // 297 mm
-  const MX  = 12; // outer margin
-  const MY  = 12;
-  const PAD = 10; // inner padding from border to content edge
+  const PW = doc.internal.pageSize.getWidth();
+  const PH = doc.internal.pageSize.getHeight();
+  const MX = 16;
+  const MY = 16;
+  const PAD = 10;
 
-  const bx  = MX;
-  const by  = MY;
-  const bw  = PW - MX * 2;  // 186 mm
-  const bh  = PH - MY * 2;  // 273 mm
-  const CX  = PW / 2;       // centre X
-  const leftX  = bx + PAD;
+  const bx = MX;
+  const by = MY;
+  const bw = PW - MX * 2;
+  const bh = PH - MY * 2 - 25; // Main border ends 25mm above bottom margin to leave room for footer
+  const CX = PW / 2;
+  const leftX = bx + PAD;
   const rightX = bx + bw - PAD;
 
-  // ── LAYER 0: cream background ───────────────────────────────────────────────
+  // Cream background
   doc.setFillColor(...CREAM);
   doc.rect(0, 0, PW, PH, 'F');
 
-  // ── LAYER 1: outer border ───────────────────────────────────────────────────
+  // Scalloped edges simulating paper cuts at top and bottom of A4
+  const scCount = 42;
+  drawScallopLine(doc, 4, 4, PW - 4, scCount, 'down');
+  drawScallopLine(doc, 4, PH - 4, PW - 4, scCount, 'up');
+
+  // Outer thin border
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.8);
+  doc.setLineWidth(0.4);
   doc.rect(bx, by, bw, bh);
 
-  // inner border (offset 3mm)
-  doc.setLineWidth(0.3);
-  doc.rect(bx + 3, by + 3, bw - 6, bh - 6);
+  // Inner border offset 2.5mm
+  doc.setLineWidth(0.15);
+  doc.rect(bx + 2.5, by + 2.5, bw - 5, bh - 5);
 
-  // ── LAYER 2: scalloped wave lines (bezier) ──────────────────────────────────
-  const scCount  = 26; // number of scallop arcs along top/bottom
-  const scY_top  = by + 3 + 5.5;  // just inside inner border top
-  const scY_bot  = by + bh - 3 - 5.5; // just inside inner border bottom
-  const scX1     = bx + 3;
-  const scX2     = bx + bw - 3;
-
-  drawScallopLine(doc, scX1, scY_top, scX2, scCount, 'down');
-  drawScallopLine(doc, scX1, scY_bot, scX2, scCount, 'up');
-
-  // ── LAYER 3: Ganesh watermark (7% opacity, pre-processed via Canvas) ────────
+  // Watermark
   if (sealPng) {
-    const wmMM = 74;
-    // Position watermark behind donor/amount section
+    const wmMM = 80;
     const wmX = CX - wmMM / 2;
-    const wmY = 145;
+    const wmY = by + 100; // Position behind donor/amount
     doc.addImage(sealPng, 'PNG', wmX, wmY, wmMM, wmMM);
   }
 
-  // ── CONTENT: y-cursor layout ────────────────────────────────────────────────
-  // y always = TOP of the next element
-  let y = by + 3 + 5.5 + 3 + 2; // just below the top scallop row
+  // CONTENT
+  let y = by + 12;
 
-  // ── Devanagari Sanskrit blessing ────────────────────────────────────────────
   const devH = 10;
   addCentredImage(doc, devanagariPng, CX, y, CONTENT_W, devH);
   y += devH + 6;
 
-  // ── Thin gold ornament line ──────────────────────────────────────────────────
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.4);
-  doc.line(CX - 25, y, CX + 25, y);
+  doc.setLineWidth(0.3);
+  doc.line(CX - 15, y, CX + 15, y);
   y += 5;
 
-  // ── Organisation name ────────────────────────────────────────────────────────
-  const orgH = 17;
+  const orgH = 16;
   addCentredImage(doc, orgNamePng, CX, y, CONTENT_W, orgH);
-  y += orgH + 2;
+  y += orgH + 3;
 
-  // ── Subtitle ─────────────────────────────────────────────────────────────────
   const subH = 8;
   addCentredImage(doc, subtitlePng, CX, y, CONTENT_W, subH);
-  y += subH + 9;
+  y += subH + 12; // breathing space
 
-  // ── OFFICIAL DONATION RECEIPT badge ─────────────────────────────────────────
-  const badgeW = 86;
-  const badgeH = 8.5;
+  // OFFICIAL DONATION RECEIPT badge
+  const badgeW = 96;
+  const badgeH = 7.5;
   const badgeX = CX - badgeW / 2;
-  doc.setDrawColor(...DARK_BROWN);
-  doc.setLineWidth(0.45);
-  doc.rect(badgeX, y, badgeW, badgeH);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(...DARK_BROWN);
-  doc.setCharSpace(1.0);
-  doc.text('OFFICIAL DONATION RECEIPT', CX, y + 5.3, { align: 'center' });
-  doc.setCharSpace(0); // RESET — prevents bleeding into next text
-  y += badgeH + 14;
+  doc.setDrawColor(...MUTED_BROWN);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(badgeX, y, badgeW, badgeH, 1.5, 1.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...MUTED_BROWN);
+  doc.setCharSpace(1.8);
+  doc.text('OFFICIAL DONATION RECEIPT', CX, y + 4.8, { align: 'center' });
+  doc.setCharSpace(0);
+  y += badgeH + 18; // generous breathing space
 
-  // ── Receipt info row ─────────────────────────────────────────────────────────
+  // Receipt info row
   const receiptDate = parseGPMSDate(data.date).toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   });
 
-  // Labels (tiny, tracked)
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(...MUTED_BROWN);
-  doc.setCharSpace(0.9);
-  doc.text('RECEIPT NO.', leftX,  y);
-  doc.text('DATE',         rightX, y, { align: 'right' });
+  doc.setCharSpace(1.0);
+  doc.text('RECEIPT NO.', leftX, y);
+  doc.text('DATE', rightX, y, { align: 'right' });
   doc.setCharSpace(0);
   y += 6;
 
-  // Values
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
   doc.setTextColor(...DARK_BROWN);
-  doc.setCharSpace(0);
-  doc.text(data.receiptId, leftX,  y);
-  doc.text(receiptDate,    rightX, y, { align: 'right' });
+  doc.text(data.receiptId, leftX, y);
+  doc.text(receiptDate, rightX, y, { align: 'right' });
   y += 5;
 
-  // Divider
+  // Thin divider
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.15);
   doc.line(leftX, y, rightX, y);
-  y += 20;
+  y += 24; // breathing space before donor section
 
-  // ── "Received with gratitude from" ───────────────────────────────────────────
+  // Donor section
   addCentredImage(doc, gratitudePng, CX, y, CONTENT_W, 7);
-  y += 7 + 6;
+  y += 7 + 8;
 
-  // ── Donor name (auto-sized) ──────────────────────────────────────────────────
-  addCentredImage(doc, donorData.png, CX, y, donorData.widthMM, donorData.heightMM);
-  y += donorData.heightMM + 14;
+  addCentredImage(
+    doc,
+    donorData.png,
+    CX,
+    y,
+    donorData.widthMM,
+    donorData.heightMM
+  );
+  y += donorData.heightMM + 18;
 
-  // ── "CONTRIBUTION AMOUNT" label ──────────────────────────────────────────────
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
+  // Amount section
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
   doc.setTextColor(...MUTED_BROWN);
-  doc.setCharSpace(1.5);
+  doc.setCharSpace(1.8);
   doc.text('CONTRIBUTION AMOUNT', CX, y, { align: 'center' });
-  doc.setCharSpace(0); // RESET — critical, prevents ₹ spacing bug
+  doc.setCharSpace(0);
   y += 10;
 
-  // ── Amount (Canvas — ₹ rendered via system font, no jsPDF ₹ encoding issue) ──
-  const amtH = 22;
+  const amtH = 20;
   addCentredImage(doc, amtPng, CX, y, CONTENT_W, amtH);
-  y += amtH + 4;
+  y += amtH + 6;
 
-  // ── Amount in words ──────────────────────────────────────────────────────────
   addCentredImage(doc, wordsPng, CX, y, CONTENT_W, 7);
-  y += 7 + 18;
+  y += 7 + 22; // breathing space before QR
 
-  // Centre divider
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.3);
-  doc.line(CX - 32, y, CX + 32, y);
-  y += 12;
-
-  // ── QR Code ──────────────────────────────────────────────────────────────────
-  // same /verify/{receiptId} URL as original implementation
+  // QR Code
   const verifyUrl = `${origin}/verify/${data.receiptId}`;
-  const qrMM = 44;
+  const qrMM = 32; // slightly smaller
   try {
     const qrDataUri = await QRCode.toDataURL(verifyUrl, {
-      width: 440,
+      width: 320,
       margin: 1,
-      color: { dark: '#4A3728', light: '#FAF6F0' },
+      color: { dark: '#463223', light: '#FCF8F2' },
     });
 
     const qrX = CX - qrMM / 2;
 
-    // Thin gold rounded border around QR
     doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.65);
-    doc.roundedRect(qrX - 5, y - 4, qrMM + 10, qrMM + 10, 2, 2);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(qrX - 3, y - 3, qrMM + 6, qrMM + 6, 1, 1);
 
     doc.addImage(qrDataUri, 'PNG', qrX, y, qrMM, qrMM);
-    y += qrMM + 14;
   } catch (qrErr) {
     console.error('[GPMS] QR generation error:', qrErr);
-    y += 10;
   }
 
-  // ── Footer (placed AFTER QR, not at fixed position) ──────────────────────────
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.3);
-  doc.line(leftX, y, rightX, y);
-  y += 6;
-
-  doc.setFont('helvetica', 'normal');
+  // Footer is placed OUTSIDE the main receipt boundary
+  const footerY = by + bh + 12;
+  doc.setFont('helvetica', 'italic');
   doc.setFontSize(8);
   doc.setTextColor(...MUTED_BROWN);
-  doc.setCharSpace(0);
-  const footerLine1 = 'This digital receipt is issued in the spirit of the traditional bill-book.';
-  const footerLine2 = 'A copy has been sent to your phone. May Bappa bless you.';
-  doc.text(footerLine1, CX, y,     { align: 'center' });
-  doc.text(footerLine2, CX, y + 5, { align: 'center' });
+  doc.text(
+    'This digital receipt is issued in the spirit of the traditional bill-book. A copy',
+    CX,
+    footerY,
+    { align: 'center' }
+  );
+  doc.text(
+    'has been sent to your phone. May Bappa bless you.',
+    CX,
+    footerY + 4,
+    { align: 'center' }
+  );
 
   doc.save(`${data.receiptId}.pdf`);
 }
@@ -464,7 +426,6 @@ export async function generateAndDownloadExpenseRecord(
   const { jsPDF } = await import('jspdf');
   const QRCode = (await import('qrcode')).default || (await import('qrcode'));
 
-  // Create a new A5 portrait PDF (standard for records)
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -473,10 +434,8 @@ export async function generateAndDownloadExpenseRecord(
 
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  // Set fonts and colors
   doc.setFont('helvetica');
 
-  // Title / Organization Header
   doc.setFontSize(18);
   doc.setTextColor(40, 40, 40);
   doc.text('Ganesh Puja Committee 2026', pageWidth / 2, 20, {
@@ -487,17 +446,15 @@ export async function generateAndDownloadExpenseRecord(
   doc.setTextColor(100, 100, 100);
   doc.text('Official Expense Record', pageWidth / 2, 28, { align: 'center' });
 
-  // Draw a horizontal line
   doc.setDrawColor(200, 200, 200);
   doc.line(15, 35, pageWidth - 15, 35);
 
-  // Record Details
   doc.setFontSize(11);
   doc.setTextColor(20, 20, 20);
 
   let y = 45;
-  const leftCol   = 20;
-  const rightCol  = 70;
+  const leftCol = 20;
+  const rightCol = 70;
   const lineHeight = 10;
 
   const fields = [
@@ -510,7 +467,7 @@ export async function generateAndDownloadExpenseRecord(
         year: 'numeric',
       }),
     },
-    { label: 'Category:',    value: data.category },
+    { label: 'Category:', value: data.category },
     { label: 'Description:', value: data.description },
     {
       label: 'Amount:',
@@ -531,7 +488,6 @@ export async function generateAndDownloadExpenseRecord(
     doc.setFont('helvetica', 'bold');
     doc.text(field.label, leftCol, y);
     doc.setFont('helvetica', 'normal');
-    // For description which might be long, slice it
     const val =
       field.value.length > 30
         ? field.value.substring(0, 27) + '...'
@@ -540,11 +496,9 @@ export async function generateAndDownloadExpenseRecord(
     y += lineHeight;
   });
 
-  // Verification URL
   const verifyUrl = `${window.location.origin}/verify/expense/${data.expenseId}`;
 
   try {
-    // Generate QR Code as Data URI
     const qrDataUri = await QRCode.toDataURL(verifyUrl, {
       width: 100,
       margin: 1,
@@ -554,7 +508,6 @@ export async function generateAndDownloadExpenseRecord(
       },
     });
 
-    // Add QR code image
     const qrSize = 40;
     doc.addImage(
       qrDataUri,
@@ -565,7 +518,6 @@ export async function generateAndDownloadExpenseRecord(
       qrSize
     );
 
-    // Scan text
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
     doc.text('Scan QR Code to verify authenticity', pageWidth / 2, y + 55, {
@@ -575,13 +527,11 @@ export async function generateAndDownloadExpenseRecord(
     console.error('Failed to generate QR code for PDF', err);
   }
 
-  // Footer
   doc.setFontSize(10);
   doc.setTextColor(80, 80, 80);
   doc.text('Official accounting record for GPMS 2026', pageWidth / 2, 190, {
     align: 'center',
   });
 
-  // Save the PDF
   doc.save(`${data.expenseId}.pdf`);
 }
