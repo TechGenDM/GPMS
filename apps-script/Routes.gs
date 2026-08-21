@@ -144,7 +144,9 @@ function dispatch(action, payload) {
     // 4. Execute the requested protected route.
     return handler(user, payload);
   } catch (e) {
-    console.error('Unhandled Route Error: ' + (e.stack || e));
+    var requestId = (payload && payload.requestId) ? payload.requestId : '';
+    var idPart = requestId ? ' requestId=' + requestId : '';
+    console.error('Unhandled Route Error:' + idPart + ' action=' + (action || 'unknown') + ' ' + (e.stack || e));
     return error(ERROR_CODES.INTERNAL_ERROR, e.message);
   }
 }

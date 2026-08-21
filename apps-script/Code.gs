@@ -52,6 +52,13 @@ function doPost(e) {
     var action = body.action;
     var payload = body.payload || {};
 
+    // V2.6: Log correlation ID if present (set by Next.js proxy layer).
+    // Search Apps Script execution logs for this ID to trace a specific request.
+    var requestId = payload.requestId || '';
+    if (requestId) {
+      console.log('[GPMS] requestId=' + requestId + ' action=' + (action || 'unknown') + ' received');
+    }
+
     return dispatch(action, payload);
   } catch (err) {
     return error(
