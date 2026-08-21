@@ -12,6 +12,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/components/i18n/LanguageProvider';
 
 export interface AuditLog {
   logId: string;
@@ -26,6 +27,7 @@ export interface AuditLog {
 }
 
 export function AuditLogTable() {
+  const { t } = useLanguage();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -172,7 +174,7 @@ export function AuditLogTable() {
       <div className="p-8 text-center">
         <Activity className="w-8 h-8 text-maroon animate-pulse mx-auto mb-4" />
         <p className="text-[14px] font-semibold text-muted-ink">
-          Loading audit logs...
+          {t('audit.loadingLogs')}
         </p>
       </div>
     );
@@ -191,7 +193,7 @@ export function AuditLogTable() {
             className="h-[40px] px-4 font-bold rounded-[12px] border-hair text-ink hover:bg-hair/30 bg-transparent border"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-            Try Again
+            {t('audit.tryAgain')}
           </Button>
         </div>
       </div>
@@ -207,7 +209,7 @@ export function AuditLogTable() {
             <Search className="w-4 h-4 text-muted-ink absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search user, action..."
+              placeholder={t('audit.searchLogs')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-4 py-2 border border-hair rounded-[12px] text-[14px] font-semibold focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink w-full sm:w-64 placeholder:text-muted-ink"
@@ -221,7 +223,7 @@ export function AuditLogTable() {
           >
             {uniqueModules.map((m) => (
               <option key={m} value={m}>
-                {m === 'All' ? 'All Modules' : m}
+                {m === 'All' ? t('audit.allModules') : m}
               </option>
             ))}
           </select>
@@ -236,7 +238,7 @@ export function AuditLogTable() {
             <RefreshCw
               className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`}
             />
-            Refresh
+            {t('audit.refresh')}
           </Button>
           <Button
             className="h-[40px] px-4 font-bold rounded-[12px] bg-ink hover:bg-ink/90 text-cream border-transparent disabled:opacity-50"
@@ -244,7 +246,7 @@ export function AuditLogTable() {
             disabled={filteredLogs.length === 0}
           >
             <Download className="w-4 h-4 mr-2" />
-            Export CSV
+            {t('audit.exportCsv')}
           </Button>
         </div>
       </div>
@@ -253,7 +255,7 @@ export function AuditLogTable() {
       <div className="overflow-x-auto bg-white min-h-[500px]">
         {filteredLogs.length === 0 ? (
           <div className="p-12 text-center text-[14px] font-semibold text-muted-ink">
-            No audit logs found matching your filters.
+            {t('audit.noLogsFound')}
           </div>
         ) : (
           <table className="w-full text-left text-sm whitespace-nowrap">
@@ -261,19 +263,19 @@ export function AuditLogTable() {
               <tr>
                 <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px] w-10"></th>
                 <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px]">
-                  Timestamp
+                  {t('audit.timestamp')}
                 </th>
                 <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px]">
-                  User
+                  {t('audit.user')}
                 </th>
                 <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px]">
-                  Module
+                  {t('audit.module')}
                 </th>
                 <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px]">
-                  Action
+                  {t('audit.action')}
                 </th>
                 <th className="px-4 py-3 font-bold uppercase tracking-wider text-[12px] text-right">
-                  Record ID
+                  {t('audit.recordId')}
                 </th>
               </tr>
             </thead>
@@ -336,7 +338,7 @@ export function AuditLogTable() {
                             {log.oldValue && (
                               <div className="bg-[#F4E9EB] border border-maroon/20 rounded-[12px] p-3">
                                 <h4 className="text-[12px] font-bold text-maroon uppercase tracking-wider mb-2">
-                                  Previous Value
+                                  {t('audit.previousValue')}
                                 </h4>
                                 <pre className="text-[12px] text-ink whitespace-pre-wrap font-mono overflow-x-auto">
                                   {log.oldValue}
@@ -346,7 +348,7 @@ export function AuditLogTable() {
                             {log.newValue && (
                               <div className="bg-sage/10 border border-sage/20 rounded-[12px] p-3">
                                 <h4 className="text-[12px] font-bold text-sage uppercase tracking-wider mb-2">
-                                  New Value
+                                  {t('audit.newValue')}
                                 </h4>
                                 <pre className="text-[12px] text-ink whitespace-pre-wrap font-mono overflow-x-auto">
                                   {log.newValue}
@@ -365,7 +367,12 @@ export function AuditLogTable() {
         )}
       </div>
       <div className="bg-cream px-4 py-3 border-t border-hair text-[13px] font-semibold text-muted-ink flex justify-between">
-        <span>Showing latest {filteredLogs.length} records</span>
+        <span>
+          {t('audit.showingLatest').replace(
+            '{count}',
+            filteredLogs.length.toString()
+          )}
+        </span>
       </div>
     </div>
   );

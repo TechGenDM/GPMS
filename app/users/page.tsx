@@ -3,9 +3,22 @@ import { redirect } from 'next/navigation';
 import { UserManagement } from '@/components/user/UserManagement';
 import { Users, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { getDictionary } from '@/lib/i18n';
+import { cookies } from 'next/headers';
 
 export default async function UsersPage() {
   const session = await auth();
+  const cookieStore = await cookies();
+  const lang = (cookieStore.get('NEXT_LOCALE')?.value || 'en') as 'en' | 'hi';
+  const t = (key: string) => {
+    const keys = key.split('.');
+    let val: any = getDictionary(lang);
+    for (const k of keys) {
+      if (val[k] === undefined) return key;
+      val = val[k];
+    }
+    return val;
+  };
 
   if (!session?.user) {
     redirect('/login');
@@ -29,7 +42,7 @@ export default async function UsersPage() {
           </Link>
           <div className="flex items-center gap-2">
             <h1 className="font-playfair font-bold text-[20px] text-ink tracking-[0.02em]">
-              User Management
+              {t('users.userManagement')}
             </h1>
           </div>
         </div>

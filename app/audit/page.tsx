@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { AuditLogTable } from '@/components/audit/AuditLogTable';
-import { Activity } from 'lucide-react';
+import { Activity, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { getDictionary } from '@/lib/i18n';
+import { cookies } from 'next/headers';
 
 export const metadata = {
   title: 'Audit Logs | GPMS',
@@ -11,6 +12,17 @@ export const metadata = {
 
 export default async function AuditPage() {
   const session = await auth();
+  const cookieStore = await cookies();
+  const lang = (cookieStore.get('NEXT_LOCALE')?.value || 'en') as 'en' | 'hi';
+  const t = (key: string) => {
+    const keys = key.split('.');
+    let val: any = getDictionary(lang);
+    for (const k of keys) {
+      if (val[k] === undefined) return key;
+      val = val[k];
+    }
+    return val;
+  };
 
   if (!session || !session.user) {
     redirect('/login');
@@ -36,7 +48,7 @@ export default async function AuditPage() {
             <div className="flex items-center gap-2">
               <Activity className="w-5 h-5 text-maroon" />
               <h1 className="font-playfair text-[20px] font-bold text-ink tracking-[0.02em]">
-                System Audit Logs
+                {t('audit.systemAuditLogs')}
               </h1>
             </div>
           </div>

@@ -15,6 +15,7 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from 'lucide-react';
+import { useLanguage } from '@/components/i18n/LanguageProvider';
 
 interface User {
   id: string;
@@ -32,6 +33,7 @@ export function UserManagement({
 }: {
   currentUserRole: string;
 }) {
+  const { t } = useLanguage();
   const { showLoading, showSuccess, showError } = useFeedback();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,19 +177,20 @@ export function UserManagement({
       case 'SuperAdmin':
         return (
           <span className="inline-flex items-center gap-1 px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-[#E8E1F3] text-ink-2">
-            <ShieldAlert className="w-[12px] h-[12px]" /> SuperAdmin
+            <ShieldAlert className="w-[12px] h-[12px]" />{' '}
+            {t('users.superAdmin')}
           </span>
         );
       case 'Admin':
         return (
           <span className="inline-flex items-center gap-1 px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-cream-2 text-ink-2">
-            <ShieldCheck className="w-[12px] h-[12px]" /> Admin
+            <ShieldCheck className="w-[12px] h-[12px]" /> {t('users.admin')}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1 px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-cream-2 text-sage">
-            <Shield className="w-[12px] h-[12px]" /> Volunteer
+            <Shield className="w-[12px] h-[12px]" /> {t('users.volunteer')}
           </span>
         );
     }
@@ -196,11 +199,11 @@ export function UserManagement({
   const getStatusBadge = (status: string) => {
     return status === 'Active' ? (
       <span className="px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-[#E7F0E8] text-sage">
-        Active
+        {t('users.active')}
       </span>
     ) : (
       <span className="px-[10px] py-[4px] rounded-full text-[11.5px] font-bold bg-[#F4E9EB] text-maroon">
-        Disabled
+        {t('users.disabled')}
       </span>
     );
   };
@@ -212,7 +215,7 @@ export function UserManagement({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-ink" />
           <input
             type="text"
-            placeholder="Search users..."
+            placeholder={t('users.searchUsers')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-[10px] bg-white border border-hair rounded-[14px] text-[14px] text-ink focus:outline-none focus:ring-1 focus:ring-gold-soft shadow-sm"
@@ -222,7 +225,7 @@ export function UserManagement({
           onClick={handleOpenCreate}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-br from-gold-soft to-ember text-[#3a2205] font-bold text-[14.5px] rounded-[14px] px-5 py-[12px] shadow-md hover:opacity-90 transition-opacity"
         >
-          <Plus className="w-4 h-4" /> Add User
+          <Plus className="w-4 h-4" /> {t('users.addUser')}
         </button>
       </div>
 
@@ -231,11 +234,13 @@ export function UserManagement({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-cream-2/50 border-b border-hair text-muted-ink text-[12.5px] font-semibold tracking-wide">
-                <th className="p-4">Name / Email</th>
-                <th className="p-4 hidden sm:table-cell">Phone</th>
-                <th className="p-4">Role</th>
-                <th className="p-4 hidden md:table-cell">Status</th>
-                <th className="p-4 text-right">Actions</th>
+                <th className="p-4">{t('users.nameEmail')}</th>
+                <th className="p-4 hidden sm:table-cell">{t('users.phone')}</th>
+                <th className="p-4">{t('users.role')}</th>
+                <th className="p-4 hidden md:table-cell">
+                  {t('users.status')}
+                </th>
+                <th className="p-4 text-right">{t('users.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-hair">
@@ -245,7 +250,7 @@ export function UserManagement({
                     colSpan={5}
                     className="p-8 text-center text-muted-ink text-[14px]"
                   >
-                    Loading users...
+                    {t('users.loadingUsers')}
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
@@ -254,7 +259,7 @@ export function UserManagement({
                     colSpan={5}
                     className="p-8 text-center text-muted-ink text-[14px]"
                   >
-                    No users found.
+                    {t('users.noUsersFound')}
                   </td>
                 </tr>
               ) : (
@@ -314,7 +319,7 @@ export function UserManagement({
           <div className="bg-white rounded-[20px] shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-hair">
             <div className="px-6 py-[18px] border-b border-hair flex justify-between items-center bg-cream">
               <h2 className="text-[18px] font-playfair font-bold text-ink tracking-[0.02em]">
-                {editingUser ? 'Edit User' : 'Add New User'}
+                {editingUser ? t('users.editUser') : t('users.addNewUser')}
               </h2>
             </div>
 
@@ -324,7 +329,7 @@ export function UserManagement({
             >
               <div>
                 <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">
-                  Full Name
+                  {t('users.fullName')}
                 </label>
                 <input
                   required
@@ -339,7 +344,7 @@ export function UserManagement({
 
               <div>
                 <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">
-                  Email
+                  {t('users.email')}
                 </label>
                 <input
                   required
@@ -355,7 +360,7 @@ export function UserManagement({
 
               <div>
                 <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">
-                  Phone
+                  {t('users.phone')}
                 </label>
                 <input
                   required
@@ -373,7 +378,7 @@ export function UserManagement({
               {currentUserRole === 'SuperAdmin' && (
                 <div>
                   <label className="block text-[13px] font-semibold text-muted-ink mb-[6px]">
-                    Role
+                    {t('users.role')}
                   </label>
                   <select
                     value={formData.role}
@@ -385,9 +390,9 @@ export function UserManagement({
                     }
                     className="w-full px-4 py-[10px] bg-white border border-hair rounded-[14px] text-[14px] text-ink focus:outline-none focus:ring-1 focus:ring-gold-soft shadow-sm appearance-none"
                   >
-                    <option value="Volunteer">Volunteer</option>
-                    <option value="Admin">Admin</option>
-                    <option value="SuperAdmin">SuperAdmin</option>
+                    <option value="Volunteer">{t('users.volunteer')}</option>
+                    <option value="Admin">{t('users.admin')}</option>
+                    <option value="SuperAdmin">{t('users.superAdmin')}</option>
                   </select>
                 </div>
               )}
@@ -398,14 +403,14 @@ export function UserManagement({
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1 bg-cream-2 border border-hair text-ink font-bold text-[14px] rounded-[14px] px-4 py-[12px] shadow-sm hover:bg-hair/30 transition-colors"
                 >
-                  Cancel
+                  {t('users.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="flex-1 bg-ink text-cream font-bold text-[14px] rounded-[14px] px-4 py-[12px] shadow-md hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                  {submitting ? 'Saving...' : 'Save User'}
+                  {submitting ? t('users.saving') : t('users.saveUser')}
                 </button>
               </div>
             </form>
@@ -416,10 +421,13 @@ export function UserManagement({
       {/* Confirm Disable Modal */}
       <ConfirmModal
         isOpen={!!userToDisable}
-        title="Disable User"
-        message={`Are you sure you want to disable access for ${userToDisable?.fullName}? They will no longer be able to log in.`}
-        confirmText="Disable"
-        cancelText="Cancel"
+        title={t('users.disableUserTitle')}
+        message={t('users.disableUserMessage').replace(
+          '{name}',
+          userToDisable?.fullName || ''
+        )}
+        confirmText={t('users.disable')}
+        cancelText={t('users.cancel')}
         onConfirm={handleDisable}
         onCancel={() => setUserToDisable(null)}
         isDestructive={true}
