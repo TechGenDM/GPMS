@@ -22,348 +22,442 @@ export interface ExpenseRecordData {
   billLink?: string;
 }
 
-// ─── Colour palette (RGB tuples) ─────────────────────────────────────────────
-const CREAM: [number, number, number] = [250, 246, 240];
-const DARK_BROWN: [number, number, number] = [74, 55, 40];
-const MAROON: [number, number, number] = [139, 69, 19];
-const GOLD: [number, number, number] = [212, 184, 150];
-const MUTED_BROWN: [number, number, number] = [139, 115, 85];
+// ─── Colour palette ────────────────────────────────────────────────────────────
+const CREAM:      [number, number, number] = [250, 246, 240];
+const DARK_BROWN: [number, number, number] = [74,  55,  40];
+const MAROON:     [number, number, number] = [139, 69,  19];
+const GOLD:       [number, number, number] = [212, 184, 150];
+const MUTED_BROWN:[number, number, number] = [139, 115, 85];
+
+const CREAM_HEX       = '#FAF6F0';
+const DARK_BROWN_HEX  = '#4A3728';
+const MAROON_HEX      = '#8B4513';
+const MUTED_BROWN_HEX = '#8B7355';
+
+// Pixels-per-mm for Canvas rendering (higher = sharper text in PDF)
+const PPM = 10;
+
+// ─── Canvas helpers ────────────────────────────────────────────────────────────
 
 /**
- * Renders the Devanagari Sanskrit blessing using the browser's native Canvas,
- * which supports system Devanagari fonts on all platforms.
- * Returns a PNG data URL suitable for doc.addImage().
+ * Renders text onto a Canvas and returns a PNG data URL.
+ * Dimensions are in mm; internally multiplied by PPM for pixel resolution.
  */
-function renderDevanagariToPng(
+function textToPng(
   text: string,
-  widthPx: number,
-  heightPx: number
+  widthMM: number,
+  heightMM: number,
+  fontCss: string,          // CSS font string, e.g. "bold 120px Georgia, serif"
+  colorCss: string,
+  align: CanvasTextAlign = 'center'
 ): string {
+  const W = Math.round(widthMM * PPM);
+  const H = Math.round(heightMM * PPM);
   const canvas = document.createElement('canvas');
-  canvas.width = widthPx;
-  canvas.height = heightPx;
+  canvas.width  = W;
+  canvas.height = H;
   const ctx = canvas.getContext('2d')!;
-
-  // Transparent background (matches cream PDF background)
-  ctx.clearRect(0, 0, widthPx, heightPx);
-
-  // Use system Devanagari font stack — supported on all modern OSes
-  ctx.font = `bold ${heightPx * 0.55}px "Noto Serif Devanagari", "Mangal", "Kokila", serif`;
-  ctx.fillStyle = '#8B4513'; // MAROON
-  ctx.textAlign = 'center';
+  ctx.clearRect(0, 0, W, H);
+  ctx.font         = fontCss;
+  ctx.fillStyle    = colorCss;
+  ctx.textAlign    = align;
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, widthPx / 2, heightPx / 2);
-
+  const x = align === 'center' ? W / 2 : align === 'right' ? W : 0;
+  ctx.fillText(text, x, H / 2);
   return canvas.toDataURL('image/png');
 }
 
 /**
- * Fetches a URL as base64. Used for loading the Ganesh seal watermark.
+ * Auto-sizes the donor name to fit within maxWidthMM.
+ * Returns { png, widthMM, heightMM }.
  */
-async function fetchAsBase64(url: string): Promise<string> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`fetch ${url}: HTTP ${response.status}`);
-  const buffer = await response.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  const chunk = 8192;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(binary);
+function donorNameToPng(
+  name: string,
+  maxWidthMM: number
+): { png: string; widthMM: number; heightMM: number } {
+  const maxW = Math.round(maxWidthMM * PPM);
+  const canvas = document.createElement('canvas');
+  canvas.width  = maxW;
+  canvas.height = 1; // temp
+  const ctx = canvas.getContext('2d')!;
+
+  // Start at a generous size and shrink to fit
+  let fontSize = 26 * PPM / 10; // start ~26mm equivalent
+  const family = 'Georgia, "Times New Roman", serif';
+  do {
+    ctx.font = `bold ${fontSize}px ${family}`;
+    if (ctx.measureText(name).width <= maxW * 0.92) break;
+    fontSize -= 5;
+  } while (fontSize > 14);
+
+  const H = Math.round(fontSize * 1.6);
+  canvas.height = H;
+  ctx.clearRect(0, 0, maxW, H);
+  ctx.font         = `bold ${fontSize}px ${family}`;
+  ctx.fillStyle    = DARK_BROWN_HEX;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(name, maxW / 2, H / 2);
+
+  return {
+    png:      canvas.toDataURL('image/png'),
+    widthMM:  maxWidthMM,
+    heightMM: H / PPM,
+  };
 }
 
 /**
- * Draws a row of small filled circles — scalloped / beaded border decoration.
+ * Fetches seal.png and re-renders it at the requested opacity (0–1) using Canvas.
+ * Returns a PNG data URL with opacity baked in, or null on failure.
  */
-function drawScallops(
+async function loadSealAtOpacity(
+  url: string,
+  opacity: number
+): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    return await new Promise<string | null>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const SZ = 800;
+        const c  = document.createElement('canvas');
+        c.width = c.height = SZ;
+        const ctx = c.getContext('2d')!;
+        ctx.globalAlpha = opacity;
+        ctx.drawImage(img, 0, 0, SZ, SZ);
+        URL.revokeObjectURL(blobUrl);
+        resolve(c.toDataURL('image/png'));
+      };
+      img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
+      img.src = blobUrl;
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ─── PDF drawing helpers ───────────────────────────────────────────────────────
+
+/**
+ * Adds a PNG image centred horizontally at the given Y (top of image).
+ */
+function addCentredImage(
   doc: import('jspdf').jsPDF,
-  startX: number,
-  y: number,
-  totalWidth: number,
-  count: number,
-  radius: number
+  png: string,
+  xCentre: number,
+  yTop: number,
+  widthMM: number,
+  heightMM: number
 ): void {
-  doc.setFillColor(...GOLD);
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.1);
-  const step = totalWidth / count;
-  for (let i = 0; i < count; i++) {
-    doc.circle(startX + i * step + step / 2, y, radius, 'FD');
-  }
+  doc.addImage(png, 'PNG', xCentre - widthMM / 2, yTop, widthMM, heightMM);
 }
 
 /**
- * ═════════════════════════════════════════════════════════════════════════════
- *  DONATION — Premium ceremonial Ganesh Puja receipt (A4 portrait)
- *
- *  Typography: Helvetica (built-in jsPDF — zero parsing errors guaranteed).
- *  Devanagari: Rendered via browser Canvas → embedded as PNG image.
- *  Design: cream background, gold double border, scallops, watermark, QR.
- * ═════════════════════════════════════════════════════════════════════════════
+ * Draws a scalloped wave line using cubic-bezier semicircles.
+ * facing='down' → arcs bow downward (for top border).
+ * facing='up'   → arcs bow upward   (for bottom border).
  */
+function drawScallopLine(
+  doc: import('jspdf').jsPDF,
+  x1: number,
+  y:  number,
+  x2: number,
+  count: number,
+  facing: 'down' | 'up'
+): void {
+  const r   = (x2 - x1) / (count * 2);
+  const k   = r * 0.5523; // Bézier control-point factor for circle approx
+  const dir = facing === 'down' ? 1 : -1;
+
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.45);
+  doc.moveTo(x1, y);
+
+  for (let i = 0; i < count; i++) {
+    const lx = x1 + i * 2 * r;
+    const cx = lx + r;
+    const rx = lx + 2 * r;
+    // First half: (lx, y) → (cx, y + dir*r)
+    doc.curveTo(lx, y + dir * k, cx - k, y + dir * r, cx, y + dir * r);
+    // Second half: (cx, y+dir*r) → (rx, y)
+    doc.curveTo(cx + k, y + dir * r, rx, y + dir * k, rx, y);
+  }
+  doc.stroke();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  DONATION — Premium ceremonial Ganesh Puja receipt  (A4 portrait)
+// ══════════════════════════════════════════════════════════════════════════════
 export async function generateAndDownloadReceipt(data: ReceiptData) {
   const { jsPDF } = await import('jspdf');
-  const QRCode = (await import('qrcode')).default || (await import('qrcode'));
+  const QRCode    = (await import('qrcode')).default || (await import('qrcode'));
 
   const origin = window.location.origin;
 
-  // ── Render Sanskrit blessing via Canvas → PNG ─────────────────────────────
+  // ── Pre-render all Canvas images in parallel ────────────────────────────────
+  const CONTENT_W = 162; // mm (content width inside border padding)
+  const SERIF     = 'Georgia, "Times New Roman", Times, serif';
+
+  // Devanagari — system fonts handle Devanagari natively in Canvas
   // ॥ ॐ श्री गणेशाय नमः ॥
-  const devanagariText =
+  const DEVANAGARI =
     '\u0964\u0964 \u0913\u092E \u0936\u094D\u0930\u0940 \u0917\u0923\u0947\u0936\u093E\u092F \u0928\u092E\u0903 \u0964\u0964';
-  let devanagariPng: string | null = null;
-  try {
-    devanagariPng = renderDevanagariToPng(devanagariText, 900, 80);
-  } catch {
-    // Silently skip — we will show a latin fallback text instead
-  }
 
-  // ── A4 portrait — using only built-in Helvetica (always available) ────────
+  const devanagariPng = textToPng(
+    DEVANAGARI,
+    CONTENT_W, 10,
+    `bold ${11 * PPM}px "Noto Serif Devanagari", "Mangal", "Kokila", serif`,
+    MAROON_HEX
+  );
+
+  const orgNamePng = textToPng(
+    'Ganesh Puja Kharsawan',
+    CONTENT_W, 17,
+    `bold ${14 * PPM}px ${SERIF}`,
+    DARK_BROWN_HEX
+  );
+
+  const subtitlePng = textToPng(
+    'Sarvajanik Ganeshotsav \u00B7 Kharsawan',
+    CONTENT_W, 8,
+    `italic ${6 * PPM}px ${SERIF}`,
+    MUTED_BROWN_HEX
+  );
+
+  const gratitudePng = textToPng(
+    'Received with gratitude from',
+    CONTENT_W, 7,
+    `italic ${5.5 * PPM}px ${SERIF}`,
+    MUTED_BROWN_HEX
+  );
+
+  const donorData = donorNameToPng(data.donorName, CONTENT_W);
+
+  // Amount: large serif, maroon, using Canvas so ₹ renders via system font
+  const amtNum        = Number(data.amount);
+  const amtFormatted  = '\u20B9' + amtNum.toLocaleString('en-IN');
+  const amtPng = textToPng(
+    amtFormatted,
+    CONTENT_W, 22,
+    `bold ${18 * PPM}px ${SERIF}`,
+    MAROON_HEX
+  );
+
+  const words    = amountToWords(data.amount);
+  const wordsPng = textToPng(
+    words,
+    CONTENT_W, 7,
+    `italic ${5.5 * PPM}px ${SERIF}`,
+    DARK_BROWN_HEX
+  );
+
+  // Watermark — seal at ~7% opacity, pre-processed on Canvas
+  const [sealPng] = await Promise.all([
+    loadSealAtOpacity(`${origin}/seal.png`, 0.07),
+  ]);
+
+  // ── Create A4 document ──────────────────────────────────────────────────────
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const PW = doc.internal.pageSize.getWidth(); // 210 mm
-  const PH = doc.internal.pageSize.getHeight(); // 297 mm
-  const MX = 16;
-  const MY = 16;
+  const PW  = doc.internal.pageSize.getWidth();  // 210 mm
+  const PH  = doc.internal.pageSize.getHeight(); // 297 mm
+  const MX  = 12; // outer margin
+  const MY  = 12;
+  const PAD = 10; // inner padding from border to content edge
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // LAYER 0 — warm cream background
-  // ══════════════════════════════════════════════════════════════════════════
+  const bx  = MX;
+  const by  = MY;
+  const bw  = PW - MX * 2;  // 186 mm
+  const bh  = PH - MY * 2;  // 273 mm
+  const CX  = PW / 2;       // centre X
+  const leftX  = bx + PAD;
+  const rightX = bx + bw - PAD;
+
+  // ── LAYER 0: cream background ───────────────────────────────────────────────
   doc.setFillColor(...CREAM);
   doc.rect(0, 0, PW, PH, 'F');
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // LAYER 1 — outer decorative double gold border
-  // ══════════════════════════════════════════════════════════════════════════
-  const bx = MX;
-  const by = MY;
-  const bw = PW - MX * 2;
-  const bh = PH - MY * 2;
-
+  // ── LAYER 1: outer border ───────────────────────────────────────────────────
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(1.0);
+  doc.setLineWidth(0.8);
   doc.rect(bx, by, bw, bh);
-  doc.setLineWidth(0.35);
+
+  // inner border (offset 3mm)
+  doc.setLineWidth(0.3);
   doc.rect(bx + 3, by + 3, bw - 6, bh - 6);
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // LAYER 2 — scalloped dot rows (top and bottom)
-  // ══════════════════════════════════════════════════════════════════════════
-  const scX = bx + 3;
-  const scW = bw - 6;
-  drawScallops(doc, scX, by + 3 + 4.8, scW, 32, 1.3);
-  drawScallops(doc, scX, by + bh - 3 - 4.8, scW, 32, 1.3);
+  // ── LAYER 2: scalloped wave lines (bezier) ──────────────────────────────────
+  const scCount  = 26; // number of scallop arcs along top/bottom
+  const scY_top  = by + 3 + 5.5;  // just inside inner border top
+  const scY_bot  = by + bh - 3 - 5.5; // just inside inner border bottom
+  const scX1     = bx + 3;
+  const scX2     = bx + bw - 3;
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // LAYER 3 — Ganesh seal watermark (non-fatal, purely decorative)
-  // ══════════════════════════════════════════════════════════════════════════
-  try {
-    const sealB64 = await fetchAsBase64(`${origin}/seal.png`);
-    const wmSize = 78;
-    const wmX = (PW - wmSize) / 2;
-    const wmY = 122;
-    doc.addImage(sealB64, 'PNG', wmX, wmY, wmSize, wmSize);
-    doc.setFillColor(...CREAM);
-    doc.setGState(doc.GState({ opacity: 0.82 }));
-    doc.rect(wmX, wmY, wmSize, wmSize, 'F');
-    doc.setGState(doc.GState({ opacity: 1.0 }));
-  } catch {
-    // Watermark is decorative — skip silently
+  drawScallopLine(doc, scX1, scY_top, scX2, scCount, 'down');
+  drawScallopLine(doc, scX1, scY_bot, scX2, scCount, 'up');
+
+  // ── LAYER 3: Ganesh watermark (7% opacity, pre-processed via Canvas) ────────
+  if (sealPng) {
+    const wmMM = 74;
+    // Position watermark behind donor/amount section
+    const wmX = CX - wmMM / 2;
+    const wmY = 145;
+    doc.addImage(sealPng, 'PNG', wmX, wmY, wmMM, wmMM);
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // CONTENT (top → bottom, Y cursor)
-  // ══════════════════════════════════════════════════════════════════════════
-  let y = by + 14;
+  // ── CONTENT: y-cursor layout ────────────────────────────────────────────────
+  // y always = TOP of the next element
+  let y = by + 3 + 5.5 + 3 + 2; // just below the top scallop row
 
-  // ── Sanskrit blessing (Canvas-rendered PNG, or latin fallback) ─────────────
-  if (devanagariPng) {
-    // Embed the Canvas-rendered Devanagari as an image (90mm wide, 8mm tall)
-    const imgW = 90;
-    const imgH = 8;
-    doc.addImage(devanagariPng, 'PNG', (PW - imgW) / 2, y - 5, imgW, imgH);
-    y += 10;
-  } else {
-    // Plain latin fallback if Canvas failed
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(...MAROON);
-    doc.text('|| Om Shri Ganeshaya Namah ||', PW / 2, y, { align: 'center' });
-    y += 9;
-  }
+  // ── Devanagari Sanskrit blessing ────────────────────────────────────────────
+  const devH = 10;
+  addCentredImage(doc, devanagariPng, CX, y, CONTENT_W, devH);
+  y += devH + 6;
 
-  // ── gold ornament line ─────────────────────────────────────────────────────
+  // ── Thin gold ornament line ──────────────────────────────────────────────────
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.4);
-  doc.line(PW / 2 - 30, y, PW / 2 + 30, y);
-  y += 11;
+  doc.line(CX - 25, y, CX + 25, y);
+  y += 5;
 
-  // ── organisation name ──────────────────────────────────────────────────────
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(24);
-  doc.setTextColor(...DARK_BROWN);
-  doc.text('Ganesh Puja Kharsawan', PW / 2, y, { align: 'center' });
-  y += 9;
+  // ── Organisation name ────────────────────────────────────────────────────────
+  const orgH = 17;
+  addCentredImage(doc, orgNamePng, CX, y, CONTENT_W, orgH);
+  y += orgH + 2;
 
-  // ── subtitle ───────────────────────────────────────────────────────────────
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(...MUTED_BROWN);
-  doc.text('Sarvajanik Ganeshotsav  \u00B7  Kharsawan', PW / 2, y, {
-    align: 'center',
-  });
-  y += 13;
+  // ── Subtitle ─────────────────────────────────────────────────────────────────
+  const subH = 8;
+  addCentredImage(doc, subtitlePng, CX, y, CONTENT_W, subH);
+  y += subH + 9;
 
-  // ── OFFICIAL DONATION RECEIPT badge ───────────────────────────────────────
-  const badgeW = 90;
-  const badgeH = 9;
-  const badgeX = (PW - badgeW) / 2;
+  // ── OFFICIAL DONATION RECEIPT badge ─────────────────────────────────────────
+  const badgeW = 86;
+  const badgeH = 8.5;
+  const badgeX = CX - badgeW / 2;
   doc.setDrawColor(...DARK_BROWN);
-  doc.setLineWidth(0.5);
+  doc.setLineWidth(0.45);
   doc.rect(badgeX, y, badgeW, badgeH);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
+  doc.setFontSize(8);
   doc.setTextColor(...DARK_BROWN);
-  doc.text('OFFICIAL DONATION RECEIPT', PW / 2, y + 5.7, {
-    align: 'center',
-    charSpace: 1.2,
-  });
-  y += badgeH + 16;
+  doc.setCharSpace(1.0);
+  doc.text('OFFICIAL DONATION RECEIPT', CX, y + 5.3, { align: 'center' });
+  doc.setCharSpace(0); // RESET — prevents bleeding into next text
+  y += badgeH + 14;
 
-  // ── Receipt info row ──────────────────────────────────────────────────────
+  // ── Receipt info row ─────────────────────────────────────────────────────────
   const receiptDate = parseGPMSDate(data.date).toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   });
-  const leftX = bx + 12;
-  const rightX = bx + bw - 12;
 
+  // Labels (tiny, tracked)
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.setTextColor(...MUTED_BROWN);
-  doc.text('RECEIPT NO.', leftX, y, { charSpace: 0.8 });
-  doc.text('DATE', rightX, y, { align: 'right', charSpace: 0.8 });
-  y += 7;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(...DARK_BROWN);
-  doc.text(data.receiptId, leftX, y);
-  doc.text(receiptDate, rightX, y, { align: 'right' });
+  doc.setCharSpace(0.9);
+  doc.text('RECEIPT NO.', leftX,  y);
+  doc.text('DATE',         rightX, y, { align: 'right' });
+  doc.setCharSpace(0);
   y += 6;
 
+  // Values
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(...DARK_BROWN);
+  doc.setCharSpace(0);
+  doc.text(data.receiptId, leftX,  y);
+  doc.text(receiptDate,    rightX, y, { align: 'right' });
+  y += 5;
+
+  // Divider
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.3);
   doc.line(leftX, y, rightX, y);
-  y += 22;
+  y += 20;
 
-  // ── "Received with gratitude from" ────────────────────────────────────────
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
+  // ── "Received with gratitude from" ───────────────────────────────────────────
+  addCentredImage(doc, gratitudePng, CX, y, CONTENT_W, 7);
+  y += 7 + 6;
+
+  // ── Donor name (auto-sized) ──────────────────────────────────────────────────
+  addCentredImage(doc, donorData.png, CX, y, donorData.widthMM, donorData.heightMM);
+  y += donorData.heightMM + 14;
+
+  // ── "CONTRIBUTION AMOUNT" label ──────────────────────────────────────────────
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
   doc.setTextColor(...MUTED_BROWN);
-  doc.text('Received with gratitude from', PW / 2, y, { align: 'center' });
-  y += 12;
-
-  // ── Donor name ────────────────────────────────────────────────────────────
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(26);
-  doc.setTextColor(...DARK_BROWN);
-  doc.text(data.donorName, PW / 2, y, { align: 'center' });
-  y += 18;
-
-  // ── CONTRIBUTION AMOUNT label ─────────────────────────────────────────────
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...MUTED_BROWN);
-  doc.text('CONTRIBUTION AMOUNT', PW / 2, y, {
-    align: 'center',
-    charSpace: 1.5,
-  });
-  y += 12;
-
-  // ── Amount (large, maroon) ────────────────────────────────────────────────
-  const amtFormatted = '\u20B9' + Number(data.amount).toLocaleString('en-IN');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(46);
-  doc.setTextColor(...MAROON);
-  doc.text(amtFormatted, PW / 2, y, { align: 'center' });
+  doc.setCharSpace(1.5);
+  doc.text('CONTRIBUTION AMOUNT', CX, y, { align: 'center' });
+  doc.setCharSpace(0); // RESET — critical, prevents ₹ spacing bug
   y += 10;
 
-  // ── Amount in words ───────────────────────────────────────────────────────
-  const words = amountToWords(data.amount);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(...DARK_BROWN);
-  doc.text(words, PW / 2, y, { align: 'center' });
-  y += 24;
+  // ── Amount (Canvas — ₹ rendered via system font, no jsPDF ₹ encoding issue) ──
+  const amtH = 22;
+  addCentredImage(doc, amtPng, CX, y, CONTENT_W, amtH);
+  y += amtH + 4;
 
+  // ── Amount in words ──────────────────────────────────────────────────────────
+  addCentredImage(doc, wordsPng, CX, y, CONTENT_W, 7);
+  y += 7 + 18;
+
+  // Centre divider
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.3);
-  doc.line(PW / 2 - 38, y, PW / 2 + 38, y);
-  y += 15;
+  doc.line(CX - 32, y, CX + 32, y);
+  y += 12;
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // QR CODE — same /verify/{receiptId} URL as the original implementation
-  // ══════════════════════════════════════════════════════════════════════════
+  // ── QR Code ──────────────────────────────────────────────────────────────────
+  // same /verify/{receiptId} URL as original implementation
   const verifyUrl = `${origin}/verify/${data.receiptId}`;
+  const qrMM = 44;
   try {
     const qrDataUri = await QRCode.toDataURL(verifyUrl, {
-      width: 200,
+      width: 440,
       margin: 1,
       color: { dark: '#4A3728', light: '#FAF6F0' },
     });
-    const qrSize = 48;
-    const qrX = (PW - qrSize) / 2;
 
+    const qrX = CX - qrMM / 2;
+
+    // Thin gold rounded border around QR
     doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.7);
-    doc.roundedRect(qrX - 5, y - 4, qrSize + 10, qrSize + 10, 2, 2);
-    doc.addImage(qrDataUri, 'PNG', qrX, y, qrSize, qrSize);
-    y += qrSize + 13;
+    doc.setLineWidth(0.65);
+    doc.roundedRect(qrX - 5, y - 4, qrMM + 10, qrMM + 10, 2, 2);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...MUTED_BROWN);
-    doc.text('Scan to verify authenticity online', PW / 2, y, {
-      align: 'center',
-    });
+    doc.addImage(qrDataUri, 'PNG', qrX, y, qrMM, qrMM);
+    y += qrMM + 14;
   } catch (qrErr) {
-    console.error('[GPMS] QR generation failed:', qrErr);
+    console.error('[GPMS] QR generation error:', qrErr);
+    y += 10;
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // FOOTER
-  // ══════════════════════════════════════════════════════════════════════════
-  const footerY = PH - MY - 14;
+  // ── Footer (placed AFTER QR, not at fixed position) ──────────────────────────
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.3);
-  doc.line(bx + 12, footerY - 6, bx + bw - 12, footerY - 6);
+  doc.line(leftX, y, rightX, y);
+  y += 6;
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
+  doc.setFontSize(8);
   doc.setTextColor(...MUTED_BROWN);
-  doc.text(
-    'This digital receipt is issued in the spirit of the traditional bill-book.',
-    PW / 2,
-    footerY,
-    { align: 'center' }
-  );
-  doc.text(
-    'A copy has been sent to your phone. May Bappa bless you.',
-    PW / 2,
-    footerY + 5,
-    { align: 'center' }
-  );
+  doc.setCharSpace(0);
+  const footerLine1 = 'This digital receipt is issued in the spirit of the traditional bill-book.';
+  const footerLine2 = 'A copy has been sent to your phone. May Bappa bless you.';
+  doc.text(footerLine1, CX, y,     { align: 'center' });
+  doc.text(footerLine2, CX, y + 5, { align: 'center' });
 
   doc.save(`${data.receiptId}.pdf`);
 }
 
-/**
- * ═════════════════════════════════════════════════════════════════════════════
- *  EXPENSE — original implementation, completely unchanged
- * ═════════════════════════════════════════════════════════════════════════════
- */
+// ══════════════════════════════════════════════════════════════════════════════
+//  EXPENSE — original implementation, completely unchanged
+// ══════════════════════════════════════════════════════════════════════════════
 export async function generateAndDownloadExpenseRecord(
   data: ExpenseRecordData
 ) {
@@ -402,8 +496,8 @@ export async function generateAndDownloadExpenseRecord(
   doc.setTextColor(20, 20, 20);
 
   let y = 45;
-  const leftCol = 20;
-  const rightCol = 70;
+  const leftCol   = 20;
+  const rightCol  = 70;
   const lineHeight = 10;
 
   const fields = [
@@ -416,7 +510,7 @@ export async function generateAndDownloadExpenseRecord(
         year: 'numeric',
       }),
     },
-    { label: 'Category:', value: data.category },
+    { label: 'Category:',    value: data.category },
     { label: 'Description:', value: data.description },
     {
       label: 'Amount:',
