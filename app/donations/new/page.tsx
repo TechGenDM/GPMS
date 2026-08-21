@@ -38,6 +38,8 @@ const PURPOSES = [
 
 const PAYMENT_MODES = ['Cash', 'UPI'] as const;
 
+const PRESET_AMOUNTS = ['51', '101', '251', '501', '1001'];
+
 // ── Types ────────────────────────────────────────────────────────────
 interface ProofFile {
   base64: string;
@@ -618,6 +620,23 @@ export default function NewDonationPage() {
                 className="w-full h-[56px] pl-[36px] pr-4 rounded-[12px] border border-hair bg-white text-ink text-[24px] font-bold placeholder:text-hair focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink transition-shadow"
               />
             </div>
+          </div>
+          {/* Amount Presets */}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {PRESET_AMOUNTS.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => updateField('amount', preset)}
+                className={`px-[16px] py-[10px] rounded-[24px] text-[14px] font-bold transition-all ${
+                  form.amount === preset
+                    ? 'bg-ink text-cream border-transparent shadow-sm'
+                    : 'bg-white text-ink border border-hair hover:border-ink hover:text-ink'
+                }`}
+              >
+                ₹{preset}
+              </button>
+            ))}
           </div>
 
           {/* Purpose — Pill Chips */}
