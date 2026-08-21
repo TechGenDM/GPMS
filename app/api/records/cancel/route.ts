@@ -78,14 +78,12 @@ export async function POST(req: NextRequest) {
       clearTimeout(timeoutId);
     }
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : 'Internal server error';
+    const msg =
+      error instanceof Error ? error.message : 'Internal server error';
     console.error(
       `[GPMS] requestId=${requestId} action=cancel unexpected error:`,
       error
     );
-    return NextResponse.json(
-      { success: false, message: msg },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: msg }, { status: 500 });
   }
 }

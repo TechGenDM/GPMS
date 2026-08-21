@@ -73,15 +73,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data, { status: response.status });
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : 'Internal server error';
+    const msg =
+      error instanceof Error ? error.message : 'Internal server error';
     console.error(
       `[GPMS] requestId=${requestId} action=searchDonations unexpected error:`,
       error
     );
-    return NextResponse.json(
-      { success: false, message: msg },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: msg }, { status: 500 });
   }
 }
-

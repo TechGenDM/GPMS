@@ -148,7 +148,12 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   console.log(`[GPMS] requestId=${requestId} action=createUser invoked`);
-  const data = await mutationProxy('createUser', session.user.email, body, requestId);
+  const data = await mutationProxy(
+    'createUser',
+    session.user.email,
+    body,
+    requestId
+  );
   return NextResponse.json(data, { status: data.success ? 200 : 400 });
 }
 
@@ -164,7 +169,12 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json();
-  const data = await mutationProxy('updateUser', session.user.email, body, requestId);
+  const data = await mutationProxy(
+    'updateUser',
+    session.user.email,
+    body,
+    requestId
+  );
   return NextResponse.json(data, { status: data.success ? 200 : 400 });
 }
 
@@ -181,6 +191,11 @@ export async function DELETE(request: NextRequest) {
 
   const body = await request.json();
   console.log(`[GPMS] requestId=${requestId} action=disableUser invoked`);
-  const data = await mutationProxy('disableUser', session.user.email, { userId: body.userId }, requestId);
+  const data = await mutationProxy(
+    'disableUser',
+    session.user.email,
+    { userId: body.userId },
+    requestId
+  );
   return NextResponse.json(data, { status: data.success ? 200 : 400 });
 }
